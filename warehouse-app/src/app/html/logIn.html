@@ -1,0 +1,58 @@
+<main>
+  <section id="ads-section">
+    <ads-display></ads-display>
+  </section>
+  <section id="form-section">
+    <div id="background-container">
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="box"></div>
+      <div class="check box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="check box"></div>
+
+      <div class="check box"></div>
+      <div class="check box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="error box"></div>
+
+      <div class="check box"></div>
+      <div class="error box"></div>
+      <div class="box"></div>
+      <div class="check box"></div>
+      <div class="check box"></div>
+      <div class="check box"></div>
+      
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="check box"></div>
+      
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+      <div class="check box"></div>
+    </div>
+    <form id="form" [formGroup]="logInForm" (ngSubmit)="submitLogIn()">
+      <label>Log in</label>
+      <p class="message" *ngIf="message">{{message}}</p>
+      <p class="err" *ngIf="error">{{error}}</p>
+      <login-input [logInForm]="logInForm"></login-input>
+      <a routerLink="/sign-up" id="signup-route">New here?</a>
+      <button type="submit">Log in</button>
+    </form>
+  </section>
+</main>

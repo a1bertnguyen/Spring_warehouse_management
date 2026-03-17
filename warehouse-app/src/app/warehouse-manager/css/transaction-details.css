@@ -1,0 +1,39 @@
+.section-card {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px #ccc;
+}
+
+.transaction-details-page {
+  max-width: 900px;
+  margin: auto;
+}
+
+.transaction-status-update {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.message {
+  padding: 10px;
+  background: #c1ffd7;
+  border-left: 5px solid #2ecc71;
+}
+
+.back-btn {
+  padding: 8px 16px;
+  background-color: #1e3b8a;
+  color: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.back-btn:hover {
+  background: #e0e0e0;
+  color: #1e3b8a;
+}

@@ -1,0 +1,116 @@
+<main>
+  <header>
+    <h1>Task Management</h1>
+  </header>
+
+  <div class="content-box">
+    <div *ngIf="message" class="message">{{ message }}</div>
+    <div *ngIf="error" class="err">{{ error }}</div>
+
+    <div class="toolbar">
+      <form class="search-form" [formGroup]="searchForm" (ngSubmit)="onSearchSubmit()">
+        <input type="text" placeholder="Search tasks..." formControlName="searchInput" />
+        <button type="submit">Search</button>
+      </form>
+
+      <button *ngIf="role === 'ADMIN'" class="add-item" (click)="openAddTaskForm()">
+        Add Task
+      </button>
+
+      <button *ngIf="role === 'ADMIN'" class="add-item" (click)="addRandomTask()">
+        Add Random Task
+      </button>
+    </div>
+
+    <div class="pill-container">
+      <div class="pill" *ngFor="let t of tasks">
+        <div class="left-section">
+          <span class="status" [ngStyle]="{'background-color': statusColor(t.status)}">
+            {{ t.status }}
+          </span>
+
+          <span class="pill-name">{{ t.name }}</span>
+        </div>
+
+        <div class="right-section">
+          <a class="details-link" [routerLink]="['/task-details', t.id]">Details</a>
+
+          <div *ngIf="role === 'ADMIN'" class="actions">
+            <button class="edit" (click)="openEditTaskModal(t)">Edit</button>
+            <button class="delete" (click)="deleteTask(t.id)">Delete</button>
+          </div>
+
+          <div *ngIf="role === 'MANAGER'" class="actions">
+            <button class="accept" *ngIf="t.status === 'ASSIGNED'" (click)="updateStatus(t.id, 'IN_PROGRESS')">
+              Accept
+            </button>
+
+            <button class="complete" *ngIf="t.status === 'IN_PROGRESS'" (click)="updateStatus(t.id, 'COMPLETED')">
+              Complete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-background" *ngIf="showAddTaskForm">
+    <form class="modal" [formGroup]="addTaskForm" (ngSubmit)="addTask()">
+      <h2>Add Task</h2>
+
+      <label>Name</label>
+      <input type="text" formControlName="name" />
+
+      <label>Description</label>
+      <textarea rows="3" formControlName="description"></textarea>
+
+      <label>Assign To User</label>
+      <select formControlName="userId">
+        <option *ngFor="let u of users" [value]="u.id">{{ u.name }}</option>
+      </select>
+
+      <label>Product</label>
+      <select formControlName="productId">
+        <option *ngFor="let p of products" [value]="p.id">{{ p.name }}</option>
+      </select>
+
+      <label>Deadline</label>
+      <input type="datetime-local" formControlName="deadline" />
+
+      <div class="modal-controls">
+        <button type="button" class="btn-cancel" (click)="closeAddTaskForm()">Cancel</button>
+        <button type="submit" class="btn-save">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-background" *ngIf="showEditTaskForm">
+    <form class="modal" [formGroup]="editTaskForm" (ngSubmit)="editTask(selectedTask.id)">
+      <h2>Edit Task</h2>
+
+      <label>Name</label>
+      <input type="text" formControlName="name" />
+
+      <label>Description</label>
+      <textarea rows="3" formControlName="description"></textarea>
+
+      <label>Assign To User</label>
+      <select formControlName="userId">
+        <option *ngFor="let u of users" [value]="u.id">{{ u.name }}</option>
+      </select>
+
+      <label>Product</label>
+      <select formControlName="productId">
+        <option *ngFor="let p of products" [value]="p.id">{{ p.name }}</option>
+      </select>
+
+      <label>Deadline</label>
+      <input type="datetime-local" formControlName="deadline" />
+
+      <div class="modal-controls">
+        <button type="button" class="btn-cancel" (click)="closeEditTaskForm()">Cancel</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</main>

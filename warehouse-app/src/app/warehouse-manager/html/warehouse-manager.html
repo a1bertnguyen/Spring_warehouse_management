@@ -1,0 +1,19 @@
+<div class="view">
+    <nav>
+        <h1>Warehouse Management</h1>
+        <hr>
+        <a routerLink="/warehouse-manager/account">Account</a>
+        <hr>
+        <a routerLink="/warehouse-manager/supplier">Supplier</a>
+        <a routerLink="/warehouse-manager/category">Category</a>
+        <a routerLink="/warehouse-manager/product">Product</a>
+        <!--<a routerLink="/warehouse-manager/inventory">Inventory</a>-->
+        <a [routerLink]="['/warehouse-manager/transaction', 'Selling']">Selling transaction</a>
+        <a [routerLink]="['/warehouse-manager/transaction', 'Purchasing']">Purchasing transaction</a>
+        <a routerLink="/warehouse-manager/task" class="task-link">
+            Task
+            <span *ngIf="hasAssignedTasks" class="red-dot"></span>
+        </a>
+    </nav>
+    <router-outlet></router-outlet>
+</div>

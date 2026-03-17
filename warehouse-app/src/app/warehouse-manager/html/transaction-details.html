@@ -1,0 +1,59 @@
+<div class="transaction-details-page">
+
+  <p *ngIf="message" class="message">{{ message }}</p>
+
+  <div *ngIf="transaction">
+
+    <div class="section-card">
+      <h2>Transaction Information</h2>
+      <p>Type: {{ transaction.transactionType }}</p>
+      <p>Status: {{ transaction.status }}</p>
+      <p>Description: {{ transaction.description }}</p>
+      <p>Note: {{ transaction.note }}</p>
+      <p>Total Products: {{ transaction.totalProducts }}</p>
+      <p>Total Price: {{ transaction.totalPrice.toFixed(2) }}</p>
+      <p>Create AT: {{ transaction.createdAt | date:'medium' }}</p>
+
+      <p *ngIf="transaction.updatedAt">
+        Updated At: {{ transaction.updatedAt | date:'medium' }}
+      </p>
+    </div>
+
+    <div class="section-card">
+      <h2>Product Information</h2>
+      <p>Name: {{ transaction.product.name }}</p>
+      <p>SKU: {{ transaction.product.sku }}</p>
+      <p>Price: {{ transaction.product.price.toFixed(2) }}</p>
+      <p>Stock Quantity: {{ transaction.product.stockQuantity }}</p>
+      <p>Description: {{ transaction.product.description }}</p>
+
+      <img 
+        *ngIf="transaction.product.imageUrl" 
+        [src]="transaction.product.imageUrl" 
+        [alt]="transaction.product.name"
+        style="max-width: 200px; display: block; margin-top: 10px;"
+      />
+    </div>
+
+    <div class="section-card">
+      <h2>User Information</h2>
+      <p>Name: {{ transaction.user.name }}</p>
+      <p>Email: {{ transaction.user.email }}</p>
+      <p>Phone Number: {{ transaction.user.phoneNumber }}</p>
+      <p>Role: {{ transaction.user.role }}</p>
+      <p>Create AT: {{ transaction.user.createdAt | date:'medium' }}</p>
+    </div>
+
+    <div class="section-card" *ngIf="transaction.supplier">
+      <h2>Supplier Information</h2>
+      <p>Name: {{ transaction.supplier.name }}</p>
+      <p>Contact Address: {{ transaction.supplier.contactInfo }}</p>
+      <p>Address: {{ transaction.supplier.address }}</p>
+    </div>
+
+  </div>
+
+  <button (click)="goBack()" class="back-btn">
+    ← Back
+  </button>
+</div>

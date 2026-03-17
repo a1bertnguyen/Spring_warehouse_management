@@ -1,0 +1,49 @@
+<div class="task-details-page">
+
+  <p *ngIf="message" class="message">{{ message }}</p>
+
+  <div *ngIf="task">
+
+    <div class="section-card">
+      <h2>Task Information</h2>
+
+      <p><strong>Name:</strong> {{ task.name }}</p>
+      <p><strong>Status:</strong> {{ task.status }}</p>
+      <p><strong>Description:</strong> {{ task.description }}</p>
+      <p><strong>Created At:</strong> {{ task.createdAt | date:'medium' }}</p>
+      <p><strong>Deadline:</strong> {{ task.deadline | date:'medium' }}</p>
+    </div>
+
+    <div class="section-card">
+      <h2>Assigned User</h2>
+
+      <p><strong>Name:</strong> {{ task.user.name }}</p>
+      <p><strong>Email:</strong> {{ task.user.email }}</p>
+      <p><strong>Phone Number:</strong> {{ task.user.phoneNumber }}</p>
+      <p><strong>Role:</strong> {{ task.user.role }}</p>
+      <p><strong>Created At:</strong> {{ task.user.createdAt | date:'medium' }}</p>
+    </div>
+
+    <div class="section-card">
+      <h2>Product Information</h2>
+
+      <p><strong>Name:</strong> {{ task.product.name }}</p>
+      <p><strong>SKU:</strong> {{ task.product.sku }}</p>
+      <p><strong>Price:</strong> {{ task.product.price.toFixed(2) }}</p>
+      <p><strong>Stock Quantity:</strong> {{ task.product.stockQuantity }}</p>
+      <p><strong>Description:</strong> {{ task.product.description }}</p>
+      <p><strong>Expiry Date:</strong> {{ task.product.expiryDate | date:'medium' }}</p>
+
+      <img 
+        *ngIf="task.product.imageUrl"
+        [src]="task.product.imageUrl"
+        [alt]="task.product.name"
+        style="max-width: 200px; display: block; margin-top: 10px;"
+      />
+    </div>
+  </div>
+
+  <button (click)="goBack()" class="back-btn">
+    ← Back
+  </button>
+</div>

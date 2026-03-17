@@ -1,0 +1,252 @@
+main {
+  width: 80vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0EA5E9;
+  padding-bottom: 2rem;
+}
+
+main > * {
+  margin: 10px;
+  border-radius: 8px;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  color: #F3F4F5;
+}
+
+header h1 {
+  padding-left: 10px;
+}
+
+.content-box {
+  background-color: #F3F4F5;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.search-form input,
+.search-input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #CBD5E1;
+  outline: none;
+  width: 200px;
+  transition: 0.2s;
+}
+
+.search-input:focus {
+  border-color: #1e3b8a;
+  box-shadow: 0 0 0 2px rgba(30, 59, 138, 0.2);
+}
+
+.btn-search {
+  background-color: #1e3b8a;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-item {
+  background-color: #1e3b8a;
+  width: 14%;
+  min-width: 150px;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  align-self: flex-end;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: none;
+  cursor: pointer;
+}
+
+.product-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.product-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+.product-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.product-card h2 {
+  font-size: 1.2rem;
+  color: #1e3b8a;
+  margin-bottom: 6px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.edit {
+  background-color: #1e3b8a;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete {
+  background-color: #DC2626;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #1e3b8a;
+  box-shadow: 0 0 0 2px rgba(30, 59, 138, 0.2);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+label {
+  padding: 4px 2px;
+  font-weight: 600;
+  color: #1e3b8a;
+}
+
+.modal-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #fff;
+  padding: 2rem;
+  width: 380px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modal-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.two-column {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 1.5rem;
+  width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.two-column img.preview-img {
+  grid-column: span 2;
+}
+
+.two-column .modal-controls {
+  grid-column: span 2;
+}
+
+.preview-img {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.btn-save {
+  background-color: #1e3b8a;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #CBD5E1;
+  background-color: white;
+  cursor: pointer;
+}
+
+.message {
+  background: #22c55e;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  margin: 0.5rem 0;
+}
+
+.err {
+  background: #DC2626;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  margin: 0.5rem 0;
+}

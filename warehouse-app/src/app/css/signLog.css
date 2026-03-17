@@ -1,0 +1,115 @@
+main {
+  display: flex;
+  height: 100vh;
+}
+
+#form-section {
+  position: relative;
+  width: 40%;
+  height: 100%;
+  overflow: hidden;
+  justify-items: center;
+  align-content: center;
+}
+#background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #1E3A8A;
+  z-index: 0;
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+}
+.box {
+  width: 100%;
+  height: 100%;
+}
+.error.box:hover {
+  background-color: #DC2626;
+}
+.check.box:hover {
+  background-color: #16A34A;
+}
+[class="box"]:hover {
+  background-image: url('/assets/outside/box.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+form{
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #0ea4e95e; /* semi-transparent */
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 1rem;
+}
+#form button, #form a,
+#form signup-input,
+#form login-input{
+    pointer-events: auto;
+}
+button{
+    width: 100px;
+    height: 20px;
+}
+label{
+    text-decoration: solid;
+    font-size: 3em;
+}
+a{
+    margin: 5px;;
+    font-size: 1.2em;
+    color: #6f9dff;
+}
+
+#ads-section {
+  position: relative;
+  width: 60%;
+  height: 100%;
+}
+
+/* Error message */
+.err {
+    background-color: rgba(220, 38, 38, 0.9); /* semi-transparent red */
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.95em;
+    margin: 0.5rem 0;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: all 0.3s ease-in-out;
+}
+
+/* Optional hover/animation effect */
+.err:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Success / info message */
+.message {
+    background-color: rgba(22, 163, 74, 0.9); /* semi-transparent green */
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.95em;
+    margin: 0.5rem 0;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: all 0.3s ease-in-out;
+}
+
+.message:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}

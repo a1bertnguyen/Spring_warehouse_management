@@ -1,0 +1,17 @@
+<div class="view">
+<nav>
+    <h1>Warehouse Management</h1>
+    <hr>
+    <a routerLink="/admin/account">Account</a>
+    <hr>
+    <a routerLink="/admin/statistic">Statistic</a>
+    <a routerLink="/admin/manage-user">Manage user</a>
+    <a routerLink="/admin/supplier">Supplier</a>
+    <a routerLink="/admin/category">Category</a>
+    <a routerLink="/admin/product">Product</a>
+    <a [routerLink]="['/admin/transaction', 'Selling']">Selling transaction</a>
+    <a [routerLink]="['/admin/transaction', 'Purchasing']">Purchasing transaction</a>
+    <a routerLink="/admin/task">Task</a>
+</nav>
+<router-outlet></router-outlet>
+</div>

@@ -1,0 +1,24 @@
+<main>
+    <header>
+        <h1>Inventory list</h1>
+    </header>
+    <div class="container-box">
+        <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
+        <section class="listing" *ngFor="let product of products" [ngStyle]="{'background-color': getQuantity(product.stock_quantity)}">
+            <p class="listing-status">{{getQuantityTag(product.stock_quantity)}}</p>
+            <div style="margin: 5px;">
+            <img style="margin: 0;"
+            class="listing-photo"
+            [src]="product.image_url"
+            alt="Exterior photo of {{ product.name }}"
+            crossorigin
+            /></div>
+            <h2 class="listing-heading">{{ product.product_id }}</h2>
+            <h2 class="listing-heading">{{ product.name }}</h2>
+            <p class="listing-quantity">Quantity: {{ product.stock_quantity }}</p>
+            <p class="listing-price">Price: {{ product.price }}$</p>
+            <p class="listing-total-price">Total price: {{getTotalPrice(product.stock_quantity, product.price)}}$</p>
+        </section>
+        </div>
+    </div>
+</main>

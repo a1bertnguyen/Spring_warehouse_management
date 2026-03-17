@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "WarehouseManagmentApplication",
+            "request": "launch",
+            "mainClass": "com.Warehouse_managment.Warehouse_managment.WarehouseManagmentApplication",
+            "projectName": "ClothesWareHouse_HSF"
+        },
+        {
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}"
+            ],
+            "name": "Launch Extension",
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "preLaunchTask": "npm",
+            "request": "launch",
+            "type": "extensionHost"
+        }
+    ]
+}

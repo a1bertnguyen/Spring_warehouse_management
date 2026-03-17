@@ -1,0 +1,139 @@
+<main>
+  <header>
+    <h1>Product Management</h1>
+  </header>
+
+  <div class="content-box">
+
+    <div *ngIf="message" class="message">{{ message }}</div>
+    <div *ngIf="error" class="err">{{ error }}</div>
+
+    <form class="search-form" [formGroup]="searchForm" (ngSubmit)="onSearch()">
+      <input
+        type="text"
+        placeholder="Search..."
+        [formControl]="searchControl"
+        class="search-input"
+      />
+
+      <button type="submit" class="btn-search">Search</button>
+    </form>
+
+    <button *ngIf="role === 'ADMIN'" class="add-item" (click)="openAddForm()">
+      Add Product
+    </button>
+
+    <div class="product-list">
+      <div
+        class="product-card"
+        *ngFor="let p of filteredProducts"
+        [ngStyle]="{ 'background-color': getExpiringSoon(p.expiryDate) }"
+      >
+        <img
+          class="product-img"
+          [src]="p.imageUrl"
+          alt="{{ p.name }}"
+        />
+
+        <h2>{{ p.name }}</h2>
+        <p><strong>SKU:</strong> {{ p.sku }}</p>
+        <p><strong>Price:</strong> {{ p.price | number: '1.0-2' }}$</p>
+        <p><strong>Stock:</strong> {{ p.stockQuantity }}</p>
+        <p><strong>Expiry:</strong> {{ p.expiryDate | date: 'yyyy-MM-dd' }}</p>
+
+        <div class="actions">
+          <button class="edit" (click)="openEditForm(p)"  *ngIf="role === 'ADMIN'">Edit</button>
+          <button class="delete" (click)="deleteProduct(p.id)">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-background" *ngIf="showAddForm">
+    <form class="modal two-column" [formGroup]="addForm" (ngSubmit)="addProduct()">
+      <h2>Add Product</h2>
+      <div></div>
+
+      <label>Name</label>
+      <input type="text" formControlName="name" />
+
+      <label>SKU</label>
+      <input type="text" formControlName="sku" />
+
+      <label>Price</label>
+      <input type="number" formControlName="price" />
+
+      <label>Stock Quantity</label>
+      <input type="number" formControlName="stockQuantity" />
+
+      <label>Expiry Date</label>
+      <input type="date" formControlName="expiryDate" />
+
+      <label>Category</label>
+      <select formControlName="categoryId">
+        <option *ngFor="let c of categories" [value]="c.id">
+          {{ c.name }}
+        </option>
+      </select>
+
+      <label>Description</label>
+      <textarea formControlName="description"></textarea>
+
+      <label>Image</label>
+      <input type="file" accept="image/*" (change)="onFileSelected($event, true)" />
+      <img *ngIf="previewImage" class="preview-img" [src]="previewImage" />
+
+      <div class="modal-controls">
+        <button type="button" class="btn-cancel" (click)="closeAddForm()">Cancel</button>
+        <button type="submit" class="btn-save">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-background" *ngIf="showEditForm">
+    <form class="modal two-column" [formGroup]="editForm" (ngSubmit)="updateProduct(selectedProduct.id)">
+      <h2>Edit Product</h2>
+      <div></div>
+      <input type="hidden" formControlName="productId">
+
+      <label>Name</label>
+      <input type="text" formControlName="name" />
+
+      <label>SKU</label>
+      <input type="text" formControlName="sku" />
+
+      <label>Price</label>
+      <input type="number" formControlName="price" />
+
+      <label>Stock Quantity</label>
+      <input type="number" formControlName="stockQuantity" />
+
+      <label>Expiry Date</label>
+      <input type="date" formControlName="expiryDate" />
+
+      <label>Category</label>
+      <select formControlName="categoryId">
+        <option *ngFor="let c of categories" [value]="c.id">
+          {{ c.name }}
+        </option>
+      </select>
+
+      <label>Description</label>
+      <textarea formControlName="description"></textarea>
+
+      <label>Image</label>
+      <input type="file" accept="image/*" (change)="onFileSelected($event, false)" />
+      <img
+        *ngIf="previewImage || selectedProduct?.imageUrl"
+        class="preview-img"
+        [src]="previewImage || selectedProduct.imageUrl"
+      />
+
+      <div class="modal-controls">
+        <button type="button" class="btn-cancel" (click)="closeEditForm()">Cancel</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+
+</main>

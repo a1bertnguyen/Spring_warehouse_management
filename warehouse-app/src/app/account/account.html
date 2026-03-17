@@ -1,0 +1,65 @@
+<main>
+    <header>
+        <h1>Personal information</h1>
+        <div>
+            <span>{{user?.role}}</span>
+            <span class="logout"><a (click)="logout()">Log out</a></span>
+        </div>
+    </header>
+
+    <div class="message" *ngIf="message">{{ message }}</div>
+    <div class="err" *ngIf="error">{{ error }}</div>
+
+    <div class="content">
+    <div class="left">
+        <h2>Update information</h2>
+        <form [formGroup]="updateForm" (ngSubmit)="onUpdate()">
+            <label for="name">Username</label>
+            <input id="name" type="text" formControlName="name" [value]="user?.name" required />
+
+            <label for="phone">Phone Number</label>
+            <input id="phone" type="text" formControlName="phone" [value]="user?.phoneNumber" required />
+
+            <label for="email">Email</label>
+            <input id="email" type="email" [value]="user?.email" disabled />
+
+            <label for="role">Role</label>
+            <input id="role" type="text" [value]="user?.role" disabled />
+
+            <label for="created-date">Created date</label>
+            <input id="created-date" type="text" [value]="user?.createdAt | date:'yyyy-MM-dd'" disabled />
+
+            <button type="submit">Update</button>
+        </form>
+    </div>
+    <div class="right">
+        <div>
+            <h2>Reset password</h2>
+            <img
+                [src]="toggleIcon()"
+                alt="Toggle password visibility"
+                (click)="togglePasswordVisibility()"
+                class="reveal-icon"
+            />
+        </div>
+        <form [formGroup]="passwordForm" (ngSubmit)="onResetPassword()">
+            <label for="password">Current password</label>
+            <input id="password" [type]="passwordType" name="password" formControlName="password" required/>
+            <div class="err" *ngIf="passwordForm.get('password')?.hasError('invalidCharacter')">
+                Password cannot contain ":"
+            </div>
+
+            <label for="new-password">New password</label>
+            <input id="new-password" [type]="passwordType" name="new-password" formControlName="newPassword" required/>
+            <div class="err" *ngIf="passwordForm.get('newPassword')?.hasError('invalidCharacter')">
+                New password cannot contain ":"
+            </div>
+
+            <label for="confirm-password">Confirm password</label>
+            <input id="confirm-password" [type]="passwordType" name="confirm-password" formControlName="confirmPassword" required/>
+            
+            <button type="submit">Update</button>
+        </form>
+    </div>
+    </div>
+</main>

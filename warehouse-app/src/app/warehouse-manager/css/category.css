@@ -1,0 +1,166 @@
+main{
+    width: 80vw;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #0EA5E9;
+}
+main > *{
+    margin: 10px;
+    border-radius: 5px;
+}
+
+header{
+    background: linear-gradient(20deg, #1e3b8a70, #F3F4F5) !important;
+    display: flex;
+    flex-direction: column;
+    color: #F3F4F5 !important;
+}
+header h1{
+    padding-left: 10px;
+}
+
+.content-box {
+    background-color: #F3F4F5;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.pill-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #E9F7EE;
+  padding: 12px 18px;
+  border-radius: 50px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pill-name {
+  font-weight: 600;
+}
+
+.actions button {
+  margin-left: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.add-item{
+    background-color: #1e3b8a;
+    width: 10%;
+    color: white;
+    padding: 5px;
+    text-align: center;
+    align-self: flex-end;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+.edit {
+  background-color: #1e3b8a;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.delete {
+  background-color: #DC2626;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-background {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0,0.35);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #fff;
+  padding: 2rem;
+  width: 350px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modal label {
+  font-weight: 600;
+  color: #1e3b8a;
+}
+.modal input {
+  padding: 8px 10px;
+  border: 1px solid #CBD5E1;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.modal input:focus {
+  border-color: #1e3b8a;
+  box-shadow: 0 0 0 2px rgba(30, 59, 138, 0.2);
+}
+
+.readonly-field {
+  background: #E2E8F0;
+  padding: 10px;
+  border: 1px solid #CBD5E1;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  color: #374151;
+  pointer-events: none;
+}
+
+.modal-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.btn-cancel {
+  padding: 6px 14px;
+}
+.btn-save {
+  background-color: #1e3b8a;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.message {
+  background: #22c55e;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  margin: 0.5rem 0;
+}
+.err {
+  background: #DC2626;
+  color: white;
+  padding: 8px;
+  border-radius: 5px;
+  margin: 0.5rem 0;
+}

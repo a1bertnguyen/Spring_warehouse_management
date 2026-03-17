@@ -1,0 +1,46 @@
+.view{
+    min-height: 100vh;
+    display: flex;
+    background-color: #1E3A8A;
+}
+
+nav{
+    width: 20vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+nav *{
+    color: #F3F4F5;
+    text-align: center;
+    align-content: center;
+}
+nav a{
+    height: 5%;
+    width: 90%;
+    text-decoration: none;
+}
+nav a:hover{
+    background-color: #0EA5E9;
+}
+nav hr{
+    width: 90%;
+    height: 0;
+    border: solid 1px;
+}
+
+.task-link {
+  position: relative;
+}
+
+.red-dot {
+  width: 10px;
+  height: 10px;
+  background: red;
+  border-radius: 50%;
+  position: absolute;
+  right: 30%;
+  top: 10%;
+  top: 2px;
+}

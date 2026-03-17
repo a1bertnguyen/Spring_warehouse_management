@@ -1,0 +1,52 @@
+<main>
+  <header>
+    <h1>Category Management</h1>
+  </header>
+
+  <div class="content-box">
+    <div *ngIf="message" class="message">{{ message }}</div>
+    <div *ngIf="error" class="err">{{ error }}</div>
+
+    <button *ngIf="role === 'ADMIN'" class="add-item" (click)="openAddCategoryForm()">Add category</button>
+
+    <div class="pill-container">
+      <div class="pill" *ngFor="let c of categories">
+        <span class="pill-name">{{ c.name }}</span>
+
+        <div class="actions" *ngIf="role === 'ADMIN'">
+          <button class="edit" (click)="openEditCategoryModal(c)">Edit</button>
+          <button class="delete" (click)="deleteCategory(c.id)">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-background" *ngIf="showAddCategoryForm">
+    <form class="modal" [formGroup]="addCategoryForm" (ngSubmit)="addCategory()">
+      <h2>Add category</h2>
+
+      <label for="name">Name</label>
+      <input id="name" type="text" formControlName="name" />
+
+      <div class="modal-controls">
+        <button type="button" class="btn-cancel" (click)="closeAddCategoryForm()">Cancel</button>
+        <button type="submit" class="btn-save">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-background" *ngIf="showEditCategoryForm">
+    <form class="modal" [formGroup]="editCategoryForm" (ngSubmit)="editCategory(selectedCategory.id)">
+      <h2>Edit category</h2>
+
+      <label for="editName">Name</label>
+      <input id="editName" type="text" formControlName="name" />
+
+      <div class="modal-controls">
+        <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+
+</main>

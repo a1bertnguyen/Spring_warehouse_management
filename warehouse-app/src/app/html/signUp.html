@@ -1,0 +1,57 @@
+<main>
+  <section id="form-section">
+    <div id="background-container">
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      
+      <div class="box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+      <div class="check box"></div>
+      <div class="error box"></div>
+      <div class="error box"></div>
+    </div>
+    <form id="form" [formGroup]="signUpForm" (submit)="submitSignUp()">
+      <label>Sign up</label>
+      <p class="err" *ngIf="error">{{error}}</p>
+      <signup-input [signUpForm]="signUpForm"></signup-input>
+      <a routerLink='/' id="login-route">Have an account?</a>
+      <button type="submit">Register</button>
+    </form>
+  </section>
+  <section id="ads-section">
+    <ads-display></ads-display>
+  </section>
+</main>

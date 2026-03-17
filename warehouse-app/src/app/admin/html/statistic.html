@@ -1,0 +1,47 @@
+<main>
+    <header>
+        <h1>General Statistic</h1>
+    </header>
+    
+      <div class="message" *ngIf="message">{{ message }}</div>
+      <div class="err" *ngIf="error">{{ error }}</div>
+
+    <div class="stat">
+        <div class="listing user" style="background-color: #22c55e">
+            <h2 class="listing-heading">Users</h2>
+            <p>{{getUserNumber()}}</p>
+        </div>
+        <div class="listing supplier" style="background-color: #22c55e">
+            <h2 class="listing-heading">Supplier</h2>
+            <p>{{getSupplierNumber()}}</p>
+        </div>
+        <div class="listing selling-transaction" style="background-color: #22c55e">
+            <h2 class="listing-heading">Selling orders</h2>
+            <p>{{getSellingOrder()}}</p>
+        </div>
+        <div class="listing purchasing-transaction" style="background-color: #22c55e">
+            <h2 class="listing-heading">Purchasing orders</h2>
+            <p>{{getPurchasingOrder()}}</p>
+        </div>
+
+        <div class="listing task" style="background-color: #22c55e">
+            <h2 class="listing-heading">Tasks</h2>
+            <p>{{getTaskNumber()}}</p>
+        </div>
+        <div class="listing category" style="background-color: #22c55e">
+            <h2 class="listing-heading">Categories</h2>
+            <p>{{getCategoryNumber()}}</p>
+        </div>
+        <div class="listing product-number" style="background-color: #22c55e;">
+            <h2 class="listing-heading">Products</h2>
+            <p>{{getProductNumber()}}</p>
+        </div>
+        <div class="listing outStock" style="background-color: #DC2626;">
+            <h2 class="listing-heading">Out of stocks</h2>
+            <p>{{getOutStock()}}</p>
+        </div>
+    </div>
+    <div class="content-box">
+        <app-stat-chart></app-stat-chart>
+    </div>
+</main>

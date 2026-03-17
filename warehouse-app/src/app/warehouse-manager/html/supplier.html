@@ -1,0 +1,76 @@
+<main>
+  <header>
+    <h1>Supplier Management</h1>
+  </header>
+
+  <div class="content-box">
+    <div *ngIf="message" class="message">{{ message }}</div>
+    <div *ngIf="error" class="err">{{ error }}</div>
+
+    <button *ngIf="role === 'ADMIN'" class="add-item" (click)="openAddItemForm()">Add supplier</button>
+
+    <table>
+      <thead class="table-head">
+        <tr>
+          <th>Name</th>
+          <th>Contact info</th>
+          <th>Address</th>
+          <th *ngIf="role === 'ADMIN'"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of suppliers">
+          <td>{{ s.name }}</td>
+          <td>{{ s.contactInfo }}</td>
+          <td>{{ s.address }}</td>
+          <td *ngIf="role === 'ADMIN'">
+            <div class="actions">
+              <button class="edit" (click)="openEditSupplierModal(s)">Edit</button>
+              <button class="delete" (click)="deleteItem(s.id)">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal-background" *ngIf="showAddItemForm">
+    <form class="modal" [formGroup]="addItemForm" (ngSubmit)="addItem()">
+      <h2>Add supplier</h2>
+
+      <label for="name">Name</label>
+      <input id="name" type="text" formControlName="name" />
+
+      <label for="contactInfo">Contact info</label>
+      <input id="contactInfo" type="text" formControlName="contactInfo" />
+
+      <label for="address">Address</label>
+      <input id="address" type="text" formControlName="address" />
+
+      <div class="modal-controls">
+        <button type="reset" class="btn-cancel" (click)="closeAddItemForm()">Cancel</button>
+        <button type="submit" class="btn-save">Add</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-background" *ngIf="showEditSupplierForm">
+    <form class="modal" [formGroup]="editSupplierForm" (ngSubmit)="editSupplier(selectedSupplier.id)">
+      <h2>Edit supplier</h2>
+
+      <label for="editName">Name</label>
+      <input id="editName" type="text" formControlName="name" />
+
+      <label for="editContactInfo">Contact info</label>
+      <input id="editContactInfo" type="text" formControlName="contactInfo" />
+
+      <label for="editAddress">Address</label>
+      <input id="editAddress" type="text" formControlName="address" />
+
+      <div class="modal-controls">
+        <button class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+        <button class="btn-save" type="submit">Save </button>
+      </div>
+    </form>
+  </div>
+</main>
