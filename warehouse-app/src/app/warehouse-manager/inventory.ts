@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
-import { PRODUCTS } from "../data";
+import { ReactiveFormsModule } from "@angular/forms";
+import { productService } from "../service/productService";
 
 @Component({
     imports:[ReactiveFormsModule, CommonModule],
@@ -10,7 +10,25 @@ import { PRODUCTS } from "../data";
 })
 
 export class Inventory {
-    products = this.sortProductsByQuantity(PRODUCTS);
+    products: any[] = [];
+    error = "";
+
+    constructor(private productService: productService) {}
+
+    ngOnInit() {
+        this.loadInventory();
+    }
+
+    loadInventory() {
+        this.productService.getAllProducts().subscribe({
+            next: (products) => {
+                this.products = this.sortProductsByQuantity(products);
+            },
+            error: () => {
+                this.error = "Failed to load inventory";
+            }
+        });
+    }
 
     getQuantity(quantity: number){
         if (quantity <= 0) return "#b91c1c";
@@ -29,8 +47,8 @@ export class Inventory {
     }
 
     sortProductsByQuantity(products: any[]) {
-        return products.sort((a, b) => {
-            return a.stock_quantity - b.stock_quantity;
+        return [...products].sort((a, b) => {
+            return a.stockQuantity - b.stockQuantity;
         });
     }
 }

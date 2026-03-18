@@ -19,7 +19,7 @@
       <button type="submit" class="btn-search">Search</button>
     </form>
 
-    <button *ngIf="role === 'ADMIN'" class="add-item" (click)="openAddForm()">
+    <button *ngIf="canManageProduct" class="add-item" (click)="openAddForm()">
       Add Product
     </button>
 
@@ -37,13 +37,14 @@
 
         <h2>{{ p.name }}</h2>
         <p><strong>SKU:</strong> {{ p.sku }}</p>
-        <p><strong>Price:</strong> {{ p.price | number: '1.0-2' }}$</p>
+        <p><strong>Purchase Price:</strong> {{ p.purchaseprice | number: '1.0-2' }}$</p>
+        <p><strong>Sale Price:</strong> {{ p.saleprice | number: '1.0-2' }}$</p>
         <p><strong>Stock:</strong> {{ p.stockQuantity }}</p>
         <p><strong>Expiry:</strong> {{ p.expiryDate | date: 'yyyy-MM-dd' }}</p>
 
         <div class="actions">
-          <button class="edit" (click)="openEditForm(p)"  *ngIf="role === 'ADMIN'">Edit</button>
-          <button class="delete" (click)="deleteProduct(p.id)">Delete</button>
+          <button class="edit" (click)="openEditForm(p)" *ngIf="canManageProduct">Edit</button>
+          <button class="delete" (click)="deleteProduct(p.id)" *ngIf="canManageProduct">Delete</button>
         </div>
       </div>
     </div>
@@ -60,8 +61,11 @@
       <label>SKU</label>
       <input type="text" formControlName="sku" />
 
-      <label>Price</label>
-      <input type="number" formControlName="price" />
+      <label>Purchase Price</label>
+      <input type="number" formControlName="purchaseprice" />
+
+      <label>Sale Price</label>
+      <input type="number" formControlName="saleprice" />
 
       <label>Stock Quantity</label>
       <input type="number" formControlName="stockQuantity" />
@@ -102,8 +106,11 @@
       <label>SKU</label>
       <input type="text" formControlName="sku" />
 
-      <label>Price</label>
-      <input type="number" formControlName="price" />
+      <label>Purchase Price</label>
+      <input type="number" formControlName="purchaseprice" />
+
+      <label>Sale Price</label>
+      <input type="number" formControlName="saleprice" />
 
       <label>Stock Quantity</label>
       <input type="number" formControlName="stockQuantity" />

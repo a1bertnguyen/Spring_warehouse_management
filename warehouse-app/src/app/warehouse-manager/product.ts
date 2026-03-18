@@ -20,6 +20,7 @@ export class Product {
   message = "";
   error = "";
   role = localStorage.getItem("role");
+  canManageProduct = this.role === "ADMIN" || this.role === "MANAGER";
 
   showAddForm = false;
   showEditForm = false;
@@ -90,7 +91,8 @@ export class Product {
   addForm = new FormGroup({
     name: new FormControl("", Validators.required),
     sku: new FormControl("", Validators.required),
-    price: new FormControl<number | null>(null, Validators.required),
+    purchaseprice: new FormControl<number | null>(null, Validators.required),
+    saleprice: new FormControl<number | null>(null, Validators.required),
     stockQuantity: new FormControl<number | null>(null, Validators.required),
     categoryId: new FormControl<number | null>(null, Validators.required),
     expiryDate: new FormControl("", Validators.required),
@@ -152,7 +154,8 @@ export class Product {
     productId: new FormControl ("", Validators.required),
     name: new FormControl("", Validators.required),
     sku: new FormControl("", Validators.required),
-    price: new FormControl<number | null>(null, Validators.required),
+    purchaseprice: new FormControl<number | null>(null, Validators.required),
+    saleprice: new FormControl<number | null>(null, Validators.required),
     stockQuantity: new FormControl<number | null>(null, Validators.required),
     categoryId: new FormControl<number | null>(null, Validators.required),
     expiryDate: new FormControl("", Validators.required),
@@ -168,7 +171,8 @@ export class Product {
       productId: p.productId,
       name: p.name,
       sku: p.sku,
-      price: p.price,
+      purchaseprice: p.purchaseprice,
+      saleprice: p.saleprice,
       stockQuantity: p.stockQuantity,
       categoryId: p.categoryId,
       expiryDate: p.expiryDate.split("T")[0],
@@ -186,7 +190,7 @@ export class Product {
   }
 
   updateProduct(id: number) {
-    if (this.editForm.invalid  || !this.selectedFile) {
+    if (this.editForm.invalid) {
       this.error = "All required fields must be filled";
       return;
     }
@@ -199,10 +203,12 @@ export class Product {
         }
       });
   
-      const exp = this.addForm.value.expiryDate + "T00:00:00";
+      const exp = this.editForm.value.expiryDate + "T00:00:00";
       formData.append("expiryDate", exp);
 
-      formData.append("imageFile", this.selectedFile);
+      if (this.selectedFile) {
+        formData.append("imageFile", this.selectedFile);
+      }
 
     this.productService.updateProduct(formData).subscribe({
       next: () => {

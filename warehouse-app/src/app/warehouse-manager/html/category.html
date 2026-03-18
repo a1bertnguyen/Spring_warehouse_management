@@ -7,13 +7,13 @@
     <div *ngIf="message" class="message">{{ message }}</div>
     <div *ngIf="error" class="err">{{ error }}</div>
 
-    <button *ngIf="role === 'ADMIN'" class="add-item" (click)="openAddCategoryForm()">Add category</button>
+    <button *ngIf="canManageCategory" class="add-item" (click)="openAddCategoryForm()">Add category</button>
 
     <div class="pill-container">
       <div class="pill" *ngFor="let c of categories">
         <span class="pill-name">{{ c.name }}</span>
 
-        <div class="actions" *ngIf="role === 'ADMIN'">
+        <div class="actions" *ngIf="canManageCategory">
           <button class="edit" (click)="openEditCategoryModal(c)">Edit</button>
           <button class="delete" (click)="deleteCategory(c.id)">Delete</button>
         </div>

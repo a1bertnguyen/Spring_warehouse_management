@@ -76,7 +76,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .user(user)
                 .supplier(supplier)
                 .totalProducts(quantity)
-                .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                .totalPrice(product.getPurchaseprice().multiply(BigDecimal.valueOf(quantity)))
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();
@@ -112,7 +112,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .product(product)
                 .user(user)
                 .totalProducts(quantity)
-                .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                .totalPrice(product.getSalePrice().multiply(BigDecimal.valueOf(quantity)))
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();

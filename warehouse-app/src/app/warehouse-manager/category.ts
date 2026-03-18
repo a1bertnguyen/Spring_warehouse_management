@@ -13,6 +13,7 @@ export class Category {
   categories: any[] = [];
 
   role = localStorage.getItem('role');
+  canManageCategory = this.role === 'ADMIN' || this.role === 'MANAGER';
   message = "";
   error = "";
 

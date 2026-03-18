@@ -2,41 +2,30 @@ package com.Warehouse_managment.Warehouse_managment.Dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ProductDTO {
+public class WarehouseDTO {
 
-    private Long id;
+    private Integer id;
 
-    private Long categoryId;
-    private Long productId;
-    private Long supplierId;
-
+    @NotBlank(message = "Warehouse name is required")
     private String name;
 
-    private String sku;
-
-    private BigDecimal Purchaseprice;
-    private BigDecimal Saleprice;
-
-    private Integer stockQuantity;
-
-    private String description;
-    private LocalDateTime expiryDate;
-    private String imageUrl;
-
+    @NotBlank(message = "Address is required")
+    private String address;
 
     private LocalDateTime createdAt;
 
-
+    private List<ProductDTO> products;
 }

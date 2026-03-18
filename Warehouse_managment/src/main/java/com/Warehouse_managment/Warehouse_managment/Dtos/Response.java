@@ -36,6 +36,9 @@ public class Response {
     private SupplierDTO supplier;
     private List<SupplierDTO> suppliers;
 
+    private WarehouseDTO warehouse;
+    private List<WarehouseDTO> warehouses;
+
     private CategoryDTO category;
     private List<CategoryDTO> categories;
 

@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,8 @@ public class ProductServiceImpl implements ProductService {
         Product productToSave = Product.builder()
                 .name(productDTO.getName())
                 .sku(productDTO.getSku())
-                .price(productDTO.getPrice())
+                .purchaseprice(productDTO.getPurchaseprice())
+                .salePrice(productDTO.getSaleprice())
                 .stockQuantity(productDTO.getStockQuantity())
                 .description(productDTO.getDescription())
                 .expiryDate(productDTO.getExpiryDate())
@@ -104,13 +106,21 @@ public class ProductServiceImpl implements ProductService {
             existingProduct.setDescription(productDTO.getDescription());
         }
 
-        if (productDTO.getPrice() != null && productDTO.getPrice().compareTo(BigDecimal.ZERO) >= 0) {
-            existingProduct.setPrice(productDTO.getPrice());
+        if (productDTO.getPurchaseprice() != null && productDTO.getPurchaseprice().compareTo(BigDecimal.ZERO) >= 0) {
+            existingProduct.setPurchaseprice(productDTO.getPurchaseprice());
+        }
+        if (productDTO.getSaleprice() != null && productDTO.getSaleprice().compareTo(BigDecimal.ZERO) >= 0) {
+            existingProduct.setSalePrice(productDTO.getSaleprice());
         }
 
         if (productDTO.getStockQuantity() != null && productDTO.getStockQuantity() >= 0) {
             existingProduct.setStockQuantity(productDTO.getStockQuantity());
         }
+
+        if (productDTO.getExpiryDate() != null) {
+            existingProduct.setExpiryDate(productDTO.getExpiryDate());
+        }
+
         //update the product
         productRepository.save(existingProduct);
 
@@ -128,8 +138,9 @@ public class ProductServiceImpl implements ProductService {
 
         List<Product> productList = productRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
 
-        List<ProductDTO> productDTOList = modelMapper.map(productList, new TypeToken<List<ProductDTO>>() {
-        }.getType());
+        List<ProductDTO> productDTOList = productList.stream()
+                .map(this::toProductDTO)
+                .collect(Collectors.toList());
 
         return Response.builder()
                 .status(200)
@@ -147,7 +158,7 @@ public class ProductServiceImpl implements ProductService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .product(modelMapper.map(product, ProductDTO.class))
+                .product(toProductDTO(product))
                 .build();
     }
 
@@ -174,14 +185,37 @@ public class ProductServiceImpl implements ProductService {
             throw new NotFoundException("Product Not Found");
         }
 
-        List<ProductDTO> productDTOList = modelMapper.map(products, new TypeToken<List<ProductDTO>>() {
-        }.getType());
+        List<ProductDTO> productDTOList = products.stream()
+                .map(this::toProductDTO)
+                .collect(Collectors.toList());
 
         return Response.builder()
                 .status(200)
                 .message("success")
                 .products(productDTOList)
                 .build();
+    }
+
+    private ProductDTO toProductDTO(Product product) {
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setProductId(product.getId());
+        productDTO.setName(product.getName());
+        productDTO.setSku(product.getSku());
+        productDTO.setPurchaseprice(product.getPurchaseprice());
+        productDTO.setSaleprice(product.getSalePrice());
+        productDTO.setStockQuantity(product.getStockQuantity());
+        productDTO.setSupplierId(product.getSupplierId());
+        productDTO.setDescription(product.getDescription());
+        productDTO.setExpiryDate(product.getExpiryDate());
+        productDTO.setImageUrl(product.getImageUrl());
+        productDTO.setCreatedAt(product.getCreatedAt());
+
+        if (product.getCategory() != null) {
+            productDTO.setCategoryId(product.getCategory().getId());
+        }
+
+        return productDTO;
     }
 
 

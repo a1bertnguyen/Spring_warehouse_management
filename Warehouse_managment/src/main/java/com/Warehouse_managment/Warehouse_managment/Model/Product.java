@@ -32,10 +32,28 @@ public class Product {
     private String sku;
 
     @Positive(message = "product price must be a positive value")
-    private BigDecimal price;
+    private BigDecimal purchaseprice;
+
+    @Column(name = "sale_price")
+    private BigDecimal salePrice;
 
     @Min(value = 0, message = "stock quantity cannot be negative")
     private Integer stockQuantity;
+
+    @Column(name = "supplier_id")
+    Long supplierId;
+
+    @ManyToOne
+    @JoinColumn(name = "supplier_id", insertable = false, updatable = false)
+    Supplier supplier;
+
+    @Min(value = 0, message = "low stock threshold cannot be negative")
+    @Column(name = "low_stock_threshold")
+    private Integer lowStockThreshold;
+
+
+    @Column(name = "updated_at")
+    LocalDateTime updatedAt;
 
     private String description;
     private LocalDateTime expiryDate;
@@ -54,12 +72,14 @@ public class Product {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", sku='" + sku + '\'' +
-                ", price=" + price +
+                ", Purchaseprice=" + purchaseprice +
+                ", salePrice=" + salePrice +
                 ", stockQuantity=" + stockQuantity +
                 ", description='" + description + '\'' +
                 ", expiryDate=" + expiryDate +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 }

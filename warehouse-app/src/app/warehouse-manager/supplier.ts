@@ -13,6 +13,7 @@ export class Supplier {
   suppliers:any[] = [];
 
   role = localStorage.getItem('role');
+  canManageSupplier = this.role === 'ADMIN' || this.role === 'MANAGER';
   message = "";
   error = "";
 
@@ -137,9 +138,9 @@ export class Supplier {
         address:this.editSupplierForm.value.address
     }
 
-    this.supplierService.addSupplier(id).subscribe({
+    this.supplierService.updateSupplier(id, supplier).subscribe({
         next: () =>{
-            setTimeout(() => {this.message = "Supplier added successfully"}, 500);
+            setTimeout(() => {this.message = "Supplier updated successfully"}, 500);
             this.loadSuppliers();
         },
         error: (err) =>{
