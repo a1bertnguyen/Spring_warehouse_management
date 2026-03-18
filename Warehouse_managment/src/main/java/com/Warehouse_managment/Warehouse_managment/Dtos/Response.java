@@ -28,6 +28,9 @@ public class Response {
     //for pagination
     private Integer totalPages;
     private Long totalElements;
+    private Long totalQuantityOnHand;
+    private Long outOfStockCount;
+    private Long lowStockCount;
 
     //data output optionals
     private UserDTO user;
@@ -44,6 +47,9 @@ public class Response {
 
     private ProductDTO product;
     private List<ProductDTO> products;
+
+    private InventoryDTO inventory;
+    private List<InventoryDTO> inventories;
 
     private TransactionDTO transaction;
     private List<TransactionDTO> transactions;
