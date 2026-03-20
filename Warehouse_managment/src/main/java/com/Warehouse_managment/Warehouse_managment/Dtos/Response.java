@@ -51,6 +51,12 @@ public class Response {
     private InventoryDTO inventory;
     private List<InventoryDTO> inventories;
 
+    private PurchaseOrderDTO purchaseOrder;
+    private List<PurchaseOrderDTO> purchaseOrders;
+
+    private PurchaseOrderDetailDTO purchaseOrderDetail;
+    private List<PurchaseOrderDetailDTO> purchaseOrderDetails;
+
     private TransactionDTO transaction;
     private List<TransactionDTO> transactions;
 
