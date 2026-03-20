@@ -13,4 +13,6 @@ public interface InventoryService {
     Response searchInventories(Integer warehouseId, String productName);
 
     Response getInventorySummary();
+
+    byte[] exportInventoriesToExcel(Integer warehouseId, String productName);
 }

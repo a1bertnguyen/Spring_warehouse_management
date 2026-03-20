@@ -3,6 +3,8 @@ package com.Warehouse_managment.Warehouse_managment.Controller;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -43,5 +45,18 @@ public class InventoryController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<Response> getInventorySummary() {
         return ResponseEntity.ok(inventoryService.getInventorySummary());
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> exportInventoriesToExcel(@RequestParam(required = false) Integer warehouseId,
+                                                           @RequestParam(required = false) String productName) {
+        byte[] excelFile = inventoryService.exportInventoriesToExcel(warehouseId, productName);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=inventories.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelFile);
     }
 }
