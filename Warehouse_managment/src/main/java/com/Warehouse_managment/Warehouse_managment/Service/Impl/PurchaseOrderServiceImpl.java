@@ -35,7 +35,9 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -52,6 +54,24 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
     private final UserService userService;
+
+    private static final Map<PurchaseOrder.OrderStatus, List<PurchaseOrder.OrderStatus>> VALID_TRANSITIONS =
+            new EnumMap<>(PurchaseOrder.OrderStatus.class);
+
+    static {
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.pending_approval,
+                List.of(PurchaseOrder.OrderStatus.approved, PurchaseOrder.OrderStatus.rejected));
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.approved,
+                List.of(PurchaseOrder.OrderStatus.ordered,
+                        PurchaseOrder.OrderStatus.partially_received,
+                        PurchaseOrder.OrderStatus.received));
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.ordered,
+                List.of(PurchaseOrder.OrderStatus.partially_received, PurchaseOrder.OrderStatus.received));
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.partially_received,
+                List.of(PurchaseOrder.OrderStatus.received));
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.received, List.of());
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.rejected, List.of());
+    }
 
     @Override
     public Response createPurchaseOrder(PurchaseOrderRequest purchaseOrderRequest) {
@@ -147,6 +167,16 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .orElseThrow(() -> new NotFoundException("Purchase Order Not Found"));
 
         PurchaseOrder.OrderStatus previousStatus = purchaseOrder.getStatus();
+
+        if (status == previousStatus) {
+            return Response.builder()
+                    .status(200)
+                    .message("Purchase Order Status Updated Successfully")
+                    .purchaseOrder(toDto(purchaseOrder))
+                    .build();
+        }
+
+        validateStatusTransition(previousStatus, status);
         purchaseOrder.setStatus(status);
 
         if (status == PurchaseOrder.OrderStatus.approved) {
@@ -164,6 +194,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .message("Purchase Order Status Updated Successfully")
                 .purchaseOrder(toDto(updatedOrder))
                 .build();
+    }
+
+    private void validateStatusTransition(PurchaseOrder.OrderStatus currentStatus,
+                                          PurchaseOrder.OrderStatus nextStatus) {
+        List<PurchaseOrder.OrderStatus> allowedTransitions = VALID_TRANSITIONS.getOrDefault(currentStatus, List.of());
+        if (!allowedTransitions.contains(nextStatus)) {
+            throw new IllegalStateException("Invalid purchase order status transition from "
+                    + currentStatus + " to " + nextStatus);
+        }
     }
 
     @Override
