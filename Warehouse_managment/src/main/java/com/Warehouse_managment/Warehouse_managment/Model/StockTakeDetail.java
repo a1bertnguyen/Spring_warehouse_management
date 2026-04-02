@@ -20,7 +20,7 @@ public class StockTakeDetail {
     private Integer stockTakeId;
 
     @Column(name = "product_id", nullable = false)
-    private Integer productId;
+    private Long productId;
 
     @Column(name = "system_quantity", nullable = false)
     private Integer systemQuantity;

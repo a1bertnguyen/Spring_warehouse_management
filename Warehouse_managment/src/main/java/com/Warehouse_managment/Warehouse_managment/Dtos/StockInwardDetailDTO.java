@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 public class StockInwardDetailDTO {
     private Integer inwardDetailId;
     private Integer stockInwardId;
-    private Integer productId;
+    private Long productId;
     private String productName;
     private String productSku;
     private Integer quantityReceived;

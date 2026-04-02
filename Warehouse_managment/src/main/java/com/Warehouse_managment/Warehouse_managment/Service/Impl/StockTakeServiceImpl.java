@@ -85,7 +85,7 @@ public class StockTakeServiceImpl implements StockTakeService {
     }
 
     private StockTakeDetailDTO toDetailDto(StockTakeDetail detail) {
-        Product product = productRepository.findById(Long.valueOf(detail.getProductId())).orElse(null);
+        Product product = productRepository.findById(detail.getProductId()).orElse(null);
         return new StockTakeDetailDTO(
                 detail.getStockTakeDetailId(),
                 detail.getStockTakeId(),

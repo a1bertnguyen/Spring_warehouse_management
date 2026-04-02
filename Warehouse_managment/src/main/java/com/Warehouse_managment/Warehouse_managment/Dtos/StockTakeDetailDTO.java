@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class StockTakeDetailDTO {
     private Integer stockTakeDetailId;
     private Integer stockTakeId;
-    private Integer productId;
+    private Long productId;
     private String productCode;
     private String productName;
     private String unit;

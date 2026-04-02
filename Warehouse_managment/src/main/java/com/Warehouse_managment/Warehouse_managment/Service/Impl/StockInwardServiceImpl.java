@@ -211,7 +211,7 @@ public class StockInwardServiceImpl implements StockInwardService {
     private StockInwardDetailDTO toDetailDto(StockInwardDetail detail) {
         Product product = detail.getProduct() != null
                 ? detail.getProduct()
-                : productRepository.findById(Long.valueOf(detail.getProductId())).orElse(null);
+                : productRepository.findById(detail.getProductId()).orElse(null);
 
         BigDecimal price = detail.getUnitPurchasePrice() != null
                 ? detail.getUnitPurchasePrice()

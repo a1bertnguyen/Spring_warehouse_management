@@ -24,7 +24,7 @@ public class StockInwardDetail {
     StockInward stockInward;
 
     @Column(name = "product_id", nullable = false)
-    Integer productId;
+    Long productId;
 
     @Column(name = "quantity_received", nullable = false)
     Integer quantityReceived;
