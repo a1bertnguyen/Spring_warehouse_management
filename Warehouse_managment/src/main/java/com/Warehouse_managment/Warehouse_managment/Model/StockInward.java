@@ -36,7 +36,7 @@ public class StockInward {
     Warehouse warehouse;
 
     @ManyToOne
-    @JoinColumn(name = "purchase_request_id")
+    @JoinColumn(name = "purchase_order_id")
     PurchaseOrder purchaseOrder;
 
     @Column(columnDefinition = "TEXT")

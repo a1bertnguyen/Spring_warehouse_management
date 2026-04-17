@@ -1,6 +1,6 @@
 package com.Warehouse_managment.Warehouse_managment.Dtos;
 
-import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrder;
+import com.Warehouse_managment.Warehouse_managment.Enum.PurchaseRequestStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -16,24 +16,22 @@ import java.util.List;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PurchaseOrderDTO {
-
+public class PurchaseRequestDTO {
     private Integer id;
-    private String orderCode;
-    private Integer purchaseRequestId;
-    private String purchaseRequestCode;
+    private String requestCode;
     private Long requesterId;
     private String requesterName;
     private Integer warehouseId;
     private String warehouseName;
     private Long supplierId;
     private String supplierName;
-    private LocalDateTime orderDate;
-    private PurchaseOrder.OrderStatus status;
+    private LocalDateTime requestDate;
+    private PurchaseRequestStatus status;
     private String notes;
+    private LocalDateTime approvedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer totalItems;
     private BigDecimal totalEstimatedAmount;
-    private List<PurchaseOrderDetailDTO> orderDetails;
+    private List<PurchaseRequestDetailDTO> requestDetails;
 }

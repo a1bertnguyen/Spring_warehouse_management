@@ -9,7 +9,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Locale;
 
@@ -34,10 +42,10 @@ public class PurchaseOrderController {
                                                          @RequestParam(required = false) Integer warehouseId,
                                                          @RequestParam(required = false) Long supplierId,
                                                          @RequestParam(required = false) Long requesterId,
-                                                         @RequestParam(required = false) String requestCode,
+                                                         @RequestParam(required = false) String orderCode,
                                                          @RequestParam(required = false) String status) {
         return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders(
-                page, size, warehouseId, supplierId, requesterId, requestCode, resolvePurchaseOrderStatus(status)));
+                page, size, warehouseId, supplierId, requesterId, orderCode, resolvePurchaseOrderStatus(status)));
     }
 
     @GetMapping("/{id}")
@@ -70,24 +78,12 @@ public class PurchaseOrderController {
             return null;
         }
 
-        String normalized = rawStatus.trim()
-                .toLowerCase(Locale.ROOT)
-                .replace('-', '_');
-
-        return switch (normalized) {
-            case "pending" -> PurchaseOrder.OrderStatus.pending_approval;
-            case "approved" -> PurchaseOrder.OrderStatus.approved;
-            case "received" -> PurchaseOrder.OrderStatus.received;
-            default -> {
-                for (PurchaseOrder.OrderStatus status : PurchaseOrder.OrderStatus.values()) {
-                    if (status.name().equalsIgnoreCase(normalized)) {
-                        yield status;
-                    }
-                }
-                throw new IllegalArgumentException(
-                        "Unsupported purchase order status: " + rawStatus
-                                + ". Supported values include pending, approved, received.");
+        String normalized = rawStatus.trim().toLowerCase(Locale.ROOT).replace('-', '_');
+        for (PurchaseOrder.OrderStatus status : PurchaseOrder.OrderStatus.values()) {
+            if (status.name().equalsIgnoreCase(normalized)) {
+                return status;
             }
-        };
+        }
+        throw new IllegalArgumentException("Unsupported purchase order status: " + rawStatus);
     }
 }

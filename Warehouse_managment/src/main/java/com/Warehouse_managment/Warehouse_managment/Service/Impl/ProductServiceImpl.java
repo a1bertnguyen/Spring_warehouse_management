@@ -53,7 +53,7 @@ public class ProductServiceImpl implements ProductService {
                 .sku(productDTO.getSku())
                 .purchaseprice(productDTO.getPurchaseprice())
                 .salePrice(productDTO.getSaleprice())
-                .stockQuantity(productDTO.getStockQuantity())
+                .stockQuantity(0)
                 .description(productDTO.getDescription())
                 .expiryDate(productDTO.getExpiryDate())
                 .category(category)
@@ -111,10 +111,6 @@ public class ProductServiceImpl implements ProductService {
         }
         if (productDTO.getSaleprice() != null && productDTO.getSaleprice().compareTo(BigDecimal.ZERO) >= 0) {
             existingProduct.setSalePrice(productDTO.getSaleprice());
-        }
-
-        if (productDTO.getStockQuantity() != null && productDTO.getStockQuantity() >= 0) {
-            existingProduct.setStockQuantity(productDTO.getStockQuantity());
         }
 
         if (productDTO.getExpiryDate() != null) {

@@ -13,14 +13,13 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PurchaseOrderDetailDTO {
-
+public class PurchaseRequestDetailDTO {
     private Integer id;
-    private Integer purchaseOrderId;
+    private Integer purchaseRequestId;
     private Long productId;
     private String productName;
     private String productSku;
-    private Integer orderedQuantity;
+    private Integer requestedQuantity;
     private BigDecimal unitPriceEstimated;
     private BigDecimal lineTotalEstimated;
     private Long supplierIdSuggested;

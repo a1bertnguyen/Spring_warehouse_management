@@ -7,6 +7,7 @@ import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrder;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrderDetail;
+import com.Warehouse_managment.Warehouse_managment.Model.PurchaseRequestDetail;
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.PurchaseOrderDetailRepository;
 import com.Warehouse_managment.Warehouse_managment.Service.PurchaseOrderDetailService;
@@ -35,12 +36,31 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
             PurchaseOrderDetail detail = new PurchaseOrderDetail();
             detail.setPurchaseOrder(purchaseOrder);
             detail.setProductId(product.getId());
-            detail.setRequestedQuantity(request.getRequestedQuantity());
+            detail.setOrderedQuantity(request.getRequestedQuantity());
             detail.setUnitPriceEstimated(request.getUnitPriceEstimated() != null
                     ? request.getUnitPriceEstimated()
                     : product.getPurchaseprice());
             detail.setSupplierIdSuggested(request.getSupplierIdSuggested());
             detail.setNote(request.getNote());
+
+            details.add(detailRepository.save(detail));
+        }
+
+        return details;
+    }
+
+    @Override
+    public List<PurchaseOrderDetail> saveDetailsFromRequest(PurchaseOrder purchaseOrder, List<PurchaseRequestDetail> requestDetails) {
+        List<PurchaseOrderDetail> details = new ArrayList<>();
+
+        for (PurchaseRequestDetail requestDetail : requestDetails) {
+            PurchaseOrderDetail detail = new PurchaseOrderDetail();
+            detail.setPurchaseOrder(purchaseOrder);
+            detail.setProductId(requestDetail.getProductId());
+            detail.setOrderedQuantity(requestDetail.getRequestedQuantity());
+            detail.setUnitPriceEstimated(requestDetail.getUnitPriceEstimated());
+            detail.setSupplierIdSuggested(requestDetail.getSupplierIdSuggested());
+            detail.setNote(requestDetail.getNote());
 
             details.add(detailRepository.save(detail));
         }
@@ -67,7 +87,7 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
         dto.setId(detail.getId());
         dto.setPurchaseOrderId(detail.getPurchaseOrder() != null ? detail.getPurchaseOrder().getId() : null);
         dto.setProductId(detail.getProductId());
-        dto.setRequestedQuantity(detail.getRequestedQuantity());
+        dto.setOrderedQuantity(detail.getOrderedQuantity());
         dto.setUnitPriceEstimated(detail.getUnitPriceEstimated());
         dto.setSupplierIdSuggested(detail.getSupplierIdSuggested());
         dto.setNote(detail.getNote());
@@ -77,8 +97,8 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
             dto.setProductSku(detail.getProduct().getSku());
         }
 
-        if (detail.getUnitPriceEstimated() != null && detail.getRequestedQuantity() != null) {
-            dto.setLineTotalEstimated(detail.getUnitPriceEstimated().multiply(BigDecimal.valueOf(detail.getRequestedQuantity())));
+        if (detail.getUnitPriceEstimated() != null && detail.getOrderedQuantity() != null) {
+            dto.setLineTotalEstimated(detail.getUnitPriceEstimated().multiply(BigDecimal.valueOf(detail.getOrderedQuantity())));
         }
 
         return dto;

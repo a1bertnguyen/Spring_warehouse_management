@@ -18,6 +18,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
     @Query("SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i")
     long getTotalQuantityOnHand();
 
+    @Query("SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i WHERE i.product.id = :productId")
+    long getTotalQuantityOnHandByProductId(@Param("productId") Long productId);
+
     @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantityOnHand = 0")
     long countOutOfStock();
 

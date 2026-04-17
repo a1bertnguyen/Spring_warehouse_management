@@ -3,6 +3,8 @@ package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 import com.Warehouse_managment.Warehouse_managment.Dtos.ProductDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Dtos.WarehouseDTO;
+import com.Warehouse_managment.Warehouse_managment.Enum.InventoryMovementType;
+import com.Warehouse_managment.Warehouse_managment.Enum.InventoryReferenceType;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Inventory;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
@@ -10,6 +12,7 @@ import com.Warehouse_managment.Warehouse_managment.Model.Warehouse;
 import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.WarehouseRepository;
+import com.Warehouse_managment.Warehouse_managment.Service.InventoryMovementService;
 import com.Warehouse_managment.Warehouse_managment.Service.WarehouseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +20,11 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +36,8 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final ProductRepository productRepository;
     private final WarehouseRepository warehouseRepository;
     private final ModelMapper modelMapper;
+    private final InventoryStockSyncService inventoryStockSyncService;
+    private final InventoryMovementService inventoryMovementService;
 
     @Override
     public Response createWarehouse(WarehouseDTO warehouseDTO) {
@@ -92,12 +99,34 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    @Transactional
     public Response deleteWarehouse(Integer id) {
         Warehouse warehouse = getWarehouseEntity(id);
         List<Inventory> inventories = inventoryRepository.findByWarehouse(warehouse);
+        Set<Long> affectedProductIds = inventories.stream()
+                .map(Inventory::getProduct)
+                .filter(product -> product != null && product.getId() != null)
+                .map(Product::getId)
+                .collect(Collectors.toSet());
 
         if (!inventories.isEmpty()) {
+            for (Inventory inventory : inventories) {
+                int quantityBefore = safeQuantity(inventory.getQuantityOnHand());
+                inventoryMovementService.recordMovement(
+                        inventory.getProduct(),
+                        warehouse,
+                        quantityBefore,
+                        -quantityBefore,
+                        0,
+                        InventoryMovementType.WAREHOUSE_DELETION,
+                        InventoryReferenceType.WAREHOUSE,
+                        String.valueOf(warehouse.getId()),
+                        warehouse.getName(),
+                        "Inventory row removed because warehouse was deleted"
+                );
+            }
             inventoryRepository.deleteAll(inventories);
+            affectedProductIds.forEach(inventoryStockSyncService::syncProductStock);
         }
 
         warehouseRepository.delete(warehouse);
@@ -120,6 +149,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    @Transactional
     public Response addProductToWarehouse(Integer warehouseId, Long productId, Integer quantity) {
         Warehouse warehouse = getWarehouseEntity(warehouseId);
         Product product = productRepository.findById(productId)
@@ -134,9 +164,24 @@ public class WarehouseServiceImpl implements WarehouseService {
                         .build());
 
         int quantityToAdd = quantity != null ? quantity : 0;
-        inventory.setQuantityOnHand(inventory.getQuantityOnHand() + quantityToAdd);
+        int quantityBefore = safeQuantity(inventory.getQuantityOnHand());
+        int quantityAfter = quantityBefore + quantityToAdd;
+        inventory.setQuantityOnHand(quantityAfter);
         inventory.setLastUpdated(new Timestamp(System.currentTimeMillis()));
         inventoryRepository.save(inventory);
+        inventoryMovementService.recordMovement(
+                product,
+                warehouse,
+                quantityBefore,
+                quantityToAdd,
+                quantityAfter,
+                InventoryMovementType.MANUAL_STOCK_IN,
+                InventoryReferenceType.MANUAL,
+                null,
+                null,
+                "Product quantity was added manually to warehouse"
+        );
+        inventoryStockSyncService.syncProductStock(product.getId());
 
         return Response.builder()
                 .status(200)
@@ -145,6 +190,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    @Transactional
     public Response removeProductFromWarehouse(Integer warehouseId, Long productId) {
         Warehouse warehouse = getWarehouseEntity(warehouseId);
         Product product = productRepository.findById(productId)
@@ -153,7 +199,21 @@ public class WarehouseServiceImpl implements WarehouseService {
         Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
                 .orElseThrow(() -> new NotFoundException("Product Not Found In Warehouse"));
 
+        int quantityBefore = safeQuantity(inventory.getQuantityOnHand());
+        inventoryMovementService.recordMovement(
+                product,
+                warehouse,
+                quantityBefore,
+                -quantityBefore,
+                0,
+                InventoryMovementType.MANUAL_STOCK_OUT,
+                InventoryReferenceType.WAREHOUSE,
+                String.valueOf(warehouse.getId()),
+                warehouse.getName(),
+                "Product was removed from warehouse"
+        );
         inventoryRepository.delete(inventory);
+        inventoryStockSyncService.syncProductStock(product.getId());
 
         return Response.builder()
                 .status(200)
@@ -194,5 +254,9 @@ public class WarehouseServiceImpl implements WarehouseService {
         }
 
         return productDTO;
+    }
+
+    private int safeQuantity(Integer quantity) {
+        return quantity != null ? quantity : 0;
     }
 }

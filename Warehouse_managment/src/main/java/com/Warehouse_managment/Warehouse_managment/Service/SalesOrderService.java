@@ -12,6 +12,7 @@ public interface SalesOrderService {
                                int size,
                                String orderCode,
                                String customerName,
+                               Long customerId,
                                SalesOrderStatus status,
                                Integer warehouseId,
                                Long createdById);

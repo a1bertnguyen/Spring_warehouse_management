@@ -10,6 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -28,7 +29,13 @@ import java.util.List;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "sales_orders")
+@Table(
+        name = "sales_orders",
+        indexes = {
+                @Index(name = "idx_sales_orders_customer_id", columnList = "customer_id"),
+                @Index(name = "idx_sales_orders_created_by", columnList = "user_id")
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -41,6 +48,13 @@ public class SalesOrder {
 
     @Column(name = "order_code", length = 50, nullable = false, unique = true)
     String orderCode;
+
+    @Column(name = "customer_id")
+    Long customerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", insertable = false, updatable = false)
+    Customer customer;
 
     @Column(name = "customer_name", length = 100, nullable = false)
     String customerName;

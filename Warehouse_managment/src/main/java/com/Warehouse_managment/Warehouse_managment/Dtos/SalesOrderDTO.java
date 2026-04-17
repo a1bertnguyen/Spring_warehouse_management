@@ -20,6 +20,7 @@ public class SalesOrderDTO {
 
     private Integer id;
     private String orderCode;
+    private Long customerId;
     private String customerName;
     private String customerEmail;
     private String customerPhone;

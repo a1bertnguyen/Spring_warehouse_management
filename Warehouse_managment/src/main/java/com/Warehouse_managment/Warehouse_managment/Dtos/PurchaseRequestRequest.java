@@ -2,8 +2,8 @@ package com.Warehouse_managment.Warehouse_managment.Dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,22 +14,16 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SalesOrderRequest {
+public class PurchaseRequestRequest {
 
-    private Long customerId;
+    @NotNull(message = "Warehouse id is required")
+    private Integer warehouseId;
 
-    private String customerName;
-
-    @Email(message = "Customer email is invalid")
-    private String customerEmail;
-
-    private String customerPhone;
-
-    private String shippingAddress;
+    private Long supplierId;
 
     private String notes;
 
     @Valid
-    @NotEmpty(message = "Sales order must contain at least one item")
-    private List<SalesOrderDetailRequest> items;
+    @NotEmpty(message = "Purchase request must contain at least one item")
+    private List<PurchaseRequestDetailRequest> items;
 }

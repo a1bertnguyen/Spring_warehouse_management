@@ -13,7 +13,7 @@ public interface PurchaseOrderService {
                                   Integer warehouseId,
                                   Long supplierId,
                                   Long requesterId,
-                                  String requestCode,
+                                  String orderCode,
                                   PurchaseOrder.OrderStatus status);
 
     Response getPurchaseOrderById(Integer id);

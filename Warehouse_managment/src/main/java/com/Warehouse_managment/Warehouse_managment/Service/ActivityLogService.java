@@ -2,6 +2,7 @@ package com.Warehouse_managment.Warehouse_managment.Service;
 
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Enum.ActivityAction;
+import com.Warehouse_managment.Warehouse_managment.Enum.ActivityDomain;
 import com.Warehouse_managment.Warehouse_managment.Model.User;
 
 import java.time.LocalDateTime;
@@ -11,10 +12,12 @@ public interface ActivityLogService {
 
     void logActivity(User user,
                      ActivityAction action,
-                     String entityType,
-                     Long entityId,
-                     String oldValue,
-                     String newValue,
+                     ActivityDomain domain,
+                     String referenceType,
+                     Long referenceId,
+                     Object beforeState,
+                     Object afterState,
+                     Object metadata,
                      String note,
                      String ipAddress);
 

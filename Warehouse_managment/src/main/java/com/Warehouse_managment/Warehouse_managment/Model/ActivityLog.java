@@ -1,6 +1,7 @@
 package com.Warehouse_managment.Warehouse_managment.Model;
 
 import com.Warehouse_managment.Warehouse_managment.Enum.ActivityAction;
+import com.Warehouse_managment.Warehouse_managment.Enum.ActivityDomain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,6 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -20,7 +22,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "activity_logs")
+@Table(
+        name = "activity_logs",
+        indexes = {
+                @Index(name = "idx_activity_logs_user_created_at", columnList = "user_id,timestamp"),
+                @Index(name = "idx_activity_logs_domain_reference", columnList = "domain,reference_type,reference_id")
+        }
+)
 @Data
 @Builder
 @NoArgsConstructor
@@ -39,16 +47,24 @@ public class ActivityLog {
     @Column(name = "action_type", nullable = false)
     private ActivityAction action;
 
-    @Column(length = 50)
-    private String entityType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "domain", nullable = false, length = 50)
+    private ActivityDomain domain;
 
-    private Long entityId;
+    @Column(name = "reference_type", length = 100)
+    private String referenceType;
 
-    @Column(columnDefinition = "TEXT")
-    private String oldValue;
+    @Column(name = "reference_id")
+    private Long referenceId;
 
-    @Column(columnDefinition = "TEXT")
-    private String newValue;
+    @Column(name = "before_state", columnDefinition = "JSON")
+    private String beforeState;
+
+    @Column(name = "after_state", columnDefinition = "JSON")
+    private String afterState;
+
+    @Column(name = "metadata", columnDefinition = "JSON")
+    private String metadata;
 
     private String ipAddress;
 
@@ -65,10 +81,12 @@ public class ActivityLog {
                 "id=" + id +
                 ", userId=" + (user != null ? user.getId() : null) +
                 ", action=" + action +
-                ", entityType='" + entityType + '\'' +
-                ", entityId=" + entityId +
-                ", oldValue='" + oldValue + '\'' +
-                ", newValue='" + newValue + '\'' +
+                ", domain=" + domain +
+                ", referenceType='" + referenceType + '\'' +
+                ", referenceId=" + referenceId +
+                ", beforeState='" + beforeState + '\'' +
+                ", afterState='" + afterState + '\'' +
+                ", metadata='" + metadata + '\'' +
                 ", ipAddress='" + ipAddress + '\'' +
                 ", note='" + note + '\'' +
                 ", createdAt=" + createdAt +

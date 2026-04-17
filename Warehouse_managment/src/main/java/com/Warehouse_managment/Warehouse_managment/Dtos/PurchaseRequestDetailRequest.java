@@ -1,7 +1,8 @@
 package com.Warehouse_managment.Warehouse_managment.Dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,18 +12,17 @@ import java.math.BigDecimal;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PurchaseOrderDetailDTO {
+public class PurchaseRequestDetailRequest {
 
-    private Integer id;
-    private Integer purchaseOrderId;
+    @NotNull(message = "Product id is required")
     private Long productId;
-    private String productName;
-    private String productSku;
-    private Integer orderedQuantity;
+
+    @NotNull(message = "Requested quantity is required")
+    @Positive(message = "Requested quantity must be greater than 0")
+    private Integer requestedQuantity;
+
     private BigDecimal unitPriceEstimated;
-    private BigDecimal lineTotalEstimated;
     private Long supplierIdSuggested;
     private String note;
 }

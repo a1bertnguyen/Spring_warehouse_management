@@ -202,7 +202,7 @@ public class StockInwardServiceImpl implements StockInwardService {
         dto.setWarehouseName(warehouse != null ? warehouse.getName() : null);
         dto.setPurchaseOrderId(stockInward.getPurchaseOrder() != null ? stockInward.getPurchaseOrder().getId() : null);
         dto.setPurchaseOrderCode(stockInward.getPurchaseOrder() != null
-                ? stockInward.getPurchaseOrder().getRequestCode()
+                ? stockInward.getPurchaseOrder().getOrderCode()
                 : null);
 
         return dto;

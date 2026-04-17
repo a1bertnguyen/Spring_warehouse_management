@@ -39,11 +39,12 @@ public class SalesOrderController {
                                                       @RequestParam(defaultValue = "10") int size,
                                                       @RequestParam(required = false) String orderCode,
                                                       @RequestParam(required = false) String customerName,
+                                                      @RequestParam(required = false) Long customerId,
                                                       @RequestParam(required = false) SalesOrderStatus status,
                                                       @RequestParam(required = false) Integer warehouseId,
                                                       @RequestParam(required = false) Long createdById) {
         return ResponseEntity.ok(salesOrderService.getAllSalesOrders(
-                page, size, orderCode, customerName, status, warehouseId, createdById));
+                page, size, orderCode, customerName, customerId, status, warehouseId, createdById));
     }
 
     @GetMapping("/{id}")

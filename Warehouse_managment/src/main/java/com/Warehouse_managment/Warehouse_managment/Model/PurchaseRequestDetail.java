@@ -1,18 +1,29 @@
 package com.Warehouse_managment.Warehouse_managment.Model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "purchase_order_details")
+@Table(name = "purchase_request_details")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PurchaseOrderDetail {
+public class PurchaseRequestDetail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,13 +32,13 @@ public class PurchaseOrderDetail {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "request_id", nullable = false)
-    PurchaseOrder purchaseOrder;
+    PurchaseRequest purchaseRequest;
 
     @Column(name = "product_id", nullable = false)
     Long productId;
 
     @Column(name = "requested_quantity", nullable = false)
-    Integer orderedQuantity;
+    Integer requestedQuantity;
 
     @Column(name = "unit_price_estimated")
     BigDecimal unitPriceEstimated;
@@ -41,17 +52,4 @@ public class PurchaseOrderDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     Product product;
-
-    @Override
-    public String toString() {
-        return "PurchaseOrderDetail{" +
-                "id=" + id +
-                ", purchaseOrderId=" + (purchaseOrder != null ? purchaseOrder.getId() : null) +
-                ", productId=" + productId +
-                ", orderedQuantity=" + orderedQuantity +
-                ", unitPriceEstimated=" + unitPriceEstimated +
-                ", supplierIdSuggested=" + supplierIdSuggested +
-                ", note='" + note + '\'' +
-                '}';
-    }
 }

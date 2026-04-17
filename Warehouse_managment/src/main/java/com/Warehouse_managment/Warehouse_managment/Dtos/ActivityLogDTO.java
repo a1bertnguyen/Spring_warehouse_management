@@ -1,6 +1,7 @@
 package com.Warehouse_managment.Warehouse_managment.Dtos;
 
 import com.Warehouse_managment.Warehouse_managment.Enum.ActivityAction;
+import com.Warehouse_managment.Warehouse_managment.Enum.ActivityDomain;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +19,12 @@ public class ActivityLogDTO {
     private String userName;
     private String userEmail;
     private ActivityAction action;
+    private ActivityDomain domain;
+    private String referenceType;
+    private Long referenceId;
+    private String beforeState;
+    private String afterState;
+    private String metadata;
     private String entityType;
     private Long entityId;
     private String oldValue;

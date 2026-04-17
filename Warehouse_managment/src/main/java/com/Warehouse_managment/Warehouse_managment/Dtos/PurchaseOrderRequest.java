@@ -16,15 +16,9 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PurchaseOrderRequest {
 
-    @NotNull(message = "Warehouse id is required")
-    private Integer warehouseId;
+    @NotNull(message = "Purchase request id is required")
+    private Integer purchaseRequestId;
 
-    @NotNull(message = "Supplier id is required")
     private Long supplierId;
-
     private String notes;
-
-    @Valid
-    @NotEmpty(message = "Purchase order must contain at least one item")
-    private List<PurchaseOrderDetailRequest> items;
 }

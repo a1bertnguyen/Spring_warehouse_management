@@ -20,6 +20,4 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
                                         @Param("start") LocalDateTime start,
                                         @Param("end") LocalDateTime end,
                                         Pageable pageable);
-
-    Long id(Long id);
 }

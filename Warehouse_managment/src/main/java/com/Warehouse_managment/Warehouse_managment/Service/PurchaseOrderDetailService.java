@@ -5,11 +5,14 @@ import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderDetailReque
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrder;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrderDetail;
+import com.Warehouse_managment.Warehouse_managment.Model.PurchaseRequestDetail;
 
 import java.util.List;
 
 public interface PurchaseOrderDetailService {
     List<PurchaseOrderDetail> saveDetails(PurchaseOrder purchaseOrder, List<PurchaseOrderDetailRequest> detailRequests);
+
+    List<PurchaseOrderDetail> saveDetailsFromRequest(PurchaseOrder purchaseOrder, List<PurchaseRequestDetail> requestDetails);
 
     Response getDetailsByOrderId(Integer orderId);
 

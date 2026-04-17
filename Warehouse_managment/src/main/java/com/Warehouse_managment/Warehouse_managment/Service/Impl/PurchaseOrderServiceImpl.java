@@ -4,11 +4,16 @@ import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderDetailDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
+import com.Warehouse_managment.Warehouse_managment.Enum.InventoryMovementType;
+import com.Warehouse_managment.Warehouse_managment.Enum.InventoryReferenceType;
+import com.Warehouse_managment.Warehouse_managment.Enum.PurchaseRequestStatus;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Inventory;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrder;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrderDetail;
+import com.Warehouse_managment.Warehouse_managment.Model.PurchaseRequest;
+import com.Warehouse_managment.Warehouse_managment.Model.PurchaseRequestDetail;
 import com.Warehouse_managment.Warehouse_managment.Model.Supplier;
 import com.Warehouse_managment.Warehouse_managment.Model.User;
 import com.Warehouse_managment.Warehouse_managment.Model.Warehouse;
@@ -16,20 +21,22 @@ import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepositor
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.PurchaseOrderDetailRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.PurchaseOrderRepository;
+import com.Warehouse_managment.Warehouse_managment.Repository.PurchaseRequestDetailRepository;
+import com.Warehouse_managment.Warehouse_managment.Repository.PurchaseRequestRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.SupplierRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.UserRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.WarehouseRepository;
+import com.Warehouse_managment.Warehouse_managment.Service.InventoryMovementService;
 import com.Warehouse_managment.Warehouse_managment.Service.PurchaseOrderDetailService;
 import com.Warehouse_managment.Warehouse_managment.Service.PurchaseOrderService;
-import com.Warehouse_managment.Warehouse_managment.Service.UserService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -42,59 +49,72 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderDetailRepository purchaseOrderDetailRepository;
     private final PurchaseOrderDetailService purchaseOrderDetailService;
+    private final PurchaseRequestRepository purchaseRequestRepository;
+    private final PurchaseRequestDetailRepository purchaseRequestDetailRepository;
     private final SupplierRepository supplierRepository;
     private final WarehouseRepository warehouseRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
-    private final UserService userService;
+    private final InventoryStockSyncService inventoryStockSyncService;
+    private final InventoryMovementService inventoryMovementService;
 
     private static final Map<PurchaseOrder.OrderStatus, List<PurchaseOrder.OrderStatus>> VALID_TRANSITIONS =
             new EnumMap<>(PurchaseOrder.OrderStatus.class);
 
     static {
-        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.pending_approval,
-                List.of(PurchaseOrder.OrderStatus.approved, PurchaseOrder.OrderStatus.rejected));
-        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.approved,
-                List.of(PurchaseOrder.OrderStatus.ordered,
-                        PurchaseOrder.OrderStatus.partially_received,
-                        PurchaseOrder.OrderStatus.received));
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.ordered,
-                List.of(PurchaseOrder.OrderStatus.partially_received, PurchaseOrder.OrderStatus.received));
+                List.of(PurchaseOrder.OrderStatus.partially_received, PurchaseOrder.OrderStatus.received, PurchaseOrder.OrderStatus.cancelled));
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.partially_received,
-                List.of(PurchaseOrder.OrderStatus.received));
+                List.of(PurchaseOrder.OrderStatus.received, PurchaseOrder.OrderStatus.cancelled));
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.received, List.of());
-        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.rejected, List.of());
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.cancelled, List.of());
     }
 
     @Override
+    @Transactional
     public Response createPurchaseOrder(PurchaseOrderRequest purchaseOrderRequest) {
-        Supplier supplier = supplierRepository.findById(purchaseOrderRequest.getSupplierId())
-                .orElseThrow(() -> new NotFoundException("Supplier Not Found"));
+        PurchaseRequest purchaseRequest = purchaseRequestRepository.findById(purchaseOrderRequest.getPurchaseRequestId())
+                .orElseThrow(() -> new NotFoundException("Purchase Request Not Found"));
 
-        warehouseRepository.findById(purchaseOrderRequest.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
+        if (purchaseRequest.getStatus() != PurchaseRequestStatus.approved) {
+            throw new IllegalStateException("Purchase order can only be created from an approved purchase request");
+        }
 
-        User requester = userService.getCurrentLoggedInUser();
+        purchaseOrderRepository.findByPurchaseRequestId(purchaseRequest.getId()).ifPresent(existing -> {
+            throw new IllegalStateException("Purchase request has already been converted into a purchase order");
+        });
+
+        Long supplierId = purchaseOrderRequest.getSupplierId() != null
+                ? purchaseOrderRequest.getSupplierId()
+                : purchaseRequest.getSupplierId();
+
+        if (supplierId != null) {
+            supplierRepository.findById(supplierId)
+                    .orElseThrow(() -> new NotFoundException("Supplier Not Found"));
+        }
 
         PurchaseOrder purchaseOrder = new PurchaseOrder();
-        purchaseOrder.setRequestCode(generateRequestCode());
-        purchaseOrder.setRequesterId(requester.getId());
-        purchaseOrder.setWarehouseId(purchaseOrderRequest.getWarehouseId());
-        purchaseOrder.setSupplierId(supplier.getId());
-        purchaseOrder.setNotes(purchaseOrderRequest.getNotes());
-        purchaseOrder.setRequestDate(LocalDateTime.now());
-        purchaseOrder.setStatus(PurchaseOrder.OrderStatus.pending_approval);
+        purchaseOrder.setOrderCode(generateOrderCode());
+        purchaseOrder.setPurchaseRequestId(purchaseRequest.getId());
+        purchaseOrder.setRequesterId(purchaseRequest.getRequesterId());
+        purchaseOrder.setWarehouseId(purchaseRequest.getWarehouseId());
+        purchaseOrder.setSupplierId(supplierId);
+        purchaseOrder.setNotes(purchaseOrderRequest.getNotes() != null ? purchaseOrderRequest.getNotes() : purchaseRequest.getNotes());
+        purchaseOrder.setOrderDate(LocalDateTime.now());
+        purchaseOrder.setStatus(PurchaseOrder.OrderStatus.ordered);
 
         PurchaseOrder savedOrder = purchaseOrderRepository.save(purchaseOrder);
-        List<PurchaseOrderDetail> details = purchaseOrderDetailService.saveDetails(savedOrder, purchaseOrderRequest.getItems());
-        savedOrder.setOrderDetails(details);
+        List<PurchaseRequestDetail> requestDetails = purchaseRequestDetailRepository.findByPurchaseRequest_Id(purchaseRequest.getId());
+        savedOrder.setOrderDetails(purchaseOrderDetailService.saveDetailsFromRequest(savedOrder, requestDetails));
+
+        purchaseRequest.setStatus(PurchaseRequestStatus.converted);
+        purchaseRequestRepository.save(purchaseRequest);
 
         return Response.builder()
                 .status(200)
@@ -109,28 +129,24 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                          Integer warehouseId,
                                          Long supplierId,
                                          Long requesterId,
-                                         String requestCode,
+                                         String orderCode,
                                          PurchaseOrder.OrderStatus status) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Specification<PurchaseOrder> specification = Specification.where(null);
+        Specification<PurchaseOrder> specification = Specification.where((root, query, cb) -> cb.isNotNull(root.get("purchaseRequestId")));
 
         if (warehouseId != null) {
             specification = specification.and((root, query, cb) -> cb.equal(root.get("warehouseId"), warehouseId));
         }
-
         if (supplierId != null) {
             specification = specification.and((root, query, cb) -> cb.equal(root.get("supplierId"), supplierId));
         }
-
         if (requesterId != null) {
             specification = specification.and((root, query, cb) -> cb.equal(root.get("requesterId"), requesterId));
         }
-
-        if (requestCode != null && !requestCode.isBlank()) {
+        if (orderCode != null && !orderCode.isBlank()) {
             specification = specification.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("requestCode")), "%" + requestCode.trim().toLowerCase() + "%"));
+                    cb.like(cb.lower(root.get("orderCode")), "%" + orderCode.trim().toLowerCase() + "%"));
         }
-
         if (status != null) {
             specification = specification.and((root, query, cb) -> cb.equal(root.get("status"), status));
         }
@@ -153,8 +169,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public Response getPurchaseOrderById(Integer id) {
-        PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Purchase Order Not Found"));
+        PurchaseOrder purchaseOrder = getOrderEntity(id);
 
         return Response.builder()
                 .status(200)
@@ -164,10 +179,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @Transactional
     public Response updatePurchaseOrderStatus(Integer id, PurchaseOrder.OrderStatus status) {
-        PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Purchase Order Not Found"));
-
+        PurchaseOrder purchaseOrder = getOrderEntity(id);
         PurchaseOrder.OrderStatus previousStatus = purchaseOrder.getStatus();
 
         if (status == previousStatus) {
@@ -180,10 +194,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         validateStatusTransition(previousStatus, status);
         purchaseOrder.setStatus(status);
-
-        if (status == PurchaseOrder.OrderStatus.approved) {
-            purchaseOrder.setApprovedAt(LocalDateTime.now());
-        }
 
         if (status == PurchaseOrder.OrderStatus.received && previousStatus != PurchaseOrder.OrderStatus.received) {
             applyReceivedInventory(purchaseOrder);
@@ -198,19 +208,23 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .build();
     }
 
-    private void validateStatusTransition(PurchaseOrder.OrderStatus currentStatus,
-                                          PurchaseOrder.OrderStatus nextStatus) {
-        List<PurchaseOrder.OrderStatus> allowedTransitions = VALID_TRANSITIONS.getOrDefault(currentStatus, List.of());
-        if (!allowedTransitions.contains(nextStatus)) {
-            throw new IllegalStateException("Invalid purchase order status transition from "
-                    + currentStatus + " to " + nextStatus);
-        }
-    }
-
     @Override
+    @Transactional
     public Response deletePurchaseOrder(Integer id) {
-        PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Purchase Order Not Found"));
+        PurchaseOrder purchaseOrder = getOrderEntity(id);
+
+        if (purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.received
+                || purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.partially_received) {
+            throw new IllegalStateException("Cannot delete a purchase order that has already been received");
+        }
+
+        if (purchaseOrder.getPurchaseRequestId() != null) {
+            PurchaseRequest purchaseRequest = purchaseRequestRepository.findById(purchaseOrder.getPurchaseRequestId()).orElse(null);
+            if (purchaseRequest != null && purchaseRequest.getStatus() == PurchaseRequestStatus.converted) {
+                purchaseRequest.setStatus(PurchaseRequestStatus.approved);
+                purchaseRequestRepository.save(purchaseRequest);
+            }
+        }
 
         purchaseOrderRepository.delete(purchaseOrder);
 
@@ -218,6 +232,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .status(200)
                 .message("Purchase Order Deleted Successfully")
                 .build();
+    }
+
+    private void validateStatusTransition(PurchaseOrder.OrderStatus currentStatus,
+                                          PurchaseOrder.OrderStatus nextStatus) {
+        List<PurchaseOrder.OrderStatus> allowedTransitions = VALID_TRANSITIONS.getOrDefault(currentStatus, List.of());
+        if (!allowedTransitions.contains(nextStatus)) {
+            throw new IllegalStateException("Invalid purchase order status transition from "
+                    + currentStatus + " to " + nextStatus);
+        }
     }
 
     private void applyReceivedInventory(PurchaseOrder purchaseOrder) {
@@ -228,10 +251,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             Product product = productRepository.findById(detail.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
-            product.setStockQuantity((product.getStockQuantity() != null ? product.getStockQuantity() : 0)
-                    + detail.getRequestedQuantity());
-            productRepository.save(product);
-
             Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
                     .orElse(Inventory.builder()
                             .product(product)
@@ -240,11 +259,36 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                             .lastUpdated(new Timestamp(System.currentTimeMillis()))
                             .build());
 
-            inventory.setQuantityOnHand((inventory.getQuantityOnHand() != null ? inventory.getQuantityOnHand() : 0)
-                    + detail.getRequestedQuantity());
+            int quantityBefore = inventory.getQuantityOnHand() != null ? inventory.getQuantityOnHand() : 0;
+            int quantityDelta = detail.getOrderedQuantity() != null ? detail.getOrderedQuantity() : 0;
+            int quantityAfter = quantityBefore + quantityDelta;
+
+            inventory.setQuantityOnHand(quantityAfter);
             inventory.setLastUpdated(new Timestamp(System.currentTimeMillis()));
             inventoryRepository.save(inventory);
+            inventoryMovementService.recordMovement(
+                    product,
+                    warehouse,
+                    quantityBefore,
+                    quantityDelta,
+                    quantityAfter,
+                    InventoryMovementType.PURCHASE_RECEIPT,
+                    InventoryReferenceType.PURCHASE_ORDER,
+                    String.valueOf(purchaseOrder.getId()),
+                    purchaseOrder.getOrderCode(),
+                    "Inventory increased after purchase order receipt"
+            );
+            inventoryStockSyncService.syncProductStock(product.getId());
         }
+    }
+
+    private PurchaseOrder getOrderEntity(Integer id) {
+        PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Purchase Order Not Found"));
+        if (purchaseOrder.getPurchaseRequestId() == null) {
+            throw new NotFoundException("Purchase Order Not Found");
+        }
+        return purchaseOrder;
     }
 
     private PurchaseOrderDTO toSummaryDto(PurchaseOrder purchaseOrder) {
@@ -256,17 +300,20 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private PurchaseOrderDTO toDto(PurchaseOrder purchaseOrder) {
         PurchaseOrderDTO dto = new PurchaseOrderDTO();
         dto.setId(purchaseOrder.getId());
-        dto.setRequestCode(purchaseOrder.getRequestCode());
+        dto.setOrderCode(purchaseOrder.getOrderCode());
+        dto.setPurchaseRequestId(purchaseOrder.getPurchaseRequestId());
         dto.setRequesterId(purchaseOrder.getRequesterId());
         dto.setWarehouseId(purchaseOrder.getWarehouseId());
         dto.setSupplierId(purchaseOrder.getSupplierId());
-        dto.setRequestDate(purchaseOrder.getRequestDate());
+        dto.setOrderDate(purchaseOrder.getOrderDate());
         dto.setStatus(purchaseOrder.getStatus());
         dto.setNotes(purchaseOrder.getNotes());
-        dto.setApprovedAt(purchaseOrder.getApprovedAt());
         dto.setCreatedAt(purchaseOrder.getCreatedAt());
         dto.setUpdatedAt(purchaseOrder.getUpdatedAt());
 
+        PurchaseRequest purchaseRequest = purchaseOrder.getPurchaseRequestId() != null
+                ? purchaseRequestRepository.findById(purchaseOrder.getPurchaseRequestId()).orElse(null)
+                : null;
         User requester = purchaseOrder.getRequesterId() != null
                 ? userRepository.findById(purchaseOrder.getRequesterId()).orElse(null)
                 : null;
@@ -277,6 +324,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 ? warehouseRepository.findById(purchaseOrder.getWarehouseId()).orElse(null)
                 : null;
 
+        dto.setPurchaseRequestCode(purchaseRequest != null ? purchaseRequest.getRequestCode() : null);
         dto.setRequesterName(requester != null ? requester.getName() : null);
         dto.setSupplierName(supplier != null ? supplier.getName() : null);
         dto.setWarehouseName(warehouse != null ? warehouse.getName() : null);
@@ -286,7 +334,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .toList();
         dto.setOrderDetails(details);
         dto.setTotalItems(details.stream()
-                .map(PurchaseOrderDetailDTO::getRequestedQuantity)
+                .map(PurchaseOrderDetailDTO::getOrderedQuantity)
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .sum());
@@ -298,7 +346,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return dto;
     }
 
-    private String generateRequestCode() {
+    private String generateOrderCode() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         long uniqueSuffix = System.nanoTime() % 10000;
         return "PO-" + timestamp + "-" + uniqueSuffix;
