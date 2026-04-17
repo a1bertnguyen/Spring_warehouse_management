@@ -37,4 +37,15 @@ public class Warehouse {
             createdAt = LocalDateTime.now();
         }
     }
+
+    @Override
+    public String toString() {
+        return "Warehouse{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", address='" + address + '\'' +
+                ", createdAt=" + createdAt +
+                ", inventoryCount=" + (inventories != null ? inventories.size() : 0) +
+                '}';
+    }
 }

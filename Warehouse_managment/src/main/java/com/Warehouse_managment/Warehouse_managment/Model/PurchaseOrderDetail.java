@@ -42,4 +42,16 @@ public class PurchaseOrderDetail {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     Product product;
 
+    @Override
+    public String toString() {
+        return "PurchaseOrderDetail{" +
+                "id=" + id +
+                ", purchaseOrderId=" + (purchaseOrder != null ? purchaseOrder.getId() : null) +
+                ", productId=" + productId +
+                ", requestedQuantity=" + requestedQuantity +
+                ", unitPriceEstimated=" + unitPriceEstimated +
+                ", supplierIdSuggested=" + supplierIdSuggested +
+                ", note='" + note + '\'' +
+                '}';
+    }
 }

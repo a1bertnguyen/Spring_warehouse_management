@@ -57,7 +57,7 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
         return Response.builder()
                 .status(200)
                 .message("success")
-                .purchaseOrderDetails(details)
+                .data(details)
                 .build();
     }
 

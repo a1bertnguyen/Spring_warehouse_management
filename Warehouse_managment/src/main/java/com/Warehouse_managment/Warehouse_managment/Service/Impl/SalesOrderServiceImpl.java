@@ -82,7 +82,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return Response.builder()
                 .status(200)
                 .message("Sales Order Created Successfully")
-                .salesOrder(toDto(savedOrder))
+                .data(toDto(savedOrder))
                 .build();
     }
 
@@ -131,9 +131,11 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .salesOrders(orders)
-                .totalElements(orderPage.getTotalElements())
-                .totalPages(orderPage.getTotalPages())
+                .data(orders)
+                .meta(Response.Meta.builder()
+                        .totalElements(orderPage.getTotalElements())
+                        .totalPages(orderPage.getTotalPages())
+                        .build())
                 .build();
     }
 
@@ -146,7 +148,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .salesOrder(toDto(salesOrder))
+                .data(toDto(salesOrder))
                 .build();
     }
 
@@ -161,7 +163,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             return Response.builder()
                     .status(200)
                     .message("Sales Order Status Updated Successfully")
-                    .salesOrder(toDto(salesOrder))
+                    .data(toDto(salesOrder))
                     .build();
         }
 
@@ -181,7 +183,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return Response.builder()
                 .status(200)
                 .message("Sales Order Status Updated Successfully")
-                .salesOrder(toDto(updatedOrder))
+                .data(toDto(updatedOrder))
                 .build();
     }
 

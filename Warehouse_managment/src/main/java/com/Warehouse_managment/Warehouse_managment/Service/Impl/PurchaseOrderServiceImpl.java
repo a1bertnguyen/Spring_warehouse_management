@@ -99,7 +99,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return Response.builder()
                 .status(200)
                 .message("Purchase Order Created Successfully")
-                .purchaseOrder(toDto(savedOrder))
+                .data(toDto(savedOrder))
                 .build();
     }
 
@@ -143,9 +143,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .purchaseOrders(orderDTOs)
-                .totalElements(orderPage.getTotalElements())
-                .totalPages(orderPage.getTotalPages())
+                .data(orderDTOs)
+                .meta(Response.Meta.builder()
+                        .totalElements(orderPage.getTotalElements())
+                        .totalPages(orderPage.getTotalPages())
+                        .build())
                 .build();
     }
 
@@ -157,7 +159,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .purchaseOrder(toDto(purchaseOrder))
+                .data(toDto(purchaseOrder))
                 .build();
     }
 
@@ -172,7 +174,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             return Response.builder()
                     .status(200)
                     .message("Purchase Order Status Updated Successfully")
-                    .purchaseOrder(toDto(purchaseOrder))
+                    .data(toDto(purchaseOrder))
                     .build();
         }
 
@@ -192,7 +194,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return Response.builder()
                 .status(200)
                 .message("Purchase Order Status Updated Successfully")
-                .purchaseOrder(toDto(updatedOrder))
+                .data(toDto(updatedOrder))
                 .build();
     }
 

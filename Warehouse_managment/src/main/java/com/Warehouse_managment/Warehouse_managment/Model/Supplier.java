@@ -26,4 +26,14 @@ public class Supplier {
     private String contactInfo;
 
     private String address;
+
+    @Override
+    public String toString() {
+        return "Supplier{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", contactInfo='" + contactInfo + '\'' +
+                ", address='" + address + '\'' +
+                '}';
+    }
 }

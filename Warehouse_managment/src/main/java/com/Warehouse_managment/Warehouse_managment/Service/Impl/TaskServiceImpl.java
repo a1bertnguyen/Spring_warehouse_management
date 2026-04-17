@@ -39,7 +39,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .tasks(taskDTOList)
+                .data(taskDTOList)
                 .build();
     }
 
@@ -51,7 +51,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .task(modelMapper.map(task, TaskDTO.class))
+                .data(modelMapper.map(task, TaskDTO.class))
                 .build();
     }
 
@@ -106,7 +106,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .tasks(taskDTOList)
+                .data(taskDTOList)
                 .build();
     }
 
@@ -131,7 +131,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("New Task Generated Successfully" + newRandomGeneratedTask)
-                .task(modelMapper.map(newRandomGeneratedTask, TaskDTO.class))
+                .data(modelMapper.map(newRandomGeneratedTask, TaskDTO.class))
                 .build();
 
     }
@@ -171,7 +171,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .tasks(taskDTOList)
+                .data(taskDTOList)
                 .build();
     }
 

@@ -40,4 +40,19 @@ public class StockTakeDetail {
 
     @Transient
     private String unit;
+
+    @Override
+    public String toString() {
+        return "StockTakeDetail{" +
+                "stockTakeDetailId=" + stockTakeDetailId +
+                ", stockTakeId=" + stockTakeId +
+                ", productId=" + productId +
+                ", systemQuantity=" + systemQuantity +
+                ", countedQuantity=" + countedQuantity +
+                ", discrepancy=" + discrepancy +
+                ", productCode='" + productCode + '\'' +
+                ", productName='" + productName + '\'' +
+                ", unit='" + unit + '\'' +
+                '}';
+    }
 }

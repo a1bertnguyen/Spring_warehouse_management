@@ -69,7 +69,7 @@ public class SupplierServiceImpl implements SupplierService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .suppliers(supplierDTOList)
+                .data(supplierDTOList)
                 .build();
     }
 
@@ -84,7 +84,7 @@ public class SupplierServiceImpl implements SupplierService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .supplier(supplierDTO)
+                .data(supplierDTO)
                 .build();
     }
 

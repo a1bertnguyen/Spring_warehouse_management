@@ -59,7 +59,7 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .activityLogs(activityLogs)
+                .data(activityLogs)
                 .build();
     }
 
@@ -77,9 +77,11 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .activityLogs(activityLogs.getContent())
-                .totalPages(activityLogs.getTotalPages())
-                .totalElements(activityLogs.getTotalElements())
+                .data(activityLogs.getContent())
+                .meta(Response.Meta.builder()
+                        .totalPages(activityLogs.getTotalPages())
+                        .totalElements(activityLogs.getTotalElements())
+                        .build())
                 .build();
     }
 

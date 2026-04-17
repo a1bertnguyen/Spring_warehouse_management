@@ -82,4 +82,22 @@ public class PurchaseOrder {
         partially_received,
         received
     }
+
+    @Override
+    public String toString() {
+        return "PurchaseOrder{" +
+                "id=" + id +
+                ", requestCode='" + requestCode + '\'' +
+                ", requesterId=" + requesterId +
+                ", warehouseId=" + warehouseId +
+                ", requestDate=" + requestDate +
+                ", status=" + status +
+                ", notes='" + notes + '\'' +
+                ", supplierId=" + supplierId +
+                ", approvedAt=" + approvedAt +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", orderDetailCount=" + (orderDetails != null ? orderDetails.size() : 0) +
+                '}';
+    }
 }

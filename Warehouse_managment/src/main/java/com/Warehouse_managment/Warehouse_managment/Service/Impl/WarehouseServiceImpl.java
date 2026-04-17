@@ -54,7 +54,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .warehouses(warehouseDTOList)
+                .data(warehouseDTOList)
                 .build();
     }
 
@@ -67,7 +67,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .warehouse(warehouseDTO)
+                .data(warehouseDTO)
                 .build();
     }
 
@@ -115,7 +115,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .products(mapProductsByWarehouse(warehouse))
+                .data(mapProductsByWarehouse(warehouse))
                 .build();
     }
 

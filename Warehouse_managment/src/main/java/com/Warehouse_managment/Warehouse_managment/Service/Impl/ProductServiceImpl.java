@@ -145,7 +145,7 @@ public class ProductServiceImpl implements ProductService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .products(productDTOList)
+                .data(productDTOList)
                 .build();
     }
 
@@ -158,7 +158,7 @@ public class ProductServiceImpl implements ProductService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .product(toProductDTO(product))
+                .data(toProductDTO(product))
                 .build();
     }
 
@@ -192,7 +192,7 @@ public class ProductServiceImpl implements ProductService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .products(productDTOList)
+                .data(productDTOList)
                 .build();
     }
 

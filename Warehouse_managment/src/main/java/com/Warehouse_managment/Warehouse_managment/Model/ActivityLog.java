@@ -58,4 +58,20 @@ public class ActivityLog {
     @Builder.Default
     @Column(name = "timestamp")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Override
+    public String toString() {
+        return "ActivityLog{" +
+                "id=" + id +
+                ", userId=" + (user != null ? user.getId() : null) +
+                ", action=" + action +
+                ", entityType='" + entityType + '\'' +
+                ", entityId=" + entityId +
+                ", oldValue='" + oldValue + '\'' +
+                ", newValue='" + newValue + '\'' +
+                ", ipAddress='" + ipAddress + '\'' +
+                ", note='" + note + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
+    }
 }

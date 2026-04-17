@@ -55,4 +55,16 @@ public class SalesOrderDetail {
 
     @Column(name = "unit_sale_price", nullable = false)
     BigDecimal unitSalePrice;
+
+    @Override
+    public String toString() {
+        return "SalesOrderDetail{" +
+                "id=" + id +
+                ", salesOrderId=" + (salesOrder != null ? salesOrder.getId() : null) +
+                ", productId=" + productId +
+                ", warehouseId=" + warehouseId +
+                ", quantityOrdered=" + quantityOrdered +
+                ", unitSalePrice=" + unitSalePrice +
+                '}';
+    }
 }

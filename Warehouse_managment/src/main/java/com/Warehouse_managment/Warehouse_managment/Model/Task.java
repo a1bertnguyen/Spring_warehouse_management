@@ -42,6 +42,18 @@ public class Task {
     @JoinColumn(name = "product_id")
     private Product product;
 
-
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", status=" + status +
+                ", createdAt=" + createdAt +
+                ", deadline=" + deadline +
+                ", userId=" + (user != null ? user.getId() : null) +
+                ", productId=" + (product != null ? product.getId() : null) +
+                '}';
+    }
 
 }

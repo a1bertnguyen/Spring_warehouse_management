@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,7 +38,7 @@ public class InventoryServiceImpl implements InventoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .inventories(inventories)
+                .data(inventories)
                 .build();
     }
 
@@ -49,7 +50,7 @@ public class InventoryServiceImpl implements InventoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .inventory(toInventoryDTO(inventory))
+                .data(toInventoryDTO(inventory))
                 .build();
     }
 
@@ -63,7 +64,7 @@ public class InventoryServiceImpl implements InventoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .inventories(inventories)
+                .data(inventories)
                 .build();
     }
 
@@ -79,7 +80,7 @@ public class InventoryServiceImpl implements InventoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .inventories(inventories)
+                .data(inventories)
                 .build();
     }
 
@@ -88,9 +89,16 @@ public class InventoryServiceImpl implements InventoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .totalQuantityOnHand(inventoryRepository.getTotalQuantityOnHand())
-                .outOfStockCount(inventoryRepository.countOutOfStock())
-                .lowStockCount(inventoryRepository.countLowStock())
+                .data(Map.of(
+                        "totalQuantityOnHand", inventoryRepository.getTotalQuantityOnHand(),
+                        "outOfStockCount", inventoryRepository.countOutOfStock(),
+                        "lowStockCount", inventoryRepository.countLowStock()
+                ))
+                .meta(Response.Meta.builder()
+                        .totalQuantityOnHand(inventoryRepository.getTotalQuantityOnHand())
+                        .outOfStockCount(inventoryRepository.countOutOfStock())
+                        .lowStockCount(inventoryRepository.countLowStock())
+                        .build())
                 .build();
     }
 

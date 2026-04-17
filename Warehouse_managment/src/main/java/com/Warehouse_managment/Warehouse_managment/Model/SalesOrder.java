@@ -98,4 +98,23 @@ public class SalesOrder {
     void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @Override
+    public String toString() {
+        return "SalesOrder{" +
+                "id=" + id +
+                ", orderCode='" + orderCode + '\'' +
+                ", customerName='" + customerName + '\'' +
+                ", customerEmail='" + customerEmail + '\'' +
+                ", customerPhone='" + customerPhone + '\'' +
+                ", shippingAddress='" + shippingAddress + '\'' +
+                ", createdById=" + createdById +
+                ", orderDate=" + orderDate +
+                ", status=" + status +
+                ", notes='" + notes + '\'' +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", orderDetailCount=" + (orderDetails != null ? orderDetails.size() : 0) +
+                '}';
+    }
 }

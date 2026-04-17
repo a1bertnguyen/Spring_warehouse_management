@@ -154,15 +154,13 @@ public class UserServiceImpl implements UserService {
 
         List<User> users = userRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
 
-        users.forEach(user -> user.setTransactions(null));
-
         List<UserDTO> userDTOS = modelMapper.map(users, new TypeToken<List<UserDTO>>() {
         }.getType());
 
         return Response.builder()
                 .status(200)
                 .message("success")
-                .users(userDTOS)
+                .data(userDTOS)
                 .build();
     }
 
@@ -174,8 +172,6 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User Not Found"));
 
-        user.setTransactions(null);
-
         return user;
     }
 
@@ -186,12 +182,10 @@ public class UserServiceImpl implements UserService {
 
         UserDTO userDTO = modelMapper.map(user, UserDTO.class);
 
-        userDTO.setTransactions(null);
-
         return Response.builder()
                 .status(200)
                 .message("success")
-                .user(userDTO)
+                .data(userDTO)
                 .build();
     }
 
@@ -244,25 +238,6 @@ public class UserServiceImpl implements UserService {
                 .message("User successfully Deleted")
                 .build();
 
-    }
-
-    @Override
-    public Response getUserTransactions(Long id) {
-
-        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User Not Found"));
-
-        UserDTO userDTO = modelMapper.map(user, UserDTO.class);
-
-        userDTO.getTransactions().forEach(transactionDTO -> {
-            transactionDTO.setUser(null);
-            transactionDTO.setSupplier(null);
-        });
-
-        return Response.builder()
-                .status(200)
-                .message("success")
-                .user(userDTO)
-                .build();
     }
 
     private String getClientIpAddress(HttpServletRequest request) {

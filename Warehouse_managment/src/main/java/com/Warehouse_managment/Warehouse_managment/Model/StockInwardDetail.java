@@ -38,4 +38,16 @@ public class StockInwardDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     Product product;
+
+    @Override
+    public String toString() {
+        return "StockInwardDetail{" +
+                "inwardDetailId=" + inwardDetailId +
+                ", stockInwardId=" + (stockInward != null ? stockInward.getStockInwardId() : null) +
+                ", productId=" + productId +
+                ", quantityReceived=" + quantityReceived +
+                ", unitPriceNegotiated=" + unitPriceNegotiated +
+                ", unitPurchasePrice=" + unitPurchasePrice +
+                '}';
+    }
 }

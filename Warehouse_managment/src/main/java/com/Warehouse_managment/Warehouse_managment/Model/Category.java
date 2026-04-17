@@ -32,6 +32,7 @@ public class Category {
         return "Category{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", productCount=" + (products != null ? products.size() : 0) +
                 '}';
     }
 }

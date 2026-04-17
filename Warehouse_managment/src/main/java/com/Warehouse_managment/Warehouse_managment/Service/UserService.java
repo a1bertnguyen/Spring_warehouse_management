@@ -25,7 +25,6 @@ public interface UserService {
 
     Response deleteUser(Long id);
 
-    Response getUserTransactions(Long id);
     String forgotPassword(String email);
 
     void resetPassword(String token, String newPassword);

@@ -52,7 +52,7 @@ public class CategoryServiceImpl implements CategoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .categories(categoryDTOList)
+                .data(categoryDTOList)
                 .build();
     }
 
@@ -67,7 +67,7 @@ public class CategoryServiceImpl implements CategoryService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .category(categoryDTO)
+                .data(categoryDTO)
                 .build();
     }
 

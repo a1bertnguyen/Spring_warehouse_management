@@ -69,7 +69,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .salesOrderDetails(details)
+                .data(details)
                 .build();
     }
 

@@ -72,14 +72,17 @@ public class Product {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", sku='" + sku + '\'' +
-                ", Purchaseprice=" + purchaseprice +
+                ", purchaseprice=" + purchaseprice +
                 ", salePrice=" + salePrice +
                 ", stockQuantity=" + stockQuantity +
+                ", supplierId=" + supplierId +
+                ", lowStockThreshold=" + lowStockThreshold +
                 ", description='" + description + '\'' +
                 ", expiryDate=" + expiryDate +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", categoryId=" + (category != null ? category.getId() : null) +
                 '}';
     }
 }

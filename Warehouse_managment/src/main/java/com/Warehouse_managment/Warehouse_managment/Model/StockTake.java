@@ -46,4 +46,20 @@ public class StockTake {
 
     @Transient
     private Integer completedProducts;
+
+    @Override
+    public String toString() {
+        return "StockTake{" +
+                "stockTakeId=" + stockTakeId +
+                ", stockTakeCode='" + stockTakeCode + '\'' +
+                ", userId=" + userId +
+                ", stockTakeDate=" + stockTakeDate +
+                ", status='" + status + '\'' +
+                ", notes='" + notes + '\'' +
+                ", createdAt=" + createdAt +
+                ", userFullName='" + userFullName + '\'' +
+                ", totalProducts=" + totalProducts +
+                ", completedProducts=" + completedProducts +
+                '}';
+    }
 }

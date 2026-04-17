@@ -57,4 +57,16 @@ public class Inventory {
             return InventoryStatus.AVAILABLE;
         }
     }
+
+    @Override
+    public String toString() {
+        return "Inventory{" +
+                "inventoryId=" + inventoryId +
+                ", productId=" + (product != null ? product.getId() : null) +
+                ", warehouseId=" + (warehouse != null ? warehouse.getId() : null) +
+                ", quantityOnHand=" + quantityOnHand +
+                ", lastUpdated=" + lastUpdated +
+                ", status=" + getStatus() +
+                '}';
+    }
 }

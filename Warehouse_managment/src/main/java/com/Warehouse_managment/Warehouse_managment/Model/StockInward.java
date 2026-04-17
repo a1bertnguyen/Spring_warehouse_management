@@ -55,4 +55,20 @@ public class StockInward {
     @Column(length = 30)
     StockInwardStatus status;
 
+    @Override
+    public String toString() {
+        return "StockInward{" +
+                "stockInwardId=" + stockInwardId +
+                ", inwardCode='" + inwardCode + '\'' +
+                ", supplierId=" + (supplier != null ? supplier.getId() : null) +
+                ", userId=" + (user != null ? user.getId() : null) +
+                ", warehouseId=" + (warehouse != null ? warehouse.getId() : null) +
+                ", purchaseOrderId=" + (purchaseOrder != null ? purchaseOrder.getId() : null) +
+                ", notes='" + notes + '\'' +
+                ", inwardDate=" + inwardDate +
+                ", createdAt=" + createdAt +
+                ", detailCount=" + (details != null ? details.size() : 0) +
+                ", status=" + status +
+                '}';
+    }
 }
