@@ -33,6 +33,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
 
     List<Inventory> findByProduct(Product product);
 
+    boolean existsByProduct(Product product);
+
     List<Inventory> findByWarehouse_Id(Integer warehouseId);
 
     List<Inventory> findByWarehouse_Id(Integer warehouseId, Sort sort);

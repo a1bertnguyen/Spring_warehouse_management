@@ -9,6 +9,7 @@ import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Inventory;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
 import com.Warehouse_managment.Warehouse_managment.Model.Warehouse;
+import com.Warehouse_managment.Warehouse_managment.Repository.InventoryMovementRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.WarehouseRepository;
@@ -38,6 +39,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final ModelMapper modelMapper;
     private final InventoryStockSyncService inventoryStockSyncService;
     private final InventoryMovementService inventoryMovementService;
+    private final InventoryMovementRepository inventoryMovementRepository;
 
     @Override
     public Response createWarehouse(WarehouseDTO warehouseDTO) {
@@ -102,6 +104,11 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public Response deleteWarehouse(Integer id) {
         Warehouse warehouse = getWarehouseEntity(id);
+
+        if (inventoryMovementRepository.existsByWarehouseId(id)) {
+            throw new IllegalStateException("Cannot delete warehouse because it has inventory movement history");
+        }
+
         List<Inventory> inventories = inventoryRepository.findByWarehouse(warehouse);
         Set<Long> affectedProductIds = inventories.stream()
                 .map(Inventory::getProduct)
@@ -110,21 +117,6 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .collect(Collectors.toSet());
 
         if (!inventories.isEmpty()) {
-            for (Inventory inventory : inventories) {
-                int quantityBefore = safeQuantity(inventory.getQuantityOnHand());
-                inventoryMovementService.recordMovement(
-                        inventory.getProduct(),
-                        warehouse,
-                        quantityBefore,
-                        -quantityBefore,
-                        0,
-                        InventoryMovementType.WAREHOUSE_DELETION,
-                        InventoryReferenceType.WAREHOUSE,
-                        String.valueOf(warehouse.getId()),
-                        warehouse.getName(),
-                        "Inventory row removed because warehouse was deleted"
-                );
-            }
             inventoryRepository.deleteAll(inventories);
             affectedProductIds.forEach(inventoryStockSyncService::syncProductStock);
         }

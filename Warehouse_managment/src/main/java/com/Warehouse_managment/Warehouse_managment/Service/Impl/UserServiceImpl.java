@@ -200,24 +200,7 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getRole() != null) existingUser.setRole(userDTO.getRole());
 
         if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
-
-            String[] parts = userDTO.getPassword().split(":");
-            if (parts.length != 2) {
-                throw new RuntimeException("Invalid password format");
-            }
-
-            String oldPassword = parts[0];
-            String newPassword = parts[1];
-
-            if (!passwordEncoder.matches(oldPassword, existingUser.getPassword())) {
-                throw new RuntimeException("Current password is incorrect");
-            }
-
-            if (passwordEncoder.matches(newPassword, existingUser.getPassword())) {
-                throw new RuntimeException("New password must not be same as current password");
-            }
-
-            existingUser.setPassword(passwordEncoder.encode(newPassword));
+            updatePassword(existingUser, userDTO.getPassword());
         }
         userRepository.save(existingUser);
 
@@ -225,6 +208,41 @@ public class UserServiceImpl implements UserService {
                 .status(200)
                 .message("User successfully updated")
                 .build();
+    }
+
+    private void updatePassword(User existingUser, String passwordValue) {
+        if (!passwordValue.contains(":")) {
+            if (!isCurrentUserAdmin()) {
+                throw new IllegalArgumentException("Password update requires current:new format");
+            }
+            existingUser.setPassword(passwordEncoder.encode(passwordValue));
+            return;
+        }
+
+        String[] parts = passwordValue.split(":", -1);
+        if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+            throw new IllegalArgumentException("Invalid password format");
+        }
+
+        String oldPassword = parts[0];
+        String newPassword = parts[1];
+
+        if (!passwordEncoder.matches(oldPassword, existingUser.getPassword())) {
+            throw new IllegalStateException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(newPassword, existingUser.getPassword())) {
+            throw new IllegalStateException("New password must not be same as current password");
+        }
+
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
+    }
+
+    private boolean isCurrentUserAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(authority -> UserRole.ADMIN.name().equals(authority.getAuthority()));
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.Warehouse_managment.Warehouse_managment.Model.Product;
 import com.Warehouse_managment.Warehouse_managment.Model.SalesOrder;
 import com.Warehouse_managment.Warehouse_managment.Model.SalesOrderDetail;
 import com.Warehouse_managment.Warehouse_managment.Model.Warehouse;
+import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.SalesOrderDetailRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.WarehouseRepository;
@@ -27,6 +28,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
     private final SalesOrderDetailRepository salesOrderDetailRepository;
     private final ProductRepository productRepository;
     private final WarehouseRepository warehouseRepository;
+    private final InventoryRepository inventoryRepository;
 
     @Override
     @Transactional
@@ -37,13 +39,16 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
             Product product = productRepository.findById(request.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
-            warehouseRepository.findById(request.getWarehouseId())
+            Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
                     .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
+
+            inventoryRepository.findByProduct_IdAndWarehouse_Id(product.getId(), warehouse.getId())
+                    .orElseThrow(() -> new NotFoundException("Inventory Not Found For Product/Warehouse"));
 
             SalesOrderDetail detail = new SalesOrderDetail();
             detail.setSalesOrder(salesOrder);
             detail.setProductId(product.getId());
-            detail.setWarehouseId(request.getWarehouseId());
+            detail.setWarehouseId(warehouse.getId());
             detail.setQuantityOrdered(request.getQuantityOrdered());
             BigDecimal unitSalePrice = request.getUnitSalePrice() != null
                     ? request.getUnitSalePrice()

@@ -5,6 +5,8 @@ import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Category;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
 import com.Warehouse_managment.Warehouse_managment.Repository.CategoryRepository;
+import com.Warehouse_managment.Warehouse_managment.Repository.InventoryMovementRepository;
+import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
 import com.Warehouse_managment.Warehouse_managment.Dtos.ProductDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
@@ -33,6 +35,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
     private final CategoryRepository categoryRepository;
+    private final InventoryRepository inventoryRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
 
     private static final String IMAGE_DIRECTORY = System.getProperty("user.dir") + "/product-images/";
 
@@ -161,10 +165,18 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Response deleteProduct(Long id) {
 
-        productRepository.findById(id)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
-        productRepository.deleteById(id);
+        if (inventoryMovementRepository.existsByProductId(id)) {
+            throw new IllegalStateException("Cannot delete product because it has inventory movement history");
+        }
+
+        if (inventoryRepository.existsByProduct(product)) {
+            throw new IllegalStateException("Cannot delete product because it is assigned to warehouse inventory");
+        }
+
+        productRepository.delete(product);
 
         return Response.builder()
                 .status(200)

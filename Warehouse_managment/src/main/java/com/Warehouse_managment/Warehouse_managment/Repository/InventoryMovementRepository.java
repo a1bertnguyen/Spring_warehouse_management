@@ -13,6 +13,10 @@ import java.util.List;
 @Repository
 public interface InventoryMovementRepository extends JpaRepository<InventoryMovement, Long> {
 
+    boolean existsByProductId(Long productId);
+
+    boolean existsByWarehouseId(Integer warehouseId);
+
     @Query("""
             SELECT m
             FROM InventoryMovement m

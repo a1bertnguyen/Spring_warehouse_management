@@ -1,0 +1,406 @@
+{
+  "info": {
+    "_postman_id": "6b7b0b0f-0d70-4e64-8a2c-warehouse-errors",
+    "name": "Warehouse Management - Error Reproduction Cases",
+    "description": "Import this collection into Postman to reproduce the 3 API issues observed during module testing. Update collection variables first: token, adminUserId, productId, productName, warehouseId, wrongWarehouseId, and optionally unitSalePrice.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "token",
+      "value": "PASTE_JWT_TOKEN_HERE"
+    },
+    {
+      "key": "adminUserId",
+      "value": "4"
+    },
+    {
+      "key": "productId",
+      "value": "10"
+    },
+    {
+      "key": "productName",
+      "value": "Desk"
+    },
+    {
+      "key": "warehouseId",
+      "value": "3"
+    },
+    {
+      "key": "wrongWarehouseId",
+      "value": "1"
+    },
+    {
+      "key": "unitSalePrice",
+      "value": "2400000"
+    },
+    {
+      "key": "salesOrderId",
+      "value": ""
+    },
+    {
+      "key": "testWarehouseId",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "0. Auth - Login To Get Token",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"YOUR_ADMIN_EMAIL@example.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Run this first if you need a JWT. Copy response.token into the collection variable `token`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Task Module - ModelMapper 500",
+      "description": "Expected problem: GET task endpoints can return HTTP 500 with `ModelMapper mapping errors ... failed to convert java.util.ArrayList to java.util.List`.",
+      "item": [
+        {
+          "name": "Create Task - Usually PASS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": {{productId}},\n  \"userId\": {{adminUserId}},\n  \"name\": \"Postman Task Mapping Bug\",\n  \"description\": \"Created to reproduce Task DTO mapping bug\",\n  \"status\": \"ASSIGNED\",\n  \"deadline\": \"2030-01-01T00:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "add"
+              ]
+            },
+            "description": "This endpoint normally returns 200. It creates a task so the next GET endpoints have data to map."
+          }
+        },
+        {
+          "name": "Get All Tasks - Expected 500",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "all"
+              ]
+            },
+            "description": "Expected current behavior: HTTP 500 ModelMapper mapping error."
+          }
+        },
+        {
+          "name": "Get Tasks By User - Expected 500",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/user/{{adminUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "user",
+                "{{adminUserId}}"
+              ]
+            },
+            "description": "Expected current behavior: HTTP 500 ModelMapper mapping error."
+          }
+        },
+        {
+          "name": "Search Task By Product Name - Expected 500",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/search?input={{productName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{{productName}}"
+                }
+              ]
+            },
+            "description": "Expected current behavior: HTTP 500 ModelMapper mapping error if matching tasks exist."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Sales Order - Wrong Product/Warehouse Inventory",
+      "description": "Expected problem: creating a sales order with a product and warehouse that do not have an inventory row can succeed, but changing status to awaiting_shipment returns `Inventory Not Found For Product/Warehouse`. Set `wrongWarehouseId` to a warehouse that does NOT contain `productId` in inventory.",
+      "item": [
+        {
+          "name": "Create Sales Order With Wrong Warehouse",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = pm.response.json();",
+                  "if (json && json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('salesOrderId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"Postman Wrong Inventory Customer\",\n  \"customerEmail\": \"postman.wrong.inventory@example.com\",\n  \"customerPhone\": \"0900000099\",\n  \"shippingAddress\": \"Postman test address\",\n  \"notes\": \"Created to reproduce missing inventory validation on status update\",\n  \"items\": [\n    {\n      \"productId\": {{productId}},\n      \"warehouseId\": {{wrongWarehouseId}},\n      \"quantityOrdered\": 1,\n      \"unitSalePrice\": {{unitSalePrice}}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sales-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sales-orders"
+              ]
+            },
+            "description": "This may return 200 and stores response.data.id into `salesOrderId`."
+          }
+        },
+        {
+          "name": "Update Sales Order Status - Expected 404",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sales-orders/{{salesOrderId}}/status?status=awaiting_shipment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sales-orders",
+                "{{salesOrderId}}",
+                "status"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "awaiting_shipment"
+                }
+              ]
+            },
+            "description": "Expected current behavior for wrong product/warehouse pair: HTTP 404 `Inventory Not Found For Product/Warehouse`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Warehouse Delete - FK Inventory Movements",
+      "description": "Expected problem: after adding and removing product from a warehouse, inventory_movements still references the warehouse. Deleting the warehouse can return HTTP 500 because of FK `fk_inventory_movements_warehouse`.",
+      "item": [
+        {
+          "name": "Create Warehouse",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = pm.response.json();",
+                  "if (json && json.data && (json.data.id || json.data.warehouseId)) {",
+                  "  pm.collectionVariables.set('testWarehouseId', json.data.id || json.data.warehouseId);",
+                  "} else {",
+                  "  console.log('If id is not returned, run GET /api/warehouses/all and set testWarehouseId manually.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman FK Test Warehouse\",\n  \"address\": \"Warehouse created from Postman to reproduce delete FK error\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "add"
+              ]
+            },
+            "description": "If response does not include data.id, call GET /api/warehouses/all and set `testWarehouseId` manually."
+          }
+        },
+        {
+          "name": "Get Warehouses - Find testWarehouseId If Needed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "all"
+              ]
+            },
+            "description": "Use this if Create Warehouse does not return the new id. Find `Postman FK Test Warehouse` and set collection variable `testWarehouseId`."
+          }
+        },
+        {
+          "name": "Add Product To Warehouse",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/{{testWarehouseId}}/products?productId={{productId}}&quantity=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "{{testWarehouseId}}",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "productId",
+                  "value": "{{productId}}"
+                },
+                {
+                  "key": "quantity",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "This creates inventory and an inventory movement for the warehouse."
+          }
+        },
+        {
+          "name": "Remove Product From Warehouse",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/{{testWarehouseId}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "{{testWarehouseId}}",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": "This removes inventory but leaves movement history referencing the warehouse."
+          }
+        },
+        {
+          "name": "Delete Warehouse - Expected 500",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/delete/{{testWarehouseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "delete",
+                "{{testWarehouseId}}"
+              ]
+            },
+            "description": "Expected current behavior: HTTP 500 with MySQL FK error on `inventory_movements.warehouse_id`."
+          }
+        }
+      ]
+    }
+  ]
+}

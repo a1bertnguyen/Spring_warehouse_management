@@ -3,6 +3,8 @@ package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Dtos.TaskDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.TaskRequest;
+import com.Warehouse_managment.Warehouse_managment.Dtos.ProductDTO;
+import com.Warehouse_managment.Warehouse_managment.Dtos.UserDTO;
 import com.Warehouse_managment.Warehouse_managment.Enum.TaskStatus;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
@@ -14,9 +16,8 @@ import com.Warehouse_managment.Warehouse_managment.Repository.UserRepository;
 import com.Warehouse_managment.Warehouse_managment.Service.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,15 +27,17 @@ import java.util.List;
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
-    private final ModelMapper modelMapper;
     private  final UserRepository userRepository;
     private final ProductRepository productRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Response getAllTasks() {
         List<Task> taskList = taskRepository.findAll();
 
-        List<TaskDTO> taskDTOList = modelMapper.map(taskList, new TypeToken<List<TaskDTO>>() {}.getType());
+        List<TaskDTO> taskDTOList = taskList.stream()
+                .map(this::toTaskDTO)
+                .toList();
 
         return Response.builder()
                 .status(200)
@@ -44,6 +47,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Response getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Task Not Found"));
@@ -51,7 +55,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("success")
-                .data(modelMapper.map(task, TaskDTO.class))
+                .data(toTaskDTO(task))
                 .build();
     }
 
@@ -96,13 +100,16 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Response searchTaskByProductName(String input) {
         List<Task> matchedTasks = taskRepository.findAllByProduct_NameContainingOrProduct_DescriptionContaining(input,input);
         if (matchedTasks.isEmpty()){
             throw new NotFoundException("No Task Found for this Product");
         }
 
-        List<TaskDTO> taskDTOList = modelMapper.map(matchedTasks, new TypeToken<List<TaskDTO>>() {}.getType());
+        List<TaskDTO> taskDTOList = matchedTasks.stream()
+                .map(this::toTaskDTO)
+                .toList();
         return Response.builder()
                 .status(200)
                 .message("success")
@@ -131,7 +138,7 @@ public class TaskServiceImpl implements TaskService {
         return Response.builder()
                 .status(200)
                 .message("New Task Generated Successfully" + newRandomGeneratedTask)
-                .data(modelMapper.map(newRandomGeneratedTask, TaskDTO.class))
+                .data(toTaskDTO(newRandomGeneratedTask))
                 .build();
 
     }
@@ -163,10 +170,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Response getAllUserTasks(Long userId) {
         List<Task> matchedTasks = taskRepository.findAllByUserId(userId);
 
-        List<TaskDTO> taskDTOList = modelMapper.map(matchedTasks, new TypeToken<List<TaskDTO>>() {}.getType());
+        List<TaskDTO> taskDTOList = matchedTasks.stream()
+                .map(this::toTaskDTO)
+                .toList();
 
         return Response.builder()
                 .status(200)
@@ -186,5 +196,57 @@ public class TaskServiceImpl implements TaskService {
                 .status(200)
                 .message("Task Status Updated Successfully")
                 .build();
+    }
+
+    private TaskDTO toTaskDTO(Task task) {
+        TaskDTO dto = new TaskDTO();
+        dto.setId(task.getId());
+        dto.setName(task.getName());
+        dto.setDescription(task.getDescription());
+        dto.setStatus(task.getStatus());
+        dto.setCreatedAt(task.getCreatedAt());
+        dto.setDeadline(task.getDeadline());
+        dto.setUser(toUserDTO(task.getUser()));
+        dto.setProduct(toProductDTO(task.getProduct()));
+        return dto;
+    }
+
+    private UserDTO toUserDTO(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setRole(user.getRole());
+        dto.setCreatedAt(user.getCreatedAt());
+        return dto;
+    }
+
+    private ProductDTO toProductDTO(Product product) {
+        if (product == null) {
+            return null;
+        }
+
+        ProductDTO dto = new ProductDTO();
+        dto.setId(product.getId());
+        dto.setProductId(product.getId());
+        dto.setName(product.getName());
+        dto.setSku(product.getSku());
+        dto.setPurchaseprice(product.getPurchaseprice());
+        dto.setSaleprice(product.getSalePrice());
+        dto.setStockQuantity(product.getStockQuantity());
+        dto.setSupplierId(product.getSupplierId());
+        dto.setDescription(product.getDescription());
+        dto.setExpiryDate(product.getExpiryDate());
+        dto.setImageUrl(product.getImageUrl());
+        dto.setCreatedAt(product.getCreatedAt());
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getId());
+        }
+        return dto;
     }
 }
