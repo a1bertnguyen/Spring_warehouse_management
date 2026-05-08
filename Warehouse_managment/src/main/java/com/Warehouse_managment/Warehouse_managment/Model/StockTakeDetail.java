@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "stock_take_details")
+@Table(
+        name = "stock_take_details",
+        indexes = {
+                @Index(name = "idx_stock_take_details_stock_take_id", columnList = "stock_take_id"),
+                @Index(name = "idx_stock_take_details_product_id", columnList = "product_id")
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,8 +25,34 @@ public class StockTakeDetail {
     @Column(name = "stock_take_id", nullable = false)
     private Integer stockTakeId;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "stock_take_id",
+            referencedColumnName = "stock_take_id",
+            nullable = false,
+            insertable = false,
+            updatable = false,
+            foreignKey = @ForeignKey(name = "fk_stock_take_details_stock_take")
+    )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private StockTake stockTake;
+
     @Column(name = "product_id", nullable = false)
     private Long productId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "product_id",
+            referencedColumnName = "id",
+            nullable = false,
+            insertable = false,
+            updatable = false,
+            foreignKey = @ForeignKey(name = "fk_stock_take_details_product")
+    )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Product product;
 
     @Column(name = "system_quantity", nullable = false)
     private Integer systemQuantity;

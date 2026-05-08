@@ -40,8 +40,19 @@ public class UserController {
     }
 
     @GetMapping("/current")
-    public ResponseEntity<User> getCurrentUser() {
-        return ResponseEntity.ok(userService.getCurrentLoggedInUser());
+    public ResponseEntity<UserDTO> getCurrentUser() {
+        return ResponseEntity.ok(toSafeUserDTO(userService.getCurrentLoggedInUser()));
+    }
+
+    private UserDTO toSafeUserDTO(User user) {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setId(user.getId());
+        userDTO.setName(user.getName());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setPhoneNumber(user.getPhoneNumber());
+        userDTO.setRole(user.getRole());
+        userDTO.setCreatedAt(user.getCreatedAt());
+        return userDTO;
     }
 }
 

@@ -14,7 +14,7 @@ import java.util.List;
 public class StockTakeDTO {
     private Integer stockTakeId;
     private String stockTakeCode;
-    private Integer userId;
+    private Long userId;
     private String userFullName;
     private Date stockTakeDate;
     private String status;

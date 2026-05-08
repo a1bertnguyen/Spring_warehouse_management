@@ -14,10 +14,12 @@ import com.Warehouse_managment.Warehouse_managment.Repository.UserRepository;
 import com.Warehouse_managment.Warehouse_managment.Service.StockTakeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class StockTakeServiceImpl implements StockTakeService {
 
@@ -50,19 +52,20 @@ public class StockTakeServiceImpl implements StockTakeService {
         stockTakeRepository.findById(stockTakeId)
                 .orElseThrow(() -> new NotFoundException("Stock take not found"));
 
-        return stockTakeDetailRepository.findByStockTakeId(stockTakeId).stream()
+        return stockTakeDetailRepository.findByStockTake_StockTakeId(stockTakeId).stream()
                 .map(this::toDetailDto)
                 .toList();
     }
 
     private StockTakeDTO toDto(StockTake stockTake) {
-        List<StockTakeDetailDTO> details = stockTakeDetailRepository.findByStockTakeId(stockTake.getStockTakeId()).stream()
+        List<StockTakeDetailDTO> details = stockTakeDetailRepository.findByStockTake_StockTakeId(stockTake.getStockTakeId()).stream()
                 .map(this::toDetailDto)
                 .toList();
 
-        User user = stockTake.getUserId() != null
-                ? userRepository.findById(Long.valueOf(stockTake.getUserId())).orElse(null)
-                : null;
+        User user = stockTake.getUser();
+        if (user == null && stockTake.getUserId() != null) {
+            user = userRepository.findById(stockTake.getUserId()).orElse(null);
+        }
 
         StockTakeDTO dto = new StockTakeDTO();
         dto.setStockTakeId(stockTake.getStockTakeId());
@@ -85,10 +88,18 @@ public class StockTakeServiceImpl implements StockTakeService {
     }
 
     private StockTakeDetailDTO toDetailDto(StockTakeDetail detail) {
-        Product product = productRepository.findById(detail.getProductId()).orElse(null);
+        Product product = detail.getProduct();
+        if (product == null && detail.getProductId() != null) {
+            product = productRepository.findById(detail.getProductId()).orElse(null);
+        }
+
+        Integer stockTakeId = detail.getStockTake() != null
+                ? detail.getStockTake().getStockTakeId()
+                : detail.getStockTakeId();
+
         return new StockTakeDetailDTO(
                 detail.getStockTakeDetailId(),
-                detail.getStockTakeId(),
+                stockTakeId,
                 detail.getProductId(),
                 product != null ? product.getSku() : detail.getProductCode(),
                 product != null ? product.getName() : detail.getProductName(),

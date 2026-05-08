@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StockTakeDetailRepository extends JpaRepository<StockTakeDetail, Integer> {
-    java.util.List<StockTakeDetail> findByStockTakeId(Integer stockTakeId);
+    java.util.List<StockTakeDetail> findByStockTake_StockTakeId(Integer stockTakeId);
 }
