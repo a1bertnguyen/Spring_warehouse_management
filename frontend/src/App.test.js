@@ -1,8 +1,17 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { render, screen } from "@testing-library/react";
+import App from "./app/App";
 
-test('renders learn react link', () => {
+jest.mock("./services/ApiService", () => ({
+  __esModule: true,
+  default: {
+    isAuthenticated: jest.fn(() => false),
+    isAdmin: jest.fn(() => false),
+    clearAuth: jest.fn(),
+    logoutUser: jest.fn(),
+  },
+}));
+
+test("renders login page for unauthenticated users", () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /login/i })).toBeInTheDocument();
 });
