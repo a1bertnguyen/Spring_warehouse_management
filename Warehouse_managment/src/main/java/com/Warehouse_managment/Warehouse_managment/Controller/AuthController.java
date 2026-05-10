@@ -20,7 +20,6 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Response> registerUser(@RequestBody @Valid RegisterRequest registerRequest) {
         return ResponseEntity.ok(userService.registerUser(registerRequest));
     }
