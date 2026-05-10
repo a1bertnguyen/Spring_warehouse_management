@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Response> registerUser(@RequestBody @Valid RegisterRequest registerRequest) {
         return ResponseEntity.ok(userService.registerUser(registerRequest));
     }
@@ -35,6 +37,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
 
         String token = userService.forgotPassword(request.getEmail());
@@ -42,6 +45,7 @@ public class AuthController {
         return ResponseEntity.ok(token);
     }
     @PostMapping("/reset-password")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> resetPassword(
             @RequestBody ResetPasswordRequest request) {
 

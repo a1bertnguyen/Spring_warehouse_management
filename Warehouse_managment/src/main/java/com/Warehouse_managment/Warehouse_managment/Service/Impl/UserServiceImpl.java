@@ -41,6 +41,9 @@ public class UserServiceImpl implements UserService {
     private final ActivityLogService activityLogService;
     @Override
     public Response registerUser(RegisterRequest registerRequest) {
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            throw new IllegalStateException("Email is already in use");
+        }
 
         UserRole role = UserRole.MANAGER;
 

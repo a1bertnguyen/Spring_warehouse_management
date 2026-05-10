@@ -4,6 +4,7 @@ import com.Warehouse_managment.Warehouse_managment.Exceptions.CustomAccessDenial
 import com.Warehouse_managment.Warehouse_managment.Exceptions.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -39,14 +40,20 @@ public class SecurityConfig {
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
                 .authorizeHttpRequests(request -> request
-                        //.requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(
-                                "/api/auth/**",
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/login"
+                        ).permitAll()
+                        .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
-                        )//.hasAuthority("ADMIN")
+                        )
                         .permitAll()
                         .anyRequest().authenticated()
                 )
