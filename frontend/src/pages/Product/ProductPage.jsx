@@ -7,11 +7,38 @@ import PaginationComponent from "../../components/common/PaginationComponent";
 
 const ITEMS_PER_PAGE = 10;
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
+
+function formatStatusLabel(status) {
+  if (!status) {
+    return "Unknown";
+  }
+
+  return status === "active" ? "Active" : "Inactive";
+}
+
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 const ProductPage = () => {
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [statusInput, setStatusInput] = useState("all");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -24,10 +51,6 @@ const ProductPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warehouseId]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
   async function loadProducts() {
     try {
       const productData = warehouseId
@@ -38,31 +61,33 @@ const ProductPage = () => {
         setProducts(productData.products || []);
       }
     } catch (error) {
-      showMessage(error.response?.data?.message || "Error Getting Products: " + error);
+      showMessage(error.response?.data?.message || `Error loading products: ${error}`);
     }
   }
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) => {
-        const normalizedSearch = String(searchTerm || "").trim().toLowerCase();
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = String(appliedSearchTerm || "").trim().toLowerCase();
 
-        if (!normalizedSearch) {
-          return true;
-        }
-
-        return [
-          product.name,
+    return products.filter((product) => {
+      const matchesText =
+        !normalizedSearch ||
+        [
           product.sku,
           product.su,
-          product.categoryName,
+          product.name,
           product.description,
         ]
           .filter(Boolean)
           .some((field) => String(field).toLowerCase().includes(normalizedSearch));
-      }),
-    [products, searchTerm]
-  );
+
+      const normalizedStatus = String(product.status || "").toLowerCase();
+      const matchesStatus =
+        appliedStatusFilter === "all" ||
+        normalizedStatus === appliedStatusFilter.toLowerCase();
+
+      return matchesText && matchesStatus;
+    });
+  }, [appliedSearchTerm, appliedStatusFilter, products]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
 
@@ -78,97 +103,207 @@ const ProductPage = () => {
     }
   }, [currentPage, totalPages]);
 
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm("Are you sure you want to delete this Product?")) {
-      try {
-        await ApiService.deleteProduct(productId);
-        showMessage("Product successfully deleted");
-        await loadProducts();
-      } catch (error) {
-        showMessage(error.response?.data?.message || "Error Deleting a product: " + error);
-      }
+  async function handleDeleteProduct(productId) {
+    if (!window.confirm("Are you sure you want to delete this product?")) {
+      return;
     }
-  };
 
-  const showMessage = (msg) => {
-    setMessage(msg);
-    setTimeout(() => {
+    try {
+      await ApiService.deleteProduct(productId);
+      showMessage("Product deleted successfully.");
+      await loadProducts();
+    } catch (error) {
+      showMessage(error.response?.data?.message || `Error deleting product: ${error}`);
+    }
+  }
+
+  async function handleExportExcel() {
+    setIsExporting(true);
+
+    try {
+      const blob = await ApiService.exportProducts({
+        search: appliedSearchTerm || undefined,
+        status: appliedStatusFilter !== "all" ? appliedStatusFilter : undefined,
+      });
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "products.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      showMessage(error.response?.data?.message || "Unable to export the product list.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  function handleApplyFilters() {
+    setAppliedSearchTerm(searchInput);
+    setAppliedStatusFilter(statusInput);
+    setCurrentPage(1);
+  }
+
+  function showMessage(nextMessage) {
+    setMessage(nextMessage);
+    window.setTimeout(() => {
       setMessage("");
     }, 4000);
-  };
+  }
 
   return (
     <MainLayout>
-      {message && <div className="message">{message}</div>}
+      {message ? <div className="message">{message}</div> : null}
 
-      <div className="product-page">
-        <div className="product-header product-header-stack">
-          <div>
-            <h1>{warehouseName ? `${warehouseName} Products` : "Products"}</h1>
-            {warehouseName ? (
-              <p className="page-subtitle">Showing products assigned to this warehouse.</p>
-            ) : (
-              <p className="page-subtitle">Search and manage your product catalog.</p>
-            )}
+      <div className="product-page product-page-table">
+        <div className="product-page-shell">
+          <div className="product-page-banner">
+            <h1>{warehouseName ? `${warehouseName} Product List` : "Product List"}</h1>
           </div>
 
-          <div className="page-toolbar">
-            <input
-              className="page-search-input"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Search products"
-            />
-            {warehouseId ? (
-              <button
-                className="secondary-page-button"
-                onClick={() => navigate(PATHS.product)}
-              >
-                Clear Warehouse Filter
-              </button>
-            ) : null}
-            <button className="add-product-btn" onClick={() => navigate(PATHS.addProduct)}>
-              Add Product
-            </button>
-          </div>
-        </div>
-
-        {paginatedProducts.length ? (
-          <div className="product-list">
-            {paginatedProducts.map((product) => (
-              <div key={product.id} className="product-item">
-                <img className="product-image" src={product.imageUrl} alt={product.name} />
-
-                <div className="product-info">
-                  <h3 className="name">{product.name}</h3>
-                  <p className="sku">SKU: {product.sku || product.su || "No SKU"}</p>
-                  <p className="price">Price: {product.price}</p>
-                  <p className="quantity">Quantity: {product.stockQuantity}</p>
-                </div>
-
-                <div className="product-actions">
-                  <button
-                    className="edit-btn"
-                    onClick={() => navigate(buildEditProductPath(product.id))}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="delete-btn"
-                    onClick={() => handleDeleteProduct(product.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+          <div className="product-filter-card">
+            <div className="product-filter-grid">
+              <div className="form-group">
+                <label htmlFor="product-search">Search</label>
+                <input
+                  id="product-search"
+                  className="page-search-input product-search-input"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleApplyFilters();
+                    }
+                  }}
+                  placeholder="Search by product code or name"
+                />
               </div>
-            ))}
+
+              <div className="form-group">
+                <label htmlFor="product-status">Status</label>
+                <select
+                  id="product-status"
+                  value={statusInput}
+                  onChange={(event) => setStatusInput(event.target.value)}
+                  className="product-filter-select"
+                >
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="product-filter-button"
+                onClick={handleApplyFilters}
+              >
+                Filter Products
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="page-empty-state">
-            <strong>No products found</strong>
-            <p>Try another search term or choose a different warehouse.</p>
+
+          <div className="product-table-toolbar">
+            <div className="product-table-actions-left">
+              <button
+                type="button"
+                className="add-product-btn"
+                onClick={() => navigate(PATHS.addProduct)}
+              >
+                + Add Product
+              </button>
+
+              {warehouseId ? (
+                <button
+                  type="button"
+                  className="secondary-page-button"
+                  onClick={() => navigate(PATHS.product)}
+                >
+                  Clear Warehouse Filter
+                </button>
+              ) : null}
+            </div>
+
+            <div className="product-table-actions-right">
+              <button
+                type="button"
+                className="product-export-btn"
+                onClick={handleExportExcel}
+                disabled={isExporting}
+              >
+                {isExporting ? "Exporting..." : "Export Excel"}
+              </button>
+            </div>
           </div>
-        )}
+
+          {paginatedProducts.length ? (
+            <div className="product-table-shell">
+              <table className="product-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Code</th>
+                    <th>Product Name</th>
+                    <th>Purchase Price</th>
+                    <th>Sale Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedProducts.map((product, index) => (
+                    <tr key={product.id}>
+                      <td>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</td>
+                      <td>{product.sku || product.su || "N/A"}</td>
+                      <td>{product.name || "Unnamed product"}</td>
+                      <td>{formatCurrency(product.purchaseprice)}</td>
+                      <td>{formatCurrency(product.saleprice)}</td>
+                      <td>
+                        <span
+                          className={
+                            product.status === "inactive"
+                              ? "product-status-pill inactive"
+                              : "product-status-pill active"
+                          }
+                        >
+                          {formatStatusLabel(product.status)}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="product-row-actions">
+                          <button
+                            type="button"
+                            className="product-edit-btn"
+                            onClick={() => navigate(buildEditProductPath(product.id))}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="product-delete-btn"
+                            onClick={() => handleDeleteProduct(product.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="page-empty-state">
+              <strong>No products found</strong>
+              <p>Try another search term, status, or warehouse selection.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <PaginationComponent

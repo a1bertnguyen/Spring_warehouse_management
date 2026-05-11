@@ -18,6 +18,8 @@ public interface ProductService {
 
     Response searchProduct(String input);
 
+    /*byte[] exportProductsToExcel(String search, String status);*/
+
 
 
 }

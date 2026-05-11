@@ -5,6 +5,8 @@ import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Enum.ProductStatus;
 import com.Warehouse_managment.Warehouse_managment.Service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -125,6 +127,21 @@ public class ProductController {
     public ResponseEntity<Response> searchProduct(@RequestParam String input) {
         return ResponseEntity.ok(productService.searchProduct(input));
     }
+
+  /*  @GetMapping("/export")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> exportProductsToExcel(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) ProductStatus status
+    ) {
+        byte[] excelFile = productService.exportProductsToExcel(search, status != null ? status.name() : null);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=products.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelFile);
+    }*/
 
     private BigDecimal resolvePrice(BigDecimal primary, BigDecimal fallback) {
         return primary != null ? primary : fallback;

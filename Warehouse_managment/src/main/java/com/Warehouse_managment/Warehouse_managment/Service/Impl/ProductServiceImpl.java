@@ -16,12 +16,18 @@ import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
@@ -232,6 +238,71 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+   /* @Override
+    public byte[] exportProductsToExcel(String search, String status) {
+        String normalizedSearch = search == null || search.isBlank() ? null : search.trim().toLowerCase();
+        ProductStatus normalizedStatus = null;
+
+        if (status != null && !status.isBlank()) {
+            normalizedStatus = ProductStatus.valueOf(status.trim().toLowerCase());
+        }
+
+        List<ProductDTO> productDTOList = productRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+                .filter(product -> matchesSearch(product, normalizedSearch))
+                .filter(product -> normalizedStatus == null || product.getStatus() == normalizedStatus)
+                .map(this::toProductDTO)
+                .collect(Collectors.toList());
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Products");
+
+            String[] headers = {
+                    "No.",
+                    "Code",
+                    "Product Name",
+                    "Purchase Price",
+                    "Sale Price",
+                    "Status",
+                    "Supplier",
+                    "Category",
+                    "Unit",
+                    "Minimum Stock"
+            };
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+            }
+
+            int rowIndex = 1;
+            for (ProductDTO product : productDTOList) {
+                Row row = sheet.createRow(rowIndex);
+                row.createCell(0).setCellValue(rowIndex);
+                row.createCell(1).setCellValue(defaultString(product.getSku()));
+                row.createCell(2).setCellValue(defaultString(product.getName()));
+                row.createCell(3).setCellValue(product.getPurchaseprice() != null ? product.getPurchaseprice().doubleValue() : 0);
+                row.createCell(4).setCellValue(product.getSaleprice() != null ? product.getSaleprice().doubleValue() : 0);
+                row.createCell(5).setCellValue(formatStatus(product.getStatus()));
+                row.createCell(6).setCellValue(defaultString(product.getSupplierName()));
+                row.createCell(7).setCellValue(defaultString(product.getCategoryName()));
+                row.createCell(8).setCellValue(defaultString(product.getUnit()));
+                row.createCell(9).setCellValue(product.getLowStockThreshold() != null ? product.getLowStockThreshold() : 0);
+                rowIndex++;
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to export products to Excel", e);
+        }
+    }*/
+
     private ProductDTO toProductDTO(Product product) {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(product.getId());
@@ -264,6 +335,20 @@ public class ProductServiceImpl implements ProductService {
         return productDTO;
     }
 
+    private boolean matchesSearch(Product product, String normalizedSearch) {
+        if (normalizedSearch == null) {
+            return true;
+        }
+
+        return containsValue(product.getSku(), normalizedSearch)
+                || containsValue(product.getName(), normalizedSearch)
+                || containsValue(product.getDescription(), normalizedSearch);
+    }
+
+    private boolean containsValue(String value, String normalizedSearch) {
+        return value != null && value.toLowerCase().contains(normalizedSearch);
+    }
+
     private Integer safeInteger(Integer value, Integer fallback) {
         return value != null ? value : fallback;
     }
@@ -275,6 +360,18 @@ public class ProductServiceImpl implements ProductService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String defaultString(String value) {
+        return value != null ? value : "";
+    }
+
+    private String formatStatus(ProductStatus status) {
+        if (status == null) {
+            return "";
+        }
+
+        return status == ProductStatus.active ? "Active" : "Inactive";
     }
 
 

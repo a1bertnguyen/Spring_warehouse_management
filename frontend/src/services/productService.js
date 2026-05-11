@@ -43,3 +43,12 @@ export async function deleteProduct(productId) {
   const response = await apiClient.delete(`/products/delete/${productId}`);
   return response.data;
 }
+
+export async function exportProducts(params = {}) {
+  const response = await apiClient.get("/products/export", {
+    params,
+    responseType: "blob",
+  });
+
+  return response.data;
+}
