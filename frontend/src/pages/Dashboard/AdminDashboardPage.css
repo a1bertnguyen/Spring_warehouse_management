@@ -282,12 +282,6 @@
   margin-top: 4px;
 }
 
-.admin-user-layout {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.95fr);
-}
-
 .admin-table-shell {
   overflow-x: auto;
 }
@@ -329,6 +323,24 @@
 .admin-form {
   display: grid;
   gap: 14px;
+}
+
+.admin-modal-backdrop {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.28);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 60;
+}
+
+.admin-modal-card {
+  max-height: calc(100vh - 48px);
+  max-width: 640px;
+  overflow-y: auto;
+  width: min(100%, 640px);
 }
 
 .admin-form label {
@@ -513,8 +525,7 @@
   }
 
   .admin-chart-grid,
-  .admin-summary-grid,
-  .admin-user-layout {
+  .admin-summary-grid {
     grid-template-columns: 1fr;
   }
 }

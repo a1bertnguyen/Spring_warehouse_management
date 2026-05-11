@@ -130,6 +130,7 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeMutationId, setActiveMutationId] = useState(null);
+  const [isUserFormVisible, setIsUserFormVisible] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingUserId, setEditingUserId] = useState(null);
 
@@ -227,6 +228,13 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
   function resetForm() {
     setForm(EMPTY_FORM);
     setEditingUserId(null);
+    setIsUserFormVisible(false);
+  }
+
+  function handleOpenCreateForm() {
+    setForm(EMPTY_FORM);
+    setEditingUserId(null);
+    setIsUserFormVisible(true);
   }
 
   function handleInputChange({ target: { name, value } }) {
@@ -245,6 +253,7 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
       role: user.role || "MANAGER",
       password: "",
     });
+    setIsUserFormVisible(true);
   }
 
   async function handleSubmit(event) {
@@ -564,112 +573,122 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                     </span>
                   </div>
 
-                  <div className="admin-user-layout">
-                    <div>
-                      <div className="admin-toolbar">
-                        <div className="admin-toolbar-group">
-                          <input
-                            aria-label="Search users"
-                            placeholder="Search by name, email, phone, or role"
-                            type="text"
-                            value={userSearch}
-                            onChange={(event) => setUserSearch(event.target.value)}
-                          />
-                          <select
-                            aria-label="Sort users"
-                            value={userSort}
-                            onChange={(event) => setUserSort(event.target.value)}
-                          >
-                            <option value="asc">Name A - Z</option>
-                            <option value="desc">Name Z - A</option>
-                          </select>
-                          <button
-                            type="button"
-                            className="ghost-button"
-                            onClick={resetForm}
-                          >
-                            New User
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="admin-table-shell">
-                        <table className="admin-table">
-                          <thead>
-                            <tr>
-                              <th>User</th>
-                              <th>Role</th>
-                              <th>Status</th>
-                              <th>Last Login</th>
-                              <th>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {usersView.items.map((user) => (
-                              <tr key={user.id}>
-                                <td>
-                                  <strong>{user.name}</strong>
-                                  <small>{user.email}</small>
-                                  <small>{user.phoneNumber}</small>
-                                </td>
-                                <td>{formatUserRole(user.role)}</td>
-                                <td>
-                                  <span
-                                    className={`admin-status-pill ${user.active ? "active" : "disabled"}`}
-                                  >
-                                    {user.active ? "Active" : "Disabled"}
-                                  </span>
-                                </td>
-                                <td>{formatDateTime(user.lastLogin)}</td>
-                                <td>
-                                  <div className="admin-inline-actions">
-                                    <button
-                                      type="button"
-                                      className="ghost-button"
-                                      onClick={() => handleEditUser(user)}
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={user.active ? "warn-button" : "success-button"}
-                                      disabled={activeMutationId === user.id}
-                                      onClick={() => handleToggleUserState(user)}
-                                    >
-                                      {user.active ? "Disable" : "Enable"}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="danger-button"
-                                      disabled={activeMutationId === user.id}
-                                      onClick={() => handleDeleteUser(user)}
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-
-                        {!usersView.items.length && (
-                          <p className="admin-empty-state">
-                            No users match the current search filters.
-                          </p>
-                        )}
-                      </div>
-
-                      <Pager
-                        currentPage={usersView.currentPage}
-                        totalPages={usersView.totalPages}
-                        totalItems={usersView.totalItems}
-                        itemLabel="users"
-                        onPageChange={setUserPage}
+                  <div className="admin-toolbar">
+                    <div className="admin-toolbar-group">
+                      <input
+                        aria-label="Search users"
+                        placeholder="Search by name, email, phone, or role"
+                        type="text"
+                        value={userSearch}
+                        onChange={(event) => setUserSearch(event.target.value)}
                       />
+                      <select
+                        aria-label="Sort users"
+                        value={userSort}
+                        onChange={(event) => setUserSort(event.target.value)}
+                      >
+                        <option value="asc">Name A - Z</option>
+                        <option value="desc">Name Z - A</option>
+                      </select>
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={handleOpenCreateForm}
+                      >
+                        New User
+                      </button>
                     </div>
+                  </div>
 
-                    <aside className="admin-card">
+                  <div className="admin-table-shell">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>User</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th>Last Login</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usersView.items.map((user) => (
+                          <tr key={user.id}>
+                            <td>
+                              <strong>{user.name}</strong>
+                              <small>{user.email}</small>
+                              <small>{user.phoneNumber}</small>
+                            </td>
+                            <td>{formatUserRole(user.role)}</td>
+                            <td>
+                              <span
+                                className={`admin-status-pill ${user.active ? "active" : "disabled"}`}
+                              >
+                                {user.active ? "Active" : "Disabled"}
+                              </span>
+                            </td>
+                            <td>{formatDateTime(user.lastLogin)}</td>
+                            <td>
+                              <div className="admin-inline-actions">
+                                <button
+                                  type="button"
+                                  className="ghost-button"
+                                  onClick={() => handleEditUser(user)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className={user.active ? "warn-button" : "success-button"}
+                                  disabled={activeMutationId === user.id}
+                                  onClick={() => handleToggleUserState(user)}
+                                >
+                                  {user.active ? "Disable" : "Enable"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="danger-button"
+                                  disabled={activeMutationId === user.id}
+                                  onClick={() => handleDeleteUser(user)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {!usersView.items.length && (
+                      <p className="admin-empty-state">
+                        No users match the current search filters.
+                      </p>
+                    )}
+                  </div>
+
+                  <Pager
+                    currentPage={usersView.currentPage}
+                    totalPages={usersView.totalPages}
+                    totalItems={usersView.totalItems}
+                    itemLabel="users"
+                    onPageChange={setUserPage}
+                  />
+                </article>
+
+                {isUserFormVisible && (
+                  <div
+                    className="admin-modal-backdrop"
+                    role="presentation"
+                    onClick={resetForm}
+                  >
+                    <aside
+                      className="admin-card admin-modal-card"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label={isEditing ? "Edit user" : "Create user"}
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <div className="admin-card-header">
                         <div>
                           <h3>{isEditing ? "Edit User" : "Create User"}</h3>
@@ -679,6 +698,14 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                               : "Add a new account to the system with an assigned role."}
                           </p>
                         </div>
+
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={resetForm}
+                        >
+                          Close
+                        </button>
                       </div>
 
                       <form className="admin-form" onSubmit={handleSubmit}>
@@ -763,20 +790,18 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                                 ? "Save Changes"
                                 : "Create User"}
                           </button>
-                          {isEditing && (
-                            <button
-                              type="button"
-                              className="ghost-button"
-                              onClick={resetForm}
-                            >
-                              Cancel
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={resetForm}
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </form>
                     </aside>
                   </div>
-                </article>
+                )}
               </section>
             )}
 
