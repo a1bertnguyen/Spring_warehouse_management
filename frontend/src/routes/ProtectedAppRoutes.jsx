@@ -23,6 +23,26 @@ const protectedAppRoutes = (
     />
     <Route path={PATHS.profile} element={<ProtectedRoute element={<ProfilePage />} />} />
     <Route path={PATHS.dashboard} element={<ProtectedRoute element={<DashboardPage />} />} />
+    <Route
+      path={PATHS.dashboardWarehouses}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
+    <Route
+      path={PATHS.dashboardInventory}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
+    <Route
+      path={PATHS.dashboardSalesOrders}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
+    <Route
+      path={PATHS.dashboardPurchaseOrders}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
+    <Route
+      path={PATHS.dashboardGoodsReceipts}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
   </>
 );
 

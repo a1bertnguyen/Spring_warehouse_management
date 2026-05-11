@@ -6,6 +6,7 @@ export const BASE_URL =
 export const DEFAULT_EXPIRY_DATE = "2099-12-31T00:00:00";
 export const PLACEHOLDER_IMAGE_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnSUs0AAAAASUVORK5CYII=";
+export const API_ORIGIN = BASE_URL.replace(/\/api\/?$/, "");
 
 const ENCRYPTION_KEY = "phegon-dev-inventory";
 const TOKEN_STORAGE_KEY = "token";
@@ -208,6 +209,22 @@ export function withTopLevelAlias(
   return { ...payload, data: item, [aliasKey]: item };
 }
 
+export function resolveApiAssetUrl(url) {
+  if (!url) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(url) || url.startsWith("data:")) {
+    return url;
+  }
+
+  if (url.startsWith("/assets/") || url.startsWith("/images/")) {
+    return `${API_ORIGIN}${url}`;
+  }
+
+  return url;
+}
+
 export function normalizeProduct(product) {
   if (!product) return null;
 
@@ -223,6 +240,7 @@ export function normalizeProduct(product) {
     saleprice,
     price,
     su: product.su ?? product.sku,
+    imageUrl: resolveApiAssetUrl(product.imageUrl),
   };
 }
 

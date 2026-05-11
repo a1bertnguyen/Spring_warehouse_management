@@ -26,6 +26,19 @@ export const AdminRoute = ({element:Component}) => {
     );
 };
 
+export const ManagementRoute = ({element: Component}) => {
+    const location = useLocation();
+    if (!ApiService.isAuthenticated()) {
+        return <Navigate to={PATHS.login} replace state={{from: location}}/>;
+    }
+
+    return ApiService.isAdmin() || ApiService.getRole() === "MANAGER" ? (
+        Component
+    ) : (
+        <Navigate to={PATHS.dashboard} replace />
+    );
+};
+
 export const PublicRoute = ({element: Component}) => {
     return ApiService.isAuthenticated() ? (
         <Navigate to={PATHS.dashboard} replace />

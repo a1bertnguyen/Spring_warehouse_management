@@ -1,0 +1,547 @@
+.manager-dashboard {
+  display: grid;
+  gap: 24px;
+  padding: 8px 0 32px;
+}
+
+.manager-hero {
+  align-items: stretch;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.2), transparent 32%),
+    linear-gradient(135deg, #0f172a 0%, #111827 52%, #16363a 100%);
+  border-radius: 28px;
+  color: #f8fafc;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.9fr);
+  overflow: hidden;
+  padding: 32px;
+  position: relative;
+}
+
+.manager-hero::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 60%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.manager-hero-copy,
+.manager-hero-card {
+  position: relative;
+  z-index: 1;
+}
+
+.manager-hero-copy {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.manager-hero-copy span,
+.manager-hero-card span,
+.manager-panel-label,
+.manager-metric-card span {
+  color: #9be6dc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.manager-hero-copy h1 {
+  font-size: clamp(2.3rem, 4vw, 3.6rem);
+  line-height: 1.02;
+  max-width: 12ch;
+}
+
+.manager-hero-copy p,
+.manager-hero-card p,
+.manager-panel-description {
+  color: rgba(226, 232, 240, 0.9);
+  line-height: 1.7;
+}
+
+.manager-hero-card {
+  align-content: end;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 24px;
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+}
+
+.manager-hero-card strong {
+  font-size: 1.5rem;
+}
+
+.manager-metric-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.manager-metric-card,
+.manager-panel,
+.manager-action-card,
+.manager-insight-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.manager-metric-card {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+}
+
+.manager-metric-card strong {
+  color: #0f172a;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.manager-metric-card p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.manager-two-column-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+
+.manager-section-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.manager-warehouse-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.35fr);
+}
+
+.manager-panel {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+}
+
+.manager-panel-emphasis {
+  background: linear-gradient(180deg, #ffffff 0%, #f5fcfb 100%);
+}
+
+.manager-panel-heading {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.manager-panel-heading h2 {
+  color: #0f172a;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
+.manager-list,
+.manager-timeline,
+.manager-card-stack,
+.manager-warehouse-list {
+  display: grid;
+  gap: 14px;
+}
+
+.manager-warehouse-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  cursor: pointer;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.manager-warehouse-card:hover,
+.manager-warehouse-card.active {
+  border-color: rgba(20, 184, 166, 0.32);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.manager-warehouse-card-top {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.manager-inline-form {
+  display: grid;
+  gap: 14px;
+}
+
+.manager-inline-form label {
+  color: #334155;
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.manager-inline-form input,
+.manager-inline-form select {
+  background: #f8fafc;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  padding: 12px 14px;
+}
+
+.manager-inline-form input:focus,
+.manager-inline-form select:focus {
+  border-color: #14b8a6;
+  outline: none;
+}
+
+.manager-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.manager-form-actions button,
+.manager-panel-heading button,
+.manager-table button {
+  align-items: center;
+  border: none;
+  border-radius: 14px;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.ghost-button {
+  background: #ffffff;
+  border: 1px solid #cbd5e1 !important;
+  color: #1f2937;
+}
+
+.ghost-button:hover {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.danger-button {
+  background: #7f1d1d;
+  color: #ffffff;
+}
+
+.danger-button:hover {
+  background: #991b1b;
+}
+
+.manager-product-thumb {
+  border-radius: 12px;
+  height: 56px;
+  object-fit: cover;
+  width: 56px;
+}
+
+.manager-muted {
+  color: #94a3b8;
+}
+
+.manager-list-row,
+.manager-insight-card {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.manager-list-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+}
+
+.manager-list-row-button {
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  width: 100%;
+}
+
+.manager-list-row-button:hover {
+  border-color: rgba(20, 184, 166, 0.28);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.manager-list-row strong,
+.manager-insight-card strong,
+.manager-timeline-item strong,
+.manager-empty-state strong {
+  color: #0f172a;
+}
+
+.manager-list-row p,
+.manager-insight-card p,
+.manager-timeline-item p,
+.manager-empty-state p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+.manager-row-metrics,
+.manager-insight-metrics {
+  align-items: flex-end;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.manager-row-metrics strong {
+  color: #0f172a;
+  font-size: 1.3rem;
+}
+
+.manager-status-badge {
+  background: rgba(20, 184, 166, 0.12);
+  border-radius: 999px;
+  color: #0f766e;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+}
+
+.manager-status-badge-warning {
+  background: rgba(251, 191, 36, 0.18);
+  color: #b45309;
+}
+
+.manager-status-badge-neutral {
+  background: rgba(148, 163, 184, 0.14);
+  color: #334155;
+}
+
+.manager-timeline-item {
+  column-gap: 16px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.manager-timeline-dot {
+  background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 12px;
+  margin-top: 8px;
+  width: 12px;
+}
+
+.manager-timeline-item small {
+  color: #94a3b8;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.manager-timeline-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.manager-quick-actions {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.manager-action-card {
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.manager-action-card:hover,
+.manager-insight-card:hover {
+  border-color: rgba(20, 184, 166, 0.28);
+  box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
+  transform: translateY(-3px);
+}
+
+.manager-action-card strong {
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.manager-action-card p {
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.manager-highlight-grid,
+.manager-summary-strip {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.manager-highlight-grid div,
+.manager-summary-strip div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.manager-highlight-grid span,
+.manager-summary-strip span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.manager-highlight-grid strong,
+.manager-summary-strip strong {
+  color: #0f172a;
+  font-size: 1.45rem;
+}
+
+.manager-table-shell {
+  overflow-x: auto;
+}
+
+.manager-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.manager-table th,
+.manager-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.manager-table th {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.manager-table td {
+  color: #334155;
+}
+
+.manager-table td strong {
+  color: #0f172a;
+  display: block;
+}
+
+.manager-table td span {
+  color: #64748b;
+  display: block;
+  margin-top: 4px;
+}
+
+.manager-empty-state {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 22px;
+  display: grid;
+  gap: 8px;
+  padding: 26px;
+}
+
+.manager-loading-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.manager-loading-card {
+  animation: dashboardPulse 1.2s ease-in-out infinite;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  border-radius: 24px;
+  height: 220px;
+}
+
+@keyframes dashboardPulse {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .manager-two-column-grid,
+  .manager-warehouse-layout,
+  .manager-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .manager-dashboard {
+    gap: 18px;
+  }
+
+  .manager-hero,
+  .manager-panel,
+  .manager-metric-card {
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .manager-panel-heading,
+  .manager-list-row,
+  .manager-insight-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .manager-warehouse-card-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .manager-row-metrics,
+  .manager-insight-metrics {
+    justify-items: start;
+  }
+
+  .manager-loading-grid {
+    grid-template-columns: 1fr;
+  }
+}

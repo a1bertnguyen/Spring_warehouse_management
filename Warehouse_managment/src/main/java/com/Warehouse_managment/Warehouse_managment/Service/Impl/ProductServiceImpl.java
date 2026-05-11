@@ -23,6 +23,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,13 +38,6 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final InventoryRepository inventoryRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
-
-    private static final String IMAGE_DIRECTORY = System.getProperty("user.dir") + "/product-images/";
-
-    //AFTER YOUR FRONTEND IS SETUP CHANGE THE IMAGE DIRECTORY TO YHE FRONTEND YOU ARE USING
-    private static final String IMAGE_DIRECTORY_2 =
-            System.getProperty("user.home") + "\\Downloads\\";
-
 
     @Override
     public Response saveProduct(ProductDTO productDTO, MultipartFile imageFile) {
@@ -234,38 +228,63 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("Only image files under 1GB are allowed");
         }
 
-        Path currentPath = Paths.get(System.getProperty("user.dir"));
-        if (currentPath.endsWith("backend")) {
-            currentPath = currentPath.getParent();
-        }
+        Path imageDir = resolveImageDirectory();
 
-        // 3. Construct the full path to frontend/public/products
-        Path imageDir = currentPath.resolve("warehouse-app")
-                           .resolve("src")
-                           .resolve("assets")
-                           .resolve("products");
-
-        // 4. Create the directory if it doesn't exist
         File directory = imageDir.toFile();
 
         if (!directory.exists()) {
-            boolean created = directory.mkdirs(); // mkdirs() creates parent folders too if missing
+            boolean created = directory.mkdirs();
             if(created) log.info("Directory was created: " + directory.getAbsolutePath());
         }
 
-        // 5. Generate unique file name
         String uniqueFileName = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
 
-        // 6. Combine directory path and filename
         Path destinationPath = imageDir.resolve(uniqueFileName);
 
         try {
-            // Transfer the file
             imageFile.transferTo(destinationPath.toFile());
+            syncLegacyWarehouseAssetCopy(destinationPath, uniqueFileName);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error saving Image: " + e.getMessage());
         }
 
         return "/assets/products/" + uniqueFileName;
+    }
+
+    private Path resolveImageDirectory() {
+        Path currentPath = Paths.get(System.getProperty("user.dir"));
+
+        if (currentPath.endsWith("backend")) {
+            currentPath = currentPath.getParent();
+        }
+
+        return currentPath.resolve("product-images").toAbsolutePath().normalize();
+    }
+
+    private void syncLegacyWarehouseAssetCopy(Path sourceFile, String fileName) {
+        try {
+            Path currentPath = Paths.get(System.getProperty("user.dir"));
+            if (currentPath.endsWith("backend")) {
+                currentPath = currentPath.getParent();
+            }
+
+            Path legacyAssetDirectory = currentPath.resolve("warehouse-app")
+                    .resolve("src")
+                    .resolve("assets")
+                    .resolve("products");
+
+            File legacyDirectory = legacyAssetDirectory.toFile();
+            if (!legacyDirectory.exists()) {
+                legacyDirectory.mkdirs();
+            }
+
+            java.nio.file.Files.copy(
+                    sourceFile,
+                    legacyAssetDirectory.resolve(fileName),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+        } catch (Exception exception) {
+            log.warn("Could not sync legacy product image copy: {}", exception.getMessage());
+        }
     }
 }

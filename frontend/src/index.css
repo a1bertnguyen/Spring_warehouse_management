@@ -123,7 +123,7 @@ button[type="submit"]:hover {
 
 .sidebar-brand h1 {
   color: #f8fafc;
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 800;
   line-height: 1.15;
 }
@@ -138,6 +138,7 @@ button[type="submit"]:hover {
   padding: 14px;
   text-align: left;
   width: 100%;
+  cursor: pointer;
 }
 
 .sidebar-account:hover {
@@ -175,8 +176,20 @@ button[type="submit"]:hover {
 
 .sidebar-account-chevron {
   color: #cbd5e1;
-  font-size: 0.9rem;
-  font-weight: 700;
+  display: inline-flex;
+  height: 18px;
+  width: 18px;
+}
+
+.sidebar-account-chevron svg,
+.sidebar-link-icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  width: 100%;
+  height: 100%;
 }
 
 .sidebar-nav {
@@ -195,8 +208,7 @@ button[type="submit"]:hover {
 }
 
 
-.nav-links a {
-  display: block;
+.sidebar-link {
   color: #f1f1f1;
   text-decoration: none;
   padding: 14px 16px;
@@ -206,22 +218,41 @@ button[type="submit"]:hover {
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.nav-links a:hover {
+.sidebar-link:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #f8fafc;
 }
 
-.nav-links a.active {
+.sidebar-link.active {
   background: linear-gradient(135deg, rgba(15, 118, 110, 0.9), rgba(20, 184, 166, 0.75));
   color: #ffffff;
 }
 
-.nav-links a::before,
-.nav-links li:hover a::before {
-  content: "";
-  display: none;
+.sidebar-link-icon {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  color: rgba(226, 232, 240, 0.92);
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  min-width: 36px;
+  padding: 8px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.sidebar-link.active .sidebar-link-icon {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.sidebar-link-label {
+  flex: 1;
 }
 
 .sidebar-logout {
@@ -236,6 +267,11 @@ button[type="submit"]:hover {
   color: #ffffff;
 }
 
+.nav-links a::before,
+.nav-links li:hover a::before {
+  content: none !important;
+}
+
 
 .nav-links a::before {
   content: '→ ';
@@ -246,6 +282,11 @@ button[type="submit"]:hover {
 .nav-links li:hover a::before {
   opacity: 1;
   margin-left: -10px;
+}
+
+.sidebar-link::before,
+.nav-links li:hover .sidebar-link::before {
+  content: none !important;
 }
 
 @media (max-width: 768px) {

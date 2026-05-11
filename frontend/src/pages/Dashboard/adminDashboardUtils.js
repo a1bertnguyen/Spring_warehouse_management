@@ -208,13 +208,42 @@ export function buildUsersView(
 export function buildLoginActivityView(
   activityLogs,
   searchTerm,
+  startDate,
+  endDate,
   currentPage,
   pageSize = ACTIVITY_PAGE_SIZE
 ) {
   const normalizedSearch = String(searchTerm || "").trim().toLowerCase();
+  const normalizedStartDate = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const normalizedEndDate = endDate ? new Date(`${endDate}T23:59:59.999`) : null;
 
   const filteredLogs = activityLogs
     .filter((activity) => activity?.action === "LOGIN")
+    .filter((activity) => {
+      const createdAt = new Date(activity?.createdAt);
+
+      if (Number.isNaN(createdAt.getTime())) {
+        return false;
+      }
+
+      if (
+        normalizedStartDate &&
+        !Number.isNaN(normalizedStartDate.getTime()) &&
+        createdAt < normalizedStartDate
+      ) {
+        return false;
+      }
+
+      if (
+        normalizedEndDate &&
+        !Number.isNaN(normalizedEndDate.getTime()) &&
+        createdAt > normalizedEndDate
+      ) {
+        return false;
+      }
+
+      return true;
+    })
     .filter((activity) => {
       if (!normalizedSearch) {
         return true;

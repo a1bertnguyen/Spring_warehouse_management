@@ -146,6 +146,8 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
   const [userPage, setUserPage] = useState(1);
 
   const [activitySearch, setActivitySearch] = useState("");
+  const [activityStartDate, setActivityStartDate] = useState("");
+  const [activityEndDate, setActivityEndDate] = useState("");
   const [activityPage, setActivityPage] = useState(1);
 
   const isEditing = editingUserId !== null;
@@ -170,7 +172,7 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
 
   useEffect(() => {
     setActivityPage(1);
-  }, [activitySearch]);
+  }, [activityEndDate, activitySearch, activityStartDate]);
 
   async function loadUsers() {
     const response = await ApiService.getAllUsers();
@@ -387,8 +389,15 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
   );
 
   const activityView = useMemo(
-    () => buildLoginActivityView(activityLogs, activitySearch, activityPage),
-    [activityLogs, activityPage, activitySearch]
+    () =>
+      buildLoginActivityView(
+        activityLogs,
+        activitySearch,
+        activityStartDate,
+        activityEndDate,
+        activityPage
+      ),
+    [activityEndDate, activityLogs, activityPage, activitySearch, activityStartDate]
   );
 
   const uniqueUsersLoggedToday = useMemo(() => {
@@ -930,6 +939,28 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                         value={activitySearch}
                         onChange={(event) => setActivitySearch(event.target.value)}
                       />
+                      <input
+                        aria-label="Filter activity logs from date"
+                        type="date"
+                        value={activityStartDate}
+                        onChange={(event) => setActivityStartDate(event.target.value)}
+                      />
+                      <input
+                        aria-label="Filter activity logs to date"
+                        type="date"
+                        value={activityEndDate}
+                        onChange={(event) => setActivityEndDate(event.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => {
+                          setActivityStartDate("");
+                          setActivityEndDate("");
+                        }}
+                      >
+                        Clear Dates
+                      </button>
                     </div>
                   </div>
 
