@@ -26,6 +26,7 @@ public class UserDTO {
     private String phoneNumber;
 
     private UserRole role;
+    private Boolean active;
     private LocalDateTime createdAt;
 
 }

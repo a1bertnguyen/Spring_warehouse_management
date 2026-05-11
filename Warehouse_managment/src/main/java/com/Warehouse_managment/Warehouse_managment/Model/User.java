@@ -38,6 +38,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Builder.Default
+    @Column(name = "active")
+    private Boolean active = true;
+
     @Column(name = "created_at")
     private final LocalDateTime createdAt = LocalDateTime.now();
 
@@ -55,6 +59,7 @@ public class User {
                 ", password='" + password + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", role=" + role +
+                ", active=" + active +
                 ", createdAt=" + createdAt +
                 ", resetToken='" + resetToken + '\'' +
                 ", resetTokenExpiry=" + resetTokenExpiry +

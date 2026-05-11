@@ -8,6 +8,7 @@ import AddEditSupplierPage from "../pages/Supplier/AddEditSupplierPage";
 import ProductPage from "../pages/Product/ProductPage";
 import AddEditProductPage from "../pages/Product/AddEditProductPage";
 import UserManagementPage from "../pages/User/UserManagementPage";
+import ActivityLogPage from "../pages/Activity/ActivityLogPage";
 
 const adminRoutes = (
   <>
@@ -23,6 +24,10 @@ const adminRoutes = (
     />
     <Route path={PATHS.product} element={<AdminRoute element={<ProductPage />} />} />
     <Route path={PATHS.users} element={<AdminRoute element={<UserManagementPage />} />} />
+    <Route
+      path={PATHS.activityLogs}
+      element={<AdminRoute element={<ActivityLogPage />} />}
+    />
     <Route path={PATHS.addProduct} element={<AdminRoute element={<AddEditProductPage />} />} />
     <Route
       path={PATHS.editProduct}

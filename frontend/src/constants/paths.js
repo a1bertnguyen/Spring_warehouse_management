@@ -15,6 +15,7 @@ export const PATHS = {
   transactionDetails: "/transaction/:transactionId",
   profile: "/profile",
   users: "/users",
+  activityLogs: "/activity-logs",
 };
 
 export const buildEditSupplierPath = (supplierId) => `/edit-supplier/${supplierId}`;

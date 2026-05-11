@@ -6,6 +6,7 @@ import com.Warehouse_managment.Warehouse_managment.Enum.ActivityAction;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.InvalidCredentialsException;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.User;
+import com.Warehouse_managment.Warehouse_managment.Repository.ActivityLogRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.UserRepository;
 import com.Warehouse_managment.Warehouse_managment.Dtos.RegisterRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
@@ -23,7 +24,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +42,7 @@ public class UserServiceImpl implements UserService {
     private final ModelMapper modelMapper;
     private final JwtUtils jwtUtils;
     private final ActivityLogService activityLogService;
+    private final ActivityLogRepository activityLogRepository;
     @Override
     public Response registerUser(RegisterRequest registerRequest) {
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
@@ -57,6 +61,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .phoneNumber(registerRequest.getPhoneNumber())
                 .role(role)
+                .active(true)
                 .build();
 
         userRepository.save(userToSave);
@@ -72,6 +77,10 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new NotFoundException("Email Not Found"));
+
+        if (Boolean.FALSE.equals(user.getActive())) {
+            throw new InvalidCredentialsException("This account has been disabled by an administrator");
+        }
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException("Password Does Not Match");
@@ -171,6 +180,11 @@ public class UserServiceImpl implements UserService {
     public User getCurrentLoggedInUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getName())) {
+            throw new InvalidCredentialsException("User is not authenticated");
+        }
+
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User Not Found"));
@@ -201,6 +215,7 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getPhoneNumber() != null) existingUser.setPhoneNumber(userDTO.getPhoneNumber());
         if (userDTO.getName() != null) existingUser.setName(userDTO.getName());
         if (userDTO.getRole() != null) existingUser.setRole(userDTO.getRole());
+        if (userDTO.getActive() != null) existingUser.setActive(userDTO.getActive());
 
         if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
             updatePassword(existingUser, userDTO.getPassword());
@@ -249,10 +264,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public Response deleteUser(Long id) {
         userRepository.findById(id).orElseThrow(() -> new NotFoundException("User Not Found"));
 
-        userRepository.deleteById(id);
+        activityLogRepository.deleteByUserId(id);
+        activityLogRepository.flush();
+
+        try {
+            userRepository.deleteById(id);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw new IllegalStateException(
+                    "This user cannot be deleted because other records still reference this account. Disable the user instead or remove dependent records first."
+            );
+        }
 
         return Response.builder()
                 .status(200)

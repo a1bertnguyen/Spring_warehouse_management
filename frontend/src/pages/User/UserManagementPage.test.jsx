@@ -1,5 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import UserManagementPage from "./UserManagementPage";
 import ApiService from "../../services/ApiService";
 
@@ -11,9 +12,13 @@ jest.mock("../../layouts/MainLayout", () => ({
 jest.mock("../../services/ApiService", () => ({
   __esModule: true,
   default: {
+    isAdmin: jest.fn(() => true),
     getAllUsers: jest.fn(),
+    getAllTransactions: jest.fn(),
+    getAllActivityLogs: jest.fn(),
     registerUser: jest.fn(),
     updateUser: jest.fn(),
+    deleteUser: jest.fn(),
   },
 }));
 
@@ -28,14 +33,22 @@ const existingUser = {
 beforeEach(() => {
   jest.clearAllMocks();
   ApiService.getAllUsers.mockResolvedValue({ users: [existingUser] });
+  ApiService.getAllTransactions.mockResolvedValue({ transactions: [] });
+  ApiService.getAllActivityLogs.mockResolvedValue({ activityLogs: [] });
   ApiService.registerUser.mockResolvedValue({ message: "created" });
   ApiService.updateUser.mockResolvedValue({ message: "updated" });
+  ApiService.deleteUser.mockResolvedValue({ message: "deleted" });
+  window.confirm = jest.fn(() => true);
 });
 
 test("allows an admin to create a new user account", async () => {
-  render(<UserManagementPage />);
+  render(
+    <MemoryRouter>
+      <UserManagementPage />
+    </MemoryRouter>
+  );
 
-  await screen.findByText(existingUser.name);
+  await screen.findByLabelText(/^name$/i);
 
   await userEvent.type(screen.getByLabelText(/^name$/i), "Bob Tran");
   await userEvent.type(screen.getByLabelText(/^email$/i), "bob@example.com");
@@ -59,10 +72,14 @@ test("allows an admin to create a new user account", async () => {
 });
 
 test("allows an admin to update a user and assign a new password", async () => {
-  render(<UserManagementPage />);
+  render(
+    <MemoryRouter>
+      <UserManagementPage />
+    </MemoryRouter>
+  );
 
-  await screen.findByText(existingUser.name);
-  await userEvent.click(screen.getByRole("button", { name: /edit/i }));
+  const userRow = await screen.findByRole("row", { name: /alice nguyen/i });
+  await userEvent.click(within(userRow).getByRole("button", { name: /^edit$/i }));
   await userEvent.type(
     screen.getByLabelText(/new password \(optional\)/i),
     "NewPassword@456"

@@ -1,12 +1,73 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import ApiService from "../../services/ApiService";
 import { PATHS } from "../../constants/paths";
+
+const ADMIN_NAV_ITEMS = [
+  { path: PATHS.dashboard, label: "Statistics" },
+  { path: PATHS.users, label: "User Management" },
+  { path: PATHS.activityLogs, label: "Activity Log" },
+];
+
+const STAFF_NAV_ITEMS = [{ path: PATHS.dashboard, label: "Dashboard" }];
+
+function formatRoleLabel(role) {
+  if (!role) {
+    return "Account";
+  }
+
+  return role
+    .toLowerCase()
+    .split("_")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+}
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const isAuth = ApiService.isAuthenticated();
   const isAdmin = ApiService.isAdmin();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCurrentUser() {
+      try {
+        const response = await ApiService.getLoggedInUserInfo();
+
+        if (isMounted) {
+          setCurrentUser(response?.user || null);
+        }
+      } catch {
+        if (isMounted) {
+          setCurrentUser(null);
+        }
+      }
+    }
+
+    if (isAuth) {
+      loadCurrentUser();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuth]);
+
+  const navItems = useMemo(() => {
+    if (!isAuth) {
+      return [];
+    }
+
+    return isAdmin ? ADMIN_NAV_ITEMS : STAFF_NAV_ITEMS;
+  }, [isAdmin, isAuth]);
+
+  const displayName = currentUser?.name || (isAdmin ? "admin" : "user");
+  const displayRole = isAdmin
+    ? "Administrator"
+    : formatRoleLabel(currentUser?.role || ApiService.getRole());
+  const avatarLetter = displayName.trim().charAt(0).toUpperCase() || "U";
 
   const logout = async (event) => {
     event.preventDefault();
@@ -25,68 +86,53 @@ const Sidebar = () => {
 
   return (
     <div className="sidebar">
-      <h1 className="ims">IMS</h1>
-      <ul className="nav-links">
-        {isAuth && (
-          <li>
-            <NavLink to={PATHS.dashboard}>Dashboard</NavLink>
-          </li>
-        )}
+      <div className="sidebar-shell">
+        <div className="sidebar-brand">
+          <p>Warehouse</p>
+          <h1>Warehouse Management</h1>
+        </div>
 
         {isAuth && (
-          <li>
-            <NavLink to={PATHS.transaction}>Transactions</NavLink>
-          </li>
-        )}
+          <button
+            type="button"
+            className="sidebar-account"
+            onClick={() => navigate(PATHS.profile)}
+          >
+            <div className="sidebar-avatar">{avatarLetter}</div>
 
-        {isAdmin && (
-          <li>
-            <NavLink to={PATHS.category}>Category</NavLink>
-          </li>
-        )}
+            <div className="sidebar-account-copy">
+              <strong>{displayName}</strong>
+              <span>{displayRole}</span>
+            </div>
 
-        {isAdmin && (
-          <li>
-            <NavLink to={PATHS.product}>Product</NavLink>
-          </li>
-        )}
-
-        {isAdmin && (
-          <li>
-            <NavLink to={PATHS.supplier}>Supplier</NavLink>
-          </li>
-        )}
-
-        {isAdmin && (
-          <li>
-            <NavLink to={PATHS.users}>Users</NavLink>
-          </li>
+            <span className="sidebar-account-chevron">v</span>
+          </button>
         )}
 
         {isAuth && (
-          <li>
-            <NavLink to={PATHS.purchase}>Purchase</NavLink>
-          </li>
+          <nav className="sidebar-nav" aria-label="Primary navigation">
+            <ul className="nav-links">
+              {navItems.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    end={item.path === PATHS.dashboard}
+                    className={({ isActive }) => (isActive ? "active" : "")}
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
+      </div>
 
-        {isAuth && (
-          <li>
-            <NavLink to={PATHS.sell}>Sell</NavLink>
-          </li>
-        )}
-
-        {isAuth && (
-          <li>
-            <NavLink to={PATHS.profile}>Profile</NavLink>
-          </li>
-        )}
-
-        {isAuth && (
-          <li>
-            <NavLink onClick={logout} to={PATHS.login}>Logout</NavLink>
-          </li>
-        )}
-      </ul>
+      {isAuth && (
+        <button type="button" className="sidebar-logout" onClick={logout}>
+          Logout
+        </button>
+      )}
     </div>
   );
 };

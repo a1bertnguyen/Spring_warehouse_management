@@ -42,8 +42,14 @@ public class UserController {
     }
 
     @GetMapping("/current")
-    public ResponseEntity<UserDTO> getCurrentUser() {
-        return ResponseEntity.ok(toSafeUserDTO(userService.getCurrentLoggedInUser()));
+    public ResponseEntity<Response> getCurrentUser() {
+        return ResponseEntity.ok(
+                Response.builder()
+                        .status(200)
+                        .message("success")
+                        .data(toSafeUserDTO(userService.getCurrentLoggedInUser()))
+                        .build()
+        );
     }
 
     private UserDTO toSafeUserDTO(User user) {
@@ -53,6 +59,7 @@ public class UserController {
         userDTO.setEmail(user.getEmail());
         userDTO.setPhoneNumber(user.getPhoneNumber());
         userDTO.setRole(user.getRole());
+        userDTO.setActive(user.getActive() == null || user.getActive());
         userDTO.setCreatedAt(user.getCreatedAt());
         return userDTO;
     }

@@ -35,7 +35,9 @@ public class AuthFilter extends OncePerRequestFilter {
             String email = jwtUtils.getUsernameFromToken(token);
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-            if (StringUtils.hasText(email) && jwtUtils.isTokeValid(token, userDetails)) {
+            if (StringUtils.hasText(email)
+                    && userDetails.isEnabled()
+                    && jwtUtils.isTokeValid(token, userDetails)) {
                 log.info("Valid Token, {}", email);
 
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
@@ -46,11 +48,7 @@ public class AuthFilter extends OncePerRequestFilter {
             }
         }
 
-        try {
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            log.error("Exception occurred in AuthFilter: " + e.getMessage());
-        }
+        filterChain.doFilter(request, response);
 
     }
 

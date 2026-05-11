@@ -12,7 +12,14 @@ export async function getAllUsers() {
 
 export async function getLoggedInUserInfo() {
   const response = await apiClient.get("/users/current");
-  return withItemAlias(response.data, "user", normalizeUser);
+  const payload = response.data;
+
+  if (payload?.data) {
+    return withItemAlias(payload, "user", normalizeUser);
+  }
+
+  const user = normalizeUser(payload);
+  return { ...payload, data: user, user };
 }
 
 export async function getUserById(userId) {
