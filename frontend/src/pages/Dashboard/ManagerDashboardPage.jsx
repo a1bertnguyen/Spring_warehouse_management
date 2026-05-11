@@ -7,16 +7,14 @@ import "./ManagerDashboardPage.css";
 
 const SECTION_COPY = {
   overview: {
-    eyebrow: "Manager overview",
-    title: "Warehouse operations at a glance",
-    description:
-      "Track stock health, warehouse occupancy, and order flow from one operational dashboard.",
+    eyebrow: "Overview",
+    title: "Warehouse snapshot",
+    description: "Only the most important stock and warehouse signals.",
   },
   warehouses: {
     eyebrow: "Warehouses",
-    title: "Warehouse capacity and fulfillment readiness",
-    description:
-      "See how each warehouse is stocked, how many SKUs it carries, and where replenishment attention is needed.",
+    title: "Warehouse list",
+    description: "Manage warehouse records and open the product list for each location.",
   },
   inventory: {
     eyebrow: "Inventory",
@@ -105,6 +103,16 @@ function normalizeTopLevelCollection(payload, collectionKey) {
   return [];
 }
 
+function matchesSearch(searchTerm, fields) {
+  const normalizedSearch = String(searchTerm || "").trim().toLowerCase();
+
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  return fields.some((field) => String(field || "").toLowerCase().includes(normalizedSearch));
+}
+
 function TableEmptyState({ title, description }) {
   return (
     <div className="manager-empty-state">
@@ -119,13 +127,15 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const timeoutRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
   const [warehouseForm, setWarehouseForm] = useState(EMPTY_WAREHOUSE_FORM);
   const [editingWarehouseId, setEditingWarehouseId] = useState(null);
-  const [warehouseProductId, setWarehouseProductId] = useState("");
-  const [warehouseQuantity, setWarehouseQuantity] = useState("1");
+  const [showWarehouseForm, setShowWarehouseForm] = useState(false);
   const [isSavingWarehouse, setIsSavingWarehouse] = useState(false);
-  const [isAssigningProduct, setIsAssigningProduct] = useState(false);
+  const [warehouseSearchTerm, setWarehouseSearchTerm] = useState("");
+  const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
+  const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
+  const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
   const [dashboardData, setDashboardData] = useState({
     categories: [],
     warehouses: [],
@@ -155,21 +165,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!dashboardData.warehouses.length) {
-      setSelectedWarehouseId(null);
-      return;
-    }
-
-    setSelectedWarehouseId((currentValue) => {
-      const hasCurrentWarehouse = dashboardData.warehouses.some(
-        (warehouse) => warehouse.id === currentValue
-      );
-
-      return hasCurrentWarehouse ? currentValue : dashboardData.warehouses[0].id;
-    });
-  }, [dashboardData.warehouses]);
-
   async function loadDashboardData() {
     setIsLoading(true);
 
@@ -190,8 +185,8 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       ApiService.getAllProducts(),
       ApiService.getAllInventories(),
       ApiService.getInventorySummary(),
-      ApiService.getAllSalesOrders({ page: 0, size: 8 }),
-      ApiService.getAllPurchaseOrders({ page: 0, size: 8 }),
+      ApiService.getAllSalesOrders({ page: 0, size: 24 }),
+      ApiService.getAllPurchaseOrders({ page: 0, size: 24 }),
       ApiService.getAllStockInwards(),
     ]);
 
@@ -311,6 +306,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   function resetWarehouseForm() {
     setWarehouseForm(EMPTY_WAREHOUSE_FORM);
     setEditingWarehouseId(null);
+    setShowWarehouseForm(false);
   }
 
   function handleWarehouseFormChange({ target: { name, value } }) {
@@ -323,7 +319,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const {
     warehouses,
     warehouseProducts,
-    products,
     inventories,
     salesOrders,
     purchaseOrders,
@@ -382,29 +377,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     });
   }, [inventories, warehouseProducts, warehouses]);
 
-  const selectedWarehouse = useMemo(
-    () =>
-      warehouseInsights.find((warehouse) => warehouse.id === selectedWarehouseId) ||
-      warehouseInsights[0] ||
-      null,
-    [selectedWarehouseId, warehouseInsights]
-  );
-
-  const selectedWarehouseProducts = useMemo(
-    () => selectedWarehouse?.products || [],
-    [selectedWarehouse]
-  );
-
-  const availableProductsForWarehouse = useMemo(() => {
-    const selectedWarehouseProductIds = new Set(
-      selectedWarehouseProducts.map((product) => product.id ?? product.productId)
-    );
-
-    return products.filter(
-      (product) => !selectedWarehouseProductIds.has(product.id ?? product.productId)
-    );
-  }, [products, selectedWarehouseProducts]);
-
   const lowStockItems = useMemo(
     () =>
       inventories
@@ -453,38 +425,151 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       .slice(0, 7);
   }, [goodsReceipts, purchaseOrders, salesOrders]);
 
+  const filteredWarehouseInsights = useMemo(
+    () =>
+      warehouseInsights.filter((warehouse) =>
+        matchesSearch(warehouseSearchTerm, [warehouse.id, warehouse.name, warehouse.address])
+      ),
+    [warehouseInsights, warehouseSearchTerm]
+  );
+
+  const filteredInventories = useMemo(
+    () =>
+      inventories.filter((inventory) =>
+        matchesSearch(inventorySearchTerm, [
+          inventory.productName,
+          inventory.productSku,
+          inventory.warehouseName,
+          inventory.status,
+        ])
+      ),
+    [inventories, inventorySearchTerm]
+  );
+
   const summaryCards = useMemo(
     () => [
       {
         label: "Warehouses",
         value: warehouses.length,
-        helper: "Operational storage sites",
+        helper: "Active locations",
       },
       {
         label: "Units on hand",
         value: inventorySummary.totalQuantityOnHand,
-        helper: "Tracked across all warehouses",
+        helper: "Across all warehouses",
       },
       {
         label: "Low-stock alerts",
         value: inventorySummary.lowStockCount,
-        helper: "Need manager attention",
-      },
-      {
-        label: "Sales orders",
-        value: salesOrders.length,
-        helper: "Recent outbound records",
+        helper: "Need attention",
       },
     ],
     [
       inventorySummary.lowStockCount,
       inventorySummary.totalQuantityOnHand,
-      salesOrders.length,
       warehouses.length,
     ]
   );
 
   const activeCopy = SECTION_COPY[activeSection] || SECTION_COPY.overview;
+
+  const salesOrderRows = useMemo(
+    () =>
+      salesOrders.map((order) => ({
+        id: order.id,
+        code: order.orderCode || `Sales order #${order.id}`,
+        partner: order.customerName || "Customer not assigned",
+        warehouse:
+          order.orderDetails?.[0]?.warehouseName ||
+          order.orderDetails?.[0]?.warehouseId ||
+          "Mixed",
+        totalItems: order.totalItems || 0,
+        status: formatStatus(order.status),
+        updatedAt: order.updatedAt || order.createdAt || order.orderDate,
+      })),
+    [salesOrders]
+  );
+
+  const purchaseOrderRows = useMemo(
+    () =>
+      purchaseOrders.map((order) => ({
+        id: order.id,
+        code: order.orderCode || `Purchase order #${order.id}`,
+        partner: order.supplierName || "Supplier not assigned",
+        warehouse: order.warehouseName || "Unassigned",
+        totalItems: order.totalItems || 0,
+        status: formatStatus(order.status),
+        updatedAt: order.updatedAt || order.createdAt || order.orderDate,
+      })),
+    [purchaseOrders]
+  );
+
+  const goodsReceiptRows = useMemo(
+    () =>
+      goodsReceipts.map((receipt) => ({
+        id: receipt.stockInwardId,
+        code: receipt.inwardCode || `Receipt #${receipt.stockInwardId}`,
+        partner: receipt.supplierName || "Supplier not assigned",
+        warehouse: receipt.warehouseName || "Unassigned",
+        totalItems: receipt.totalReceivedQuantity || receipt.totalItems || 0,
+        status: formatStatus(receipt.status),
+        updatedAt: receipt.createdAt || receipt.inwardDate,
+      })),
+    [goodsReceipts]
+  );
+
+  const filteredSalesOrderRows = useMemo(
+    () =>
+      salesOrderRows.filter((row) =>
+        matchesSearch(salesOrderSearchTerm, [
+          row.code,
+          row.partner,
+          row.warehouse,
+          row.status,
+        ])
+      ),
+    [salesOrderRows, salesOrderSearchTerm]
+  );
+
+  const filteredPurchaseOrderRows = useMemo(
+    () =>
+      purchaseOrderRows.filter((row) =>
+        matchesSearch(purchaseOrderSearchTerm, [
+          row.code,
+          row.partner,
+          row.warehouse,
+          row.status,
+        ])
+      ),
+    [purchaseOrderRows, purchaseOrderSearchTerm]
+  );
+
+  const filteredGoodsReceiptRows = useMemo(
+    () =>
+      goodsReceiptRows.filter((row) =>
+        matchesSearch(goodsReceiptSearchTerm, [
+          row.code,
+          row.partner,
+          row.warehouse,
+          row.status,
+        ])
+      ),
+    [goodsReceiptRows, goodsReceiptSearchTerm]
+  );
+
+  function openCreateWarehouseForm() {
+    setWarehouseForm(EMPTY_WAREHOUSE_FORM);
+    setEditingWarehouseId(null);
+    setShowWarehouseForm(true);
+  }
+
+  function openWarehouseProducts(warehouse) {
+    const params = new URLSearchParams({
+      warehouseId: String(warehouse.id),
+      warehouseName: warehouse.name || "Warehouse",
+    });
+    navigate(`${PATHS.product}?${params.toString()}`);
+  }
 
   function renderOverview() {
     return (
@@ -499,109 +584,53 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           ))}
         </section>
 
-        <section className="manager-two-column-grid">
-          <article className="manager-panel">
-            <div className="manager-panel-heading">
-              <div>
-                <span className="manager-panel-label">Warehouses</span>
-                <h2>Quick warehouse snapshot</h2>
-              </div>
+        <article className="manager-panel">
+          <div className="manager-panel-heading">
+            <div>
+              <span className="manager-panel-label">Priority items</span>
+              <h2>What needs attention</h2>
+            </div>
+            <div className="manager-form-actions">
               <button
                 type="button"
                 className="ghost-button"
                 onClick={() => navigate(PATHS.dashboardWarehouses)}
               >
-                Open warehouses
+                Warehouses
               </button>
-            </div>
-
-            {warehouseInsights.length ? (
-              <div className="manager-list">
-                {warehouseInsights.slice(0, 4).map((warehouse) => (
-                  <button
-                    key={warehouse.id}
-                    type="button"
-                    className="manager-list-row manager-list-row-button"
-                    onClick={() => {
-                      setSelectedWarehouseId(warehouse.id);
-                      navigate(PATHS.dashboardWarehouses);
-                    }}
-                  >
-                    <div>
-                      <strong>{warehouse.name}</strong>
-                      <p>
-                        {warehouse.address}
-                      </p>
-                    </div>
-                    <div className="manager-row-metrics">
-                      <span className="manager-status-badge">{warehouse.skuCount} SKUs</span>
-                      <strong>{formatCompactNumber(warehouse.quantityOnHand)}</strong>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <TableEmptyState
-                title="No warehouses yet"
-                description="Create your first warehouse to start organizing products and stock."
-              />
-            )}
-          </article>
-
-          <article className="manager-panel">
-            <div className="manager-panel-heading">
-              <div>
-                <span className="manager-panel-label">Low stock</span>
-                <h2>Products that need attention</h2>
-              </div>
               <button
                 type="button"
                 className="ghost-button"
                 onClick={() => navigate(PATHS.dashboardInventory)}
               >
-                View inventory
+                Inventory
               </button>
-            </div>
-
-            {lowStockItems.length ? (
-              <div className="manager-list">
-                {lowStockItems.slice(0, 5).map((inventory) => (
-                  <div key={inventory.inventoryId} className="manager-list-row">
-                    <div>
-                      <strong>{inventory.productName || "Unnamed product"}</strong>
-                      <p>
-                        {inventory.productSku || "No SKU"} - {inventory.warehouseName || "No warehouse"}
-                      </p>
-                    </div>
-                    <div className="manager-row-metrics">
-                      <span className="manager-status-badge manager-status-badge-warning">
-                        {formatStatus(inventory.status)}
-                      </span>
-                      <strong>{inventory.quantityOnHand || 0}</strong>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <TableEmptyState
-                title="Inventory is stable"
-                description="No products are currently at or below their low-stock threshold."
-              />
-            )}
-          </article>
-        </section>
-
-        <article className="manager-panel">
-          <div className="manager-panel-heading">
-            <div>
-              <span className="manager-panel-label">Recent activity</span>
-              <h2>Latest operational events</h2>
             </div>
           </div>
 
-          {recentActivity.length ? (
-            <div className="manager-timeline manager-timeline-grid">
-              {recentActivity.slice(0, 6).map((item) => (
+          {lowStockItems.length ? (
+            <div className="manager-list">
+              {lowStockItems.slice(0, 6).map((inventory) => (
+                <div key={inventory.inventoryId} className="manager-list-row">
+                  <div>
+                    <strong>{inventory.productName || "Unnamed product"}</strong>
+                    <p>
+                      {inventory.productSku || "No SKU"} -{" "}
+                      {inventory.warehouseName || "No warehouse"}
+                    </p>
+                  </div>
+                  <div className="manager-row-metrics">
+                    <span className="manager-status-badge manager-status-badge-warning">
+                      {formatStatus(inventory.status)}
+                    </span>
+                    <strong>{inventory.quantityOnHand || 0}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentActivity.length ? (
+            <div className="manager-timeline">
+              {recentActivity.slice(0, 4).map((item) => (
                 <div key={item.id} className="manager-timeline-item">
                   <span className="manager-timeline-dot" />
                   <div>
@@ -618,8 +647,8 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             </div>
           ) : (
             <TableEmptyState
-              title="No recent activity"
-              description="Recent sales, purchase orders, and receipt updates will appear here."
+              title="No urgent updates"
+              description="Low-stock products or recent operations will appear here."
             />
           )}
         </article>
@@ -629,66 +658,44 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
 
   function renderWarehouses() {
     return (
-      <section className="manager-warehouse-layout">
-        <article className="manager-panel">
-          <div className="manager-panel-heading">
-            <div>
-              <span className="manager-panel-label">Warehouse list</span>
-              <h2>Warehouses in the network</h2>
-            </div>
+      <section className="manager-panel">
+        <div className="manager-panel-heading">
+          <div>
+            <span className="manager-panel-label">Warehouse directory</span>
+            <h2>Warehouse list</h2>
           </div>
+        </div>
 
-          {warehouseInsights.length ? (
-            <div className="manager-warehouse-list">
-              {warehouseInsights.map((warehouse) => (
-                <button
-                  key={warehouse.id}
-                  type="button"
-                  className={
-                    warehouse.id === selectedWarehouse?.id
-                      ? "manager-warehouse-card active"
-                      : "manager-warehouse-card"
-                  }
-                  onClick={() => setSelectedWarehouseId(warehouse.id)}
-                >
-                  <div className="manager-warehouse-card-top">
-                    <div>
-                      <span className="manager-panel-label">Warehouse</span>
-                      <strong>{warehouse.name}</strong>
-                    </div>
-                    <span className="manager-status-badge">{warehouse.skuCount} SKUs</span>
-                  </div>
-                  <p>{warehouse.address}</p>
-                  <div className="manager-highlight-grid">
-                    <div>
-                      <span>Units on hand</span>
-                      <strong>{formatCompactNumber(warehouse.quantityOnHand)}</strong>
-                    </div>
-                    <div>
-                      <span>Low-stock alerts</span>
-                      <strong>{warehouse.lowStockCount}</strong>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <TableEmptyState
-              title="No warehouses yet"
-              description="Warehouse locations will appear here once they are available from the API."
+        <div className="manager-toolbar">
+          <form
+            className="manager-search-shell"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <input
+              className="manager-search-input"
+              value={warehouseSearchTerm}
+              onChange={(event) => setWarehouseSearchTerm(event.target.value)}
+              placeholder="Search warehouses"
             />
-          )}
-        </article>
+            <button type="submit" className="ghost-button">
+              Search
+            </button>
+          </form>
 
-        <article className="manager-panel">
-          <div className="manager-panel-heading">
-            <div>
-              <span className="manager-panel-label">Warehouse editor</span>
-              <h2>{editingWarehouseId ? "Edit selected warehouse" : "Create new warehouse"}</h2>
+          <button type="button" onClick={openCreateWarehouseForm}>
+            Add Warehouse
+          </button>
+        </div>
+
+        {showWarehouseForm ? (
+          <form className="manager-inline-form manager-inline-form-card" onSubmit={handleSaveWarehouse}>
+            <div className="manager-panel-heading">
+              <div>
+                <span className="manager-panel-label">Warehouse form</span>
+                <h2>{editingWarehouseId ? "Edit warehouse" : "Create warehouse"}</h2>
+              </div>
             </div>
-          </div>
 
-          <form className="manager-inline-form" onSubmit={handleSaveWarehouse}>
             <label>
               Warehouse name
               <input
@@ -715,148 +722,73 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                     ? "Update Warehouse"
                     : "Create Warehouse"}
               </button>
+              <button type="button" className="ghost-button" onClick={resetWarehouseForm}>
+                Cancel
+              </button>
               {editingWarehouseId ? (
-                <button type="button" className="ghost-button" onClick={resetWarehouseForm}>
-                  Cancel
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={() => handleDeleteWarehouse(editingWarehouseId)}
+                >
+                  Delete Warehouse
                 </button>
               ) : null}
             </div>
           </form>
+        ) : null}
 
-          {selectedWarehouse ? (
-            <>
-              <div className="manager-panel-heading">
-                <div>
-                  <span className="manager-panel-label">Selected warehouse</span>
-                  <h2>{selectedWarehouse.name}</h2>
-                </div>
-                <div className="manager-form-actions">
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() => handleEditWarehouse(selectedWarehouse)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => handleDeleteWarehouse(selectedWarehouse.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <p className="manager-panel-description">{selectedWarehouse.address}</p>
-
-              <div className="manager-summary-strip">
-                <div>
-                  <span>Tracked products</span>
-                  <strong>{selectedWarehouseProducts.length}</strong>
-                </div>
-                <div>
-                  <span>Units on hand</span>
-                  <strong>{formatCompactNumber(selectedWarehouse.quantityOnHand)}</strong>
-                </div>
-                <div>
-                  <span>Low-stock alerts</span>
-                  <strong>{selectedWarehouse.lowStockCount}</strong>
-                </div>
-              </div>
-
-              <form className="manager-inline-form" onSubmit={handleAssignProductToWarehouse}>
-                <label>
-                  Add product to warehouse
-                  <select
-                    value={warehouseProductId}
-                    onChange={(event) => setWarehouseProductId(event.target.value)}
-                  >
-                    <option value="">Select a product</option>
-                    {availableProductsForWarehouse.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} ({product.sku || product.su || "No SKU"})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Quantity
-                  <input
-                    type="number"
-                    min="1"
-                    value={warehouseQuantity}
-                    onChange={(event) => setWarehouseQuantity(event.target.value)}
-                  />
-                </label>
-                <div className="manager-form-actions">
-                  <button type="submit" disabled={isAssigningProduct}>
-                    {isAssigningProduct ? "Adding..." : "Add Product"}
-                  </button>
-                </div>
-              </form>
-
-              {selectedWarehouseProducts.length ? (
-                <div className="manager-table-shell">
-                  <table className="manager-table">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>SKU</th>
-                        <th>Stock</th>
-                        <th>Image</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedWarehouseProducts.map((product) => (
-                        <tr key={product.id ?? product.productId}>
-                          <td>
-                            <strong>{product.name || "Unnamed product"}</strong>
-                          </td>
-                          <td>{product.sku || product.su || "No SKU"}</td>
-                          <td>{product.stockQuantity || 0}</td>
-                          <td>
-                            {product.imageUrl ? (
-                              <img
-                                className="manager-product-thumb"
-                                src={product.imageUrl}
-                                alt={product.name}
-                              />
-                            ) : (
-                              <span className="manager-muted">No image</span>
-                            )}
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="ghost-button"
-                              onClick={() =>
-                                handleRemoveProductFromWarehouse(product.id ?? product.productId)
-                              }
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <TableEmptyState
-                  title="No products in this warehouse"
-                  description="Use the form above to assign catalog products to the selected warehouse."
-                />
-              )}
-            </>
-          ) : (
-            <TableEmptyState
-              title="Select a warehouse"
-              description="Choose a warehouse on the left to view its products and manage it."
-            />
-          )}
-        </article>
+        {filteredWarehouseInsights.length ? (
+          <div className="manager-table-shell">
+            <table className="manager-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Warehouse Name</th>
+                  <th>Address</th>
+                  <th>Products</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredWarehouseInsights.map((warehouse) => (
+                  <tr key={warehouse.id}>
+                    <td>{warehouse.id}</td>
+                    <td>
+                      <strong>{warehouse.name}</strong>
+                      <span>{warehouse.lowStockCount} low-stock alerts</span>
+                    </td>
+                    <td>{warehouse.address}</td>
+                    <td>{warehouse.products.length}</td>
+                    <td>
+                      <div className="manager-table-actions">
+                        <button
+                          type="button"
+                          className="warn-button"
+                          onClick={() => handleEditWarehouse(warehouse)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="info-button"
+                          onClick={() => openWarehouseProducts(warehouse)}
+                        >
+                          Products
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <TableEmptyState
+            title="No warehouses found"
+            description="Try another search term or create a new warehouse."
+          />
+        )}
       </section>
     );
   }
@@ -869,6 +801,15 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             <span className="manager-panel-label">Inventory watchlist</span>
             <h2>Current stock positions</h2>
           </div>
+        </div>
+
+        <div className="manager-toolbar">
+          <input
+            className="manager-search-input manager-search-input-wide"
+            value={inventorySearchTerm}
+            onChange={(event) => setInventorySearchTerm(event.target.value)}
+            placeholder="Search product, SKU, warehouse, or status"
+          />
         </div>
 
         <div className="manager-summary-strip">
@@ -886,7 +827,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           </div>
         </div>
 
-        {inventories.length ? (
+        {filteredInventories.length ? (
           <div className="manager-table-shell">
             <table className="manager-table">
               <thead>
@@ -899,7 +840,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                 </tr>
               </thead>
               <tbody>
-                {inventories.slice(0, 10).map((inventory) => (
+                {filteredInventories.slice(0, 12).map((inventory) => (
                   <tr key={inventory.inventoryId}>
                     <td>
                       <strong>{inventory.productName || "Unnamed product"}</strong>
@@ -920,15 +861,23 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           </div>
         ) : (
           <TableEmptyState
-            title="Inventory is unavailable"
-            description="No inventory rows were returned for the current warehouse manager account."
+            title="No inventory matches"
+            description="Try another search term to find a product, SKU, warehouse, or status."
           />
         )}
       </section>
     );
   }
 
-  function renderOrders(title, rows, emptyTitle, emptyDescription, type) {
+  function renderOrders(
+    title,
+    rows,
+    emptyTitle,
+    emptyDescription,
+    type,
+    searchTerm,
+    setSearchTerm
+  ) {
     return (
       <section className="manager-panel">
         <div className="manager-panel-heading">
@@ -936,6 +885,15 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             <span className="manager-panel-label">{type}</span>
             <h2>{title}</h2>
           </div>
+        </div>
+
+        <div className="manager-toolbar">
+          <input
+            className="manager-search-input manager-search-input-wide"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder={`Search ${title.toLowerCase()}`}
+          />
         </div>
 
         {rows.length ? (
@@ -976,37 +934,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     );
   }
 
-  const salesOrderRows = salesOrders.slice(0, 10).map((order) => ({
-    id: order.id,
-    code: order.orderCode || `Sales order #${order.id}`,
-    partner: order.customerName || "Customer not assigned",
-    warehouse:
-      order.orderDetails?.[0]?.warehouseName || order.orderDetails?.[0]?.warehouseId || "Mixed",
-    totalItems: order.totalItems || 0,
-    status: formatStatus(order.status),
-    updatedAt: order.updatedAt || order.createdAt || order.orderDate,
-  }));
-
-  const purchaseOrderRows = purchaseOrders.slice(0, 10).map((order) => ({
-    id: order.id,
-    code: order.orderCode || `Purchase order #${order.id}`,
-    partner: order.supplierName || "Supplier not assigned",
-    warehouse: order.warehouseName || "Unassigned",
-    totalItems: order.totalItems || 0,
-    status: formatStatus(order.status),
-    updatedAt: order.updatedAt || order.createdAt || order.orderDate,
-  }));
-
-  const goodsReceiptRows = goodsReceipts.slice(0, 10).map((receipt) => ({
-    id: receipt.stockInwardId,
-    code: receipt.inwardCode || `Receipt #${receipt.stockInwardId}`,
-    partner: receipt.supplierName || "Supplier not assigned",
-    warehouse: receipt.warehouseName || "Unassigned",
-    totalItems: receipt.totalReceivedQuantity || receipt.totalItems || 0,
-    status: formatStatus(receipt.status),
-    updatedAt: receipt.createdAt || receipt.inwardDate,
-  }));
-
   async function handleSaveWarehouse(event) {
     event.preventDefault();
 
@@ -1033,6 +960,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       }
 
       resetWarehouseForm();
+      setShowWarehouseForm(false);
       await loadDashboardData();
     } catch (error) {
       showMessage(error.response?.data?.message || `Error saving warehouse: ${error}`);
@@ -1043,11 +971,11 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
 
   function handleEditWarehouse(warehouse) {
     setEditingWarehouseId(warehouse.id);
-    setSelectedWarehouseId(warehouse.id);
     setWarehouseForm({
       name: warehouse.name || "",
       address: warehouse.address || "",
     });
+    setShowWarehouseForm(true);
   }
 
   async function handleDeleteWarehouse(warehouseId) {
@@ -1067,55 +995,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     }
   }
 
-  async function handleAssignProductToWarehouse(event) {
-    event.preventDefault();
-
-    if (!selectedWarehouse?.id || !warehouseProductId) {
-      showMessage("Select a warehouse and a product first.");
-      return;
-    }
-
-    setIsAssigningProduct(true);
-
-    try {
-      await ApiService.addProductToWarehouse(
-        selectedWarehouse.id,
-        Number(warehouseProductId),
-        Number(warehouseQuantity || 0)
-      );
-      showMessage("Product added to warehouse successfully.");
-      setWarehouseProductId("");
-      setWarehouseQuantity("1");
-      await loadDashboardData();
-    } catch (error) {
-      showMessage(
-        error.response?.data?.message || `Error assigning product: ${error}`
-      );
-    } finally {
-      setIsAssigningProduct(false);
-    }
-  }
-
-  async function handleRemoveProductFromWarehouse(productId) {
-    if (!selectedWarehouse?.id) {
-      return;
-    }
-
-    if (!window.confirm("Remove this product from the warehouse?")) {
-      return;
-    }
-
-    try {
-      await ApiService.removeProductFromWarehouse(selectedWarehouse.id, productId);
-      showMessage("Product removed from warehouse successfully.");
-      await loadDashboardData();
-    } catch (error) {
-      showMessage(
-        error.response?.data?.message || `Error removing product: ${error}`
-      );
-    }
-  }
-
   function renderActiveSection() {
     if (activeSection === "warehouses") {
       return renderWarehouses();
@@ -1128,30 +1007,36 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     if (activeSection === "salesOrders") {
       return renderOrders(
         "Recent sales orders",
-        salesOrderRows,
+        filteredSalesOrderRows,
         "No sales orders found",
-        "Sales orders will show up here once outbound transactions are created.",
-        "Outbound"
+        "No sales orders match the current search.",
+        "Outbound",
+        salesOrderSearchTerm,
+        setSalesOrderSearchTerm
       );
     }
 
     if (activeSection === "purchaseOrders") {
       return renderOrders(
         "Recent purchase orders",
-        purchaseOrderRows,
+        filteredPurchaseOrderRows,
         "No purchase orders found",
-        "Purchase orders will show up here once procurement begins creating orders.",
-        "Procurement"
+        "No purchase orders match the current search.",
+        "Procurement",
+        purchaseOrderSearchTerm,
+        setPurchaseOrderSearchTerm
       );
     }
 
     if (activeSection === "goodsReceipts") {
       return renderOrders(
         "Recent goods receipts",
-        goodsReceiptRows,
+        filteredGoodsReceiptRows,
         "No goods receipts found",
-        "Goods receipts will appear here after stock inward documents are issued.",
-        "Inbound"
+        "No goods receipts match the current search.",
+        "Inbound",
+        goodsReceiptSearchTerm,
+        setGoodsReceiptSearchTerm
       );
     }
 

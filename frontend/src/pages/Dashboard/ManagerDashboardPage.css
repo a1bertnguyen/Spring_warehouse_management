@@ -134,6 +134,14 @@
   padding: 26px;
 }
 
+.manager-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
 .manager-panel-emphasis {
   background: linear-gradient(180deg, #ffffff 0%, #f5fcfb 100%);
 }
@@ -190,6 +198,13 @@
   gap: 14px;
 }
 
+.manager-inline-form-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 18px;
+}
+
 .manager-inline-form label {
   color: #334155;
   display: grid;
@@ -219,6 +234,27 @@
   gap: 12px;
 }
 
+.manager-search-shell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.manager-search-input {
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  min-height: 44px;
+  min-width: 280px;
+  padding: 0 14px;
+}
+
+.manager-search-input-wide {
+  width: min(100%, 480px);
+}
+
 .manager-form-actions button,
 .manager-panel-heading button,
 .manager-table button {
@@ -243,6 +279,24 @@
 .ghost-button:hover {
   border-color: #94a3b8 !important;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.warn-button {
+  background: #fbbf24;
+  color: #1f2937;
+}
+
+.warn-button:hover {
+  background: #f59e0b;
+}
+
+.info-button {
+  background: #22c1dc;
+  color: #ffffff;
+}
+
+.info-button:hover {
+  background: #0891b2;
 }
 
 .danger-button {
@@ -471,6 +525,11 @@
   margin-top: 4px;
 }
 
+.manager-table-actions {
+  display: grid;
+  gap: 10px;
+}
+
 .manager-empty-state {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
@@ -534,6 +593,18 @@
   .manager-warehouse-card-top {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .manager-toolbar,
+  .manager-search-shell {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manager-search-input,
+  .manager-search-input-wide {
+    min-width: 100%;
+    width: 100%;
   }
 
   .manager-row-metrics,

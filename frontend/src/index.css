@@ -334,10 +334,49 @@ button[type="submit"]:hover {
   padding: 20px;
 }
 
-.category-header {
-  margin-left: 12px;
-  display: flex;
+.page-subtitle {
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.page-toolbar {
   align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.page-search-input {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 15px;
+  min-height: 44px;
+  min-width: 280px;
+  padding: 0 14px;
+}
+
+.secondary-page-button {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1f2937;
+}
+
+.page-empty-state {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  color: #475569;
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 24px;
+}
+
+.category-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
@@ -345,16 +384,31 @@ button[type="submit"]:hover {
   color: #008080;
 }
 
+.category-header-stack {
+  margin-left: 12px;
+}
+
+.category-entry-card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  margin: 0 12px;
+  padding: 20px;
+}
+
 .add-cat {
-  margin: 0 auto;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .category-header input {
   padding: 10px;
-  margin-right: 10px;
   width: 300px;
   border: 1px solid #ddd;
   font-size: 16px;
+  border-radius: 10px;
 }
 
 .category-header button {
@@ -563,6 +617,11 @@ button[type="submit"]:hover {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+}
+
+.product-header-stack {
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .product-header h1 {
@@ -1458,6 +1517,10 @@ button:hover {
     margin-left: 250px;
   }
 
+  .product-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   .profile-grid {
     grid-template-columns: 1fr;
   }
@@ -1467,6 +1530,24 @@ button:hover {
   .main-content {
     margin-left: 250px;
     padding: 20px 16px;
+  }
+
+  .category-header,
+  .product-header,
+  .page-toolbar,
+  .add-cat {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-search-input,
+  .category-header input {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .product-list {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .profile-hero,
