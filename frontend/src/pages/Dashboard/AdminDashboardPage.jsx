@@ -5,12 +5,9 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -24,17 +21,12 @@ import {
   buildLoginActivityView,
   buildMonthlyLoginSeries,
   buildMonthlyTransactionSeries,
-  buildOverviewMetrics,
-  buildRecentLogins,
   buildTransactionDailyData,
-  buildUserRoleDistribution,
   buildUsersView,
   formatUserRole,
   resolveUserActive,
 } from "./adminDashboardUtils";
 import "./AdminDashboardPage.css";
-
-const CHART_COLORS = ["#0f766e", "#14b8a6", "#0f172a", "#fb7185", "#f59e0b"];
 
 const EMPTY_FORM = {
   name: "",
@@ -56,7 +48,7 @@ const SECTION_CONFIG = {
   overview: {
     path: PATHS.dashboard,
     label: "Statistics",
-    hint: "KPIs, charts, monthly revenue, and recent login activity.",
+    hint: "Transactions per day and revenue trend.",
   },
   users: {
     path: PATHS.users,
@@ -348,29 +340,14 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
     }
   }
 
-  const metrics = useMemo(
-    () => buildOverviewMetrics(users, transactions, activityLogs, selectedMonth, selectedYear),
-    [activityLogs, selectedMonth, selectedYear, transactions, users]
-  );
-
   const transactionSeries = useMemo(
     () => buildTransactionDailyData(transactions, selectedMonth, selectedYear),
     [selectedMonth, selectedYear, transactions]
   );
 
-  const roleDistribution = useMemo(
-    () => buildUserRoleDistribution(users),
-    [users]
-  );
-
   const monthlyTransactions = useMemo(
     () => buildMonthlyTransactionSeries(transactions),
     [transactions]
-  );
-
-  const recentLogins = useMemo(
-    () => buildRecentLogins(activityLogs, 5),
-    [activityLogs]
   );
 
   const monthlyLogins = useMemo(
@@ -445,21 +422,10 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
       <div className="admin-dashboard-page">
         <section className="admin-banner">
           <div className="admin-banner-copy">
-            <div className="admin-banner-meta">
-              <span className="admin-banner-chip">Admin workspace</span>
-              <span className="admin-banner-chip">Three admin features only</span>
-              <span className="admin-banner-chip">Search + sort + pagination</span>
-            </div>
             <div>
               <h1>{activeSectionConfig.label}</h1>
               <p>{activeSectionConfig.hint}</p>
             </div>
-          </div>
-
-          <div className="admin-banner-focus">
-            <span>Current section</span>
-            <strong>{activeSectionConfig.label}</strong>
-            <p>Navigation now lives in the left sidebar to match your reference.</p>
           </div>
         </section>
 
@@ -473,207 +439,115 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
           <>
             {selectedSection === "overview" && (
               <section className="admin-section">
-                <div className="admin-kpi-grid">
-                  <article className="admin-kpi-card">
-                    <span>Total Users</span>
-                    <strong>{metrics.totalUsers}</strong>
-                    <p>Every account registered in the system.</p>
-                  </article>
-
-                  <article className="admin-kpi-card">
-                    <span>Active Users</span>
-                    <strong>{metrics.activeUsers}</strong>
-                    <p>Accounts that can still access the system right now.</p>
-                  </article>
-
-                  <article className="admin-kpi-card">
-                    <span>Logins Today</span>
-                    <strong>{metrics.loginsToday}</strong>
-                    <p>Successful login events recorded in today&apos;s activity log.</p>
-                  </article>
-
-                  <article className="admin-kpi-card">
-                    <span>Month Transactions</span>
-                    <strong>{metrics.monthlyTransactions}</strong>
-                    <p>{formatCurrency(metrics.monthlyRevenue)} processed this month.</p>
-                  </article>
-                </div>
-
-                <div className="admin-chart-grid">
-                  <article className="admin-visual-card">
-                    <div className="admin-toolbar">
-                      <div>
-                        <h2>{chartMeta.title}</h2>
-                        <p>{chartMeta.description}</p>
-                      </div>
-
-                      <div className="admin-toolbar-group">
-                        <button
-                          type="button"
-                          className={`metric-toggle ${selectedMetric === "count" ? "active" : ""}`}
-                          onClick={() => setSelectedMetric("count")}
-                        >
-                          Count
-                        </button>
-                        <button
-                          type="button"
-                          className={`metric-toggle ${selectedMetric === "quantity" ? "active" : ""}`}
-                          onClick={() => setSelectedMetric("quantity")}
-                        >
-                          Quantity
-                        </button>
-                        <button
-                          type="button"
-                          className={`metric-toggle ${selectedMetric === "amount" ? "active" : ""}`}
-                          onClick={() => setSelectedMetric("amount")}
-                        >
-                          Amount
-                        </button>
-                        <select
-                          aria-label="Select month"
-                          value={selectedMonth}
-                          onChange={(event) => setSelectedMonth(parseInt(event.target.value, 10))}
-                        >
-                          {Array.from({ length: 12 }, (_, index) => (
-                            <option key={index + 1} value={index + 1}>
-                              {new Date(0, index).toLocaleString("default", { month: "long" })}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          aria-label="Select year"
-                          value={selectedYear}
-                          onChange={(event) => setSelectedYear(parseInt(event.target.value, 10))}
-                        >
-                          {Array.from({ length: 5 }, (_, index) => {
-                            const year = new Date().getFullYear() - index;
-                            return (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
+                <article className="admin-visual-card">
+                  <div className="admin-toolbar">
+                    <div>
+                      <h2>{chartMeta.title}</h2>
+                      <p>{chartMeta.description}</p>
                     </div>
 
-                    <ResponsiveContainer width="100%" height={320}>
-                      <LineChart data={transactionSeries}>
-                        <CartesianGrid stroke="#dbe6eb" strokeDasharray="3 3" />
-                        <XAxis dataKey="day" tick={{ fill: "#64748b" }} />
-                        <YAxis tick={{ fill: "#64748b" }} />
-                        <Tooltip
-                          formatter={(value) => chartMeta.formatter(value)}
-                          labelFormatter={(label) => `Day ${label}`}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey={selectedMetric}
-                          stroke="#0f766e"
-                          strokeWidth={3}
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </article>
-
-                  <article className="admin-visual-card">
-                    <div className="admin-card-header">
-                      <div>
-                        <h3>User Role Distribution</h3>
-                        <p>See how accounts are spread across each operational role.</p>
-                      </div>
-                    </div>
-
-                    <ResponsiveContainer width="100%" height={320}>
-                      <PieChart>
-                        <Pie
-                          data={roleDistribution}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={110}
-                          innerRadius={58}
-                          paddingAngle={3}
-                        >
-                          {roleDistribution.map((entry, index) => (
-                            <Cell
-                              key={entry.name}
-                              fill={CHART_COLORS[index % CHART_COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </article>
-                </div>
-
-                <div className="admin-summary-grid">
-                  <article className="admin-visual-card">
-                    <div className="admin-card-header">
-                      <div>
-                        <h3>Revenue Trend</h3>
-                        <p>Last six months of transaction value across the warehouse flow.</p>
-                      </div>
-                    </div>
-
-                    <ResponsiveContainer width="100%" height={280}>
-                      <AreaChart data={monthlyTransactions}>
-                        <defs>
-                          <linearGradient id="tealGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.85} />
-                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0.08} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid stroke="#dbe6eb" strokeDasharray="3 3" />
-                        <XAxis dataKey="month" tick={{ fill: "#64748b" }} />
-                        <YAxis tick={{ fill: "#64748b" }} />
-                        <Tooltip formatter={(value) => formatCurrency(value)} />
-                        <Area
-                          type="monotone"
-                          dataKey="amount"
-                          stroke="#0f766e"
-                          fill="url(#tealGradient)"
-                          strokeWidth={3}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </article>
-
-                  <article className="admin-visual-card">
-                    <div className="admin-card-header">
-                      <div>
-                        <h3>Recent Login Activity</h3>
-                        <p>Latest successful login events recorded by the auth service.</p>
-                      </div>
-                    </div>
-
-                    {recentLogins.length ? (
-                      <div className="admin-list">
-                        {recentLogins.map((activity) => (
-                          <div className="admin-list-row" key={activity.id}>
-                            <div>
-                              <h4>{activity.userName}</h4>
-                              <p>{activity.userEmail}</p>
-                            </div>
-
-                            <div>
-                              <span className="admin-status-pill login">LOGIN</span>
-                              <p>{formatDateTime(activity.createdAt)}</p>
-                            </div>
-                          </div>
+                    <div className="admin-toolbar-group">
+                      <button
+                        type="button"
+                        className={`metric-toggle ${selectedMetric === "count" ? "active" : ""}`}
+                        onClick={() => setSelectedMetric("count")}
+                      >
+                        Count
+                      </button>
+                      <button
+                        type="button"
+                        className={`metric-toggle ${selectedMetric === "quantity" ? "active" : ""}`}
+                        onClick={() => setSelectedMetric("quantity")}
+                      >
+                        Quantity
+                      </button>
+                      <button
+                        type="button"
+                        className={`metric-toggle ${selectedMetric === "amount" ? "active" : ""}`}
+                        onClick={() => setSelectedMetric("amount")}
+                      >
+                        Amount
+                      </button>
+                      <select
+                        aria-label="Select month"
+                        value={selectedMonth}
+                        onChange={(event) => setSelectedMonth(parseInt(event.target.value, 10))}
+                      >
+                        {Array.from({ length: 12 }, (_, index) => (
+                          <option key={index + 1} value={index + 1}>
+                            {new Date(0, index).toLocaleString("default", { month: "long" })}
+                          </option>
                         ))}
-                      </div>
-                    ) : (
-                      <p className="admin-empty-state">No login activity has been recorded yet.</p>
-                    )}
-                  </article>
-                </div>
+                      </select>
+                      <select
+                        aria-label="Select year"
+                        value={selectedYear}
+                        onChange={(event) => setSelectedYear(parseInt(event.target.value, 10))}
+                      >
+                        {Array.from({ length: 5 }, (_, index) => {
+                          const year = new Date().getFullYear() - index;
+                          return (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={320}>
+                    <LineChart data={transactionSeries}>
+                      <CartesianGrid stroke="#dbe6eb" strokeDasharray="3 3" />
+                      <XAxis dataKey="day" tick={{ fill: "#64748b" }} />
+                      <YAxis tick={{ fill: "#64748b" }} />
+                      <Tooltip
+                        formatter={(value) => chartMeta.formatter(value)}
+                        labelFormatter={(label) => `Day ${label}`}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey={selectedMetric}
+                        stroke="#0f766e"
+                        strokeWidth={3}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </article>
+
+                <article className="admin-visual-card">
+                  <div className="admin-card-header">
+                    <div>
+                      <h3>Revenue Trend</h3>
+                      <p>Last six months of transaction value across the warehouse flow.</p>
+                    </div>
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={320}>
+                    <AreaChart data={monthlyTransactions}>
+                      <defs>
+                        <linearGradient id="tealGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.85} />
+                          <stop offset="95%" stopColor="#14b8a6" stopOpacity={0.08} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="#dbe6eb" strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tick={{ fill: "#64748b" }} />
+                      <YAxis tick={{ fill: "#64748b" }} />
+                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="#0f766e"
+                        fill="url(#tealGradient)"
+                        strokeWidth={3}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </article>
               </section>
             )}
 
