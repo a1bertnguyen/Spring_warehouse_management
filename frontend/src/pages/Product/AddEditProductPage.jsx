@@ -5,8 +5,8 @@ import { PATHS } from "../../constants/paths";
 import { useNavigate, useParams } from "react-router-dom";
 
 const STATUS_OPTIONS = [
-  { value: "active", label: "Đang hoạt động" },
-  { value: "inactive", label: "Ngừng hoạt động" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
 ];
 
 const INITIAL_FORM = {
@@ -46,7 +46,7 @@ const AddEditProductPage = () => {
         setSuppliers(suppliersData?.suppliers || []);
       } catch (error) {
         showMessage(
-          error.response?.data?.message || "Không thể tải danh mục hoặc nhà cung cấp."
+          error.response?.data?.message || "Unable to load categories or suppliers."
         );
       }
     }
@@ -63,7 +63,7 @@ const AddEditProductPage = () => {
         const product = productData?.product;
 
         if (!product) {
-          showMessage(productData?.message || "Không tìm thấy sản phẩm.");
+          showMessage(productData?.message || "Product not found.");
           return;
         }
 
@@ -82,7 +82,7 @@ const AddEditProductPage = () => {
         setImageUrl(product.imageUrl || "");
       } catch (error) {
         showMessage(
-          error.response?.data?.message || "Không thể tải thông tin sản phẩm."
+          error.response?.data?.message || "Unable to load product details."
         );
       }
     }
@@ -145,16 +145,16 @@ const AddEditProductPage = () => {
       if (isEditing) {
         formData.append("productId", productId);
         await ApiService.updateProduct(formData);
-        showMessage("Cập nhật sản phẩm thành công.");
+        showMessage("Product updated successfully.");
       } else {
         await ApiService.addProduct(formData);
-        showMessage("Thêm sản phẩm thành công.");
+        showMessage("Product added successfully.");
       }
 
       navigate(PATHS.product);
     } catch (error) {
       showMessage(
-        error.response?.data?.message || "Không thể lưu sản phẩm lúc này."
+        error.response?.data?.message || "Unable to save the product right now."
       );
     } finally {
       setIsSubmitting(false);
@@ -167,52 +167,52 @@ const AddEditProductPage = () => {
 
       <div className="product-form-page product-form-page-modern">
         <div className="product-form-heading">
-          <h1>{isEditing ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}</h1>
-          <p>Điền đầy đủ thông tin sản phẩm để đồng bộ danh mục và luồng kho.</p>
+          <h1>{isEditing ? "Update Product" : "Add Product"}</h1>
+          <p>Fill in the product details to keep your catalog and warehouse flow aligned.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="product-form-layout">
           <div className="product-form-grid">
             <div className="form-group">
-              <label htmlFor="sku">Mã sản phẩm</label>
+              <label htmlFor="sku">Product Code</label>
               <input
                 id="sku"
                 name="sku"
                 type="text"
                 value={form.sku}
                 onChange={handleFieldChange}
-                placeholder="VD: SP-001"
+                placeholder="e.g. SP-001"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="name">Tên sản phẩm</label>
+              <label htmlFor="name">Product Name</label>
               <input
                 id="name"
                 name="name"
                 type="text"
                 value={form.name}
                 onChange={handleFieldChange}
-                placeholder="Nhập tên sản phẩm"
+                placeholder="Enter product name"
                 required
               />
             </div>
 
             <div className="form-group form-group-full">
-              <label htmlFor="description">Mô tả</label>
+              <label htmlFor="description">Description</label>
               <textarea
                 id="description"
                 name="description"
                 value={form.description}
                 onChange={handleFieldChange}
-                placeholder="Mô tả ngắn về sản phẩm"
+                placeholder="Add a short product description"
                 rows={5}
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="purchaseprice">Giá mua</label>
+              <label htmlFor="purchaseprice">Purchase Price</label>
               <input
                 id="purchaseprice"
                 name="purchaseprice"
@@ -227,7 +227,7 @@ const AddEditProductPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="saleprice">Giá bán</label>
+              <label htmlFor="saleprice">Sale Price</label>
               <input
                 id="saleprice"
                 name="saleprice"
@@ -242,7 +242,7 @@ const AddEditProductPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="status">Trạng thái</label>
+              <label htmlFor="status">Status</label>
               <select
                 id="status"
                 name="status"
@@ -259,7 +259,7 @@ const AddEditProductPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="supplierId">Nhà cung cấp</label>
+              <label htmlFor="supplierId">Supplier</label>
               <select
                 id="supplierId"
                 name="supplierId"
@@ -267,7 +267,7 @@ const AddEditProductPage = () => {
                 onChange={handleFieldChange}
                 required
               >
-                <option value="">Chọn nhà cung cấp</option>
+                <option value="">Select supplier</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.name}
@@ -277,7 +277,7 @@ const AddEditProductPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="categoryId">Danh mục</label>
+              <label htmlFor="categoryId">Category</label>
               <select
                 id="categoryId"
                 name="categoryId"
@@ -285,7 +285,7 @@ const AddEditProductPage = () => {
                 onChange={handleFieldChange}
                 required
               >
-                <option value="">Chọn danh mục</option>
+                <option value="">Select category</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -295,20 +295,20 @@ const AddEditProductPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="unit">Đơn vị tính</label>
+              <label htmlFor="unit">Unit</label>
               <input
                 id="unit"
                 name="unit"
                 type="text"
                 value={form.unit}
                 onChange={handleFieldChange}
-                placeholder="VD: Cái"
+                placeholder="e.g. Piece"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="lowStockThreshold">Tồn kho tối thiểu</label>
+              <label htmlFor="lowStockThreshold">Minimum Stock</label>
               <input
                 id="lowStockThreshold"
                 name="lowStockThreshold"
@@ -322,13 +322,13 @@ const AddEditProductPage = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="imageFile">Hình ảnh sản phẩm</label>
+              <label htmlFor="imageFile">Product Image</label>
               <input id="imageFile" type="file" accept="image/*" onChange={handleImageChange} />
             </div>
 
             {imageUrl ? (
               <div className="form-group">
-                <label>Xem trước</label>
+                <label>Preview</label>
                 <img src={imageUrl} alt="preview" className="image-preview" />
               </div>
             ) : null}
@@ -340,14 +340,14 @@ const AddEditProductPage = () => {
               className="secondary-page-button"
               onClick={() => navigate(PATHS.product)}
             >
-              Quay lại
+              Back
             </button>
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting
-                ? "Đang lưu..."
+                ? "Saving..."
                 : isEditing
-                  ? "Cập nhật sản phẩm"
-                  : "Thêm sản phẩm"}
+                  ? "Update Product"
+                  : "Add Product"}
             </button>
           </div>
         </form>
