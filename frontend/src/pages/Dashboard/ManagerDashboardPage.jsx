@@ -32,19 +32,102 @@ const SECTION_COPY = {
     eyebrow: "Purchase orders",
     title: "Inbound procurement status",
     description:
-      "Watch supplier orders moving through approval, processing, and receiving.",
+      "Watch supplier orders move from ordering into partial receipt and final receiving.",
   },
   goodsReceipts: {
-    eyebrow: "Goods receipts",
-    title: "Inbound receipt activity",
+    eyebrow: "Stock inwards",
+    title: "Inbound receiving activity",
     description:
-      "Follow the most recent stock inward documents, receiving volumes, and warehouse destinations.",
+      "Follow the most recent stock inward documents, received quantities, and warehouse destinations.",
   },
 };
 
 const EMPTY_WAREHOUSE_FORM = {
   name: "",
   address: "",
+};
+
+const ROLE_SCOPE_ITEMS = [
+  {
+    path: PATHS.category,
+    label: "Categories",
+    description: "Maintain the product groups that define the warehouse catalog.",
+    countKey: "categories",
+  },
+  {
+    path: PATHS.supplier,
+    label: "Suppliers",
+    description: "Keep supplier records ready for purchasing and stock inward flows.",
+    countKey: "suppliers",
+  },
+  {
+    path: PATHS.product,
+    label: "Products",
+    description: "Control the product master data used across warehouses and orders.",
+    countKey: "products",
+  },
+  {
+    path: PATHS.dashboardWarehouses,
+    label: "Warehouses",
+    description: "Manage locations and assign products to the right warehouse.",
+    countKey: "warehouses",
+  },
+];
+
+const ROLE_FLOW_STEPS = [
+  {
+    title: "Master data",
+    description: "Categories, suppliers, and products are the foundation for every warehouse flow.",
+  },
+  {
+    title: "Warehouse setup",
+    description: "Create warehouses, keep addresses current, and attach products to locations.",
+  },
+  {
+    title: "Inventory control",
+    description: "Track current stock, low-stock risk, and empty shelves before fulfillment slips.",
+  },
+  {
+    title: "Order oversight",
+    description: "Monitor sales orders, purchase orders, and stock inward activity from one place.",
+  },
+];
+
+const ORDER_DETAIL_CONFIG = {
+  salesOrder: {
+    key: "salesOrderDetails",
+    typeLabel: "Sales order details",
+    quantityLabel: "Ordered",
+    quantityKey: "quantityOrdered",
+    priceLabel: "Unit price",
+    priceKey: "unitSalePrice",
+    totalLabel: "Line total",
+    totalKey: "lineTotal",
+    loader: (identifier) => ApiService.getSalesOrderDetails(identifier),
+  },
+  purchaseOrder: {
+    key: "purchaseOrderDetails",
+    typeLabel: "Purchase order details",
+    quantityLabel: "Ordered",
+    quantityKey: "orderedQuantity",
+    priceLabel: "Est. unit cost",
+    priceKey: "unitPriceEstimated",
+    totalLabel: "Est. total",
+    totalKey: "lineTotalEstimated",
+    loader: (identifier) => ApiService.getPurchaseOrderDetails(identifier),
+  },
+  stockInward: {
+    key: "stockInwardDetails",
+    typeLabel: "Stock inward details",
+    quantityLabel: "Received",
+    quantityKey: "quantityReceived",
+    priceLabel: "Unit cost",
+    priceKey: "unitPriceNegotiated",
+    fallbackPriceKey: "unitPurchasePrice",
+    totalLabel: "Line value",
+    totalKey: "lineValue",
+    loader: (identifier) => ApiService.getStockInwardDetails(identifier),
+  },
 };
 
 function formatStatus(value) {
@@ -79,6 +162,20 @@ function formatCompactNumber(value) {
   }).format(Number(value || 0));
 }
 
+function formatCurrency(value) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    return "N/A";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 function normalizeWarehouseProducts(payload) {
   if (Array.isArray(payload?.products)) {
     return payload.products;
@@ -92,6 +189,18 @@ function normalizeWarehouseProducts(payload) {
 }
 
 function normalizeTopLevelCollection(payload, collectionKey) {
+  if (Array.isArray(payload?.[collectionKey])) {
+    return payload[collectionKey];
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  return [];
+}
+
+function normalizeDetailCollection(payload, collectionKey) {
   if (Array.isArray(payload?.[collectionKey])) {
     return payload[collectionKey];
   }
@@ -136,6 +245,16 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
+  const [detailDialog, setDetailDialog] = useState({
+    isOpen: false,
+    isLoading: false,
+    title: "",
+    subtitle: "",
+    status: "",
+    error: "",
+    items: [],
+    config: null,
+  });
   const [dashboardData, setDashboardData] = useState({
     categories: [],
     warehouses: [],
@@ -317,8 +436,11 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   }
 
   const {
+    categories,
     warehouses,
     warehouseProducts,
+    suppliers,
+    products,
     inventories,
     salesOrders,
     purchaseOrders,
@@ -412,7 +534,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       })),
       ...goodsReceipts.map((receipt) => ({
         id: `receipt-${receipt.stockInwardId}`,
-        type: "Goods receipt",
+        type: "Stock inward",
         title: receipt.inwardCode || `Receipt #${receipt.stockInwardId}`,
         subtitle: receipt.warehouseName || "Warehouse not assigned",
         date: receipt.createdAt || receipt.inwardDate,
@@ -469,6 +591,22 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       inventorySummary.totalQuantityOnHand,
       warehouses.length,
     ]
+  );
+
+  const roleScopeCards = useMemo(
+    () =>
+      ROLE_SCOPE_ITEMS.map((item) => ({
+        ...item,
+        count:
+          item.countKey === "categories"
+            ? categories.length
+            : item.countKey === "suppliers"
+              ? suppliers.length
+              : item.countKey === "products"
+                ? products.length
+                : warehouses.length,
+      })),
+    [categories.length, products.length, suppliers.length, warehouses.length]
   );
 
   const activeCopy = SECTION_COPY[activeSection] || SECTION_COPY.overview;
@@ -571,6 +709,57 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     navigate(`${PATHS.product}?${params.toString()}`);
   }
 
+  function closeDetailDialog() {
+    setDetailDialog({
+      isOpen: false,
+      isLoading: false,
+      title: "",
+      subtitle: "",
+      status: "",
+      error: "",
+      items: [],
+      config: null,
+    });
+  }
+
+  async function openOrderDetails(kind, row) {
+    const config = ORDER_DETAIL_CONFIG[kind];
+
+    if (!config) {
+      return;
+    }
+
+    setDetailDialog({
+      isOpen: true,
+      isLoading: true,
+      title: row.code,
+      subtitle: `${row.partner} • ${row.warehouse}`,
+      status: row.status,
+      error: "",
+      items: [],
+      config,
+    });
+
+    try {
+      const response = await config.loader(row.id);
+      const items = normalizeDetailCollection(response, config.key);
+
+      setDetailDialog((currentValue) => ({
+        ...currentValue,
+        isLoading: false,
+        items,
+      }));
+    } catch (error) {
+      setDetailDialog((currentValue) => ({
+        ...currentValue,
+        isLoading: false,
+        error:
+          error.response?.data?.message ||
+          `Unable to load ${config.typeLabel.toLowerCase()}.`,
+      }));
+    }
+  }
+
   function renderOverview() {
     return (
       <>
@@ -652,6 +841,52 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             />
           )}
         </article>
+
+        <section className="manager-two-column-grid">
+          <article className="manager-panel manager-panel-emphasis">
+            <div className="manager-panel-heading">
+              <div>
+                <span className="manager-panel-label">Warehouse manager scope</span>
+                <h2>React modules mapped from the warehouse flow</h2>
+              </div>
+            </div>
+
+            <div className="manager-quick-actions">
+              {roleScopeCards.map((card) => (
+                <button
+                  key={card.label}
+                  type="button"
+                  className="manager-action-card"
+                  onClick={() => navigate(card.path)}
+                >
+                  <span>{formatCompactNumber(card.count)}</span>
+                  <strong>{card.label}</strong>
+                  <p>{card.description}</p>
+                </button>
+              ))}
+            </div>
+          </article>
+
+          <article className="manager-panel">
+            <div className="manager-panel-heading">
+              <div>
+                <span className="manager-panel-label">Operational flow</span>
+                <h2>How this role moves through the warehouse</h2>
+              </div>
+            </div>
+
+            <div className="manager-card-stack">
+              {ROLE_FLOW_STEPS.map((step) => (
+                <div key={step.title} className="manager-insight-card">
+                  <div>
+                    <strong>{step.title}</strong>
+                    <p>{step.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
       </>
     );
   }
@@ -876,7 +1111,8 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     emptyDescription,
     type,
     searchTerm,
-    setSearchTerm
+    setSearchTerm,
+    detailKind
   ) {
     return (
       <section className="manager-panel">
@@ -907,6 +1143,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                   <th>Items</th>
                   <th>Status</th>
                   <th>Updated</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -922,6 +1159,17 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                       <span className="manager-status-badge">{row.status}</span>
                     </td>
                     <td>{formatDate(row.updatedAt)}</td>
+                    <td>
+                      <div className="manager-table-actions">
+                        <button
+                          type="button"
+                          className="info-button"
+                          onClick={() => openOrderDetails(detailKind, row)}
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1012,7 +1260,8 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         "No sales orders match the current search.",
         "Outbound",
         salesOrderSearchTerm,
-        setSalesOrderSearchTerm
+        setSalesOrderSearchTerm,
+        "salesOrder"
       );
     }
 
@@ -1024,19 +1273,21 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         "No purchase orders match the current search.",
         "Procurement",
         purchaseOrderSearchTerm,
-        setPurchaseOrderSearchTerm
+        setPurchaseOrderSearchTerm,
+        "purchaseOrder"
       );
     }
 
     if (activeSection === "goodsReceipts") {
       return renderOrders(
-        "Recent goods receipts",
+        "Recent stock inwards",
         filteredGoodsReceiptRows,
-        "No goods receipts found",
-        "No goods receipts match the current search.",
+        "No stock inwards found",
+        "No stock inward documents match the current search.",
         "Inbound",
         goodsReceiptSearchTerm,
-        setGoodsReceiptSearchTerm
+        setGoodsReceiptSearchTerm,
+        "stockInward"
       );
     }
 
@@ -1074,6 +1325,100 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         ) : (
           renderActiveSection()
         )}
+
+        {detailDialog.isOpen ? (
+          <div
+            className="manager-dialog-backdrop"
+            role="presentation"
+            onClick={closeDetailDialog}
+          >
+            <section
+              className="manager-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="manager-detail-dialog-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="manager-panel-heading">
+                <div>
+                  <span className="manager-panel-label">
+                    {detailDialog.config?.typeLabel || "Details"}
+                  </span>
+                  <h2 id="manager-detail-dialog-title">{detailDialog.title}</h2>
+                  <p className="manager-panel-description">{detailDialog.subtitle}</p>
+                </div>
+
+                <div className="manager-form-actions">
+                  {detailDialog.status ? (
+                    <span className="manager-status-badge">{detailDialog.status}</span>
+                  ) : null}
+                  <button type="button" className="ghost-button" onClick={closeDetailDialog}>
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              {detailDialog.isLoading ? (
+                <div className="manager-empty-state">
+                  <strong>Loading details</strong>
+                  <p>Fetching the latest line items for this document.</p>
+                </div>
+              ) : detailDialog.error ? (
+                <div className="manager-empty-state">
+                  <strong>Unable to load details</strong>
+                  <p>{detailDialog.error}</p>
+                </div>
+              ) : detailDialog.items.length ? (
+                <div className="manager-table-shell">
+                  <table className="manager-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>{detailDialog.config?.quantityLabel || "Quantity"}</th>
+                        <th>{detailDialog.config?.priceLabel || "Unit price"}</th>
+                        <th>{detailDialog.config?.totalLabel || "Line total"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {detailDialog.items.map((item, index) => {
+                        const priceValue =
+                          item?.[detailDialog.config?.priceKey] ??
+                          item?.[detailDialog.config?.fallbackPriceKey];
+
+                        return (
+                          <tr
+                            key={
+                              item.id ??
+                              item.inwardDetailId ??
+                              item.productId ??
+                              `${detailDialog.title}-${index}`
+                            }
+                          >
+                            <td>
+                              <strong>{item.productName || "Unnamed product"}</strong>
+                              <span>{item.productSku || "No SKU"}</span>
+                              {item.note ? <span>{item.note}</span> : null}
+                            </td>
+                            <td>{item?.[detailDialog.config?.quantityKey] ?? 0}</td>
+                            <td>{formatCurrency(priceValue)}</td>
+                            <td>
+                              {formatCurrency(item?.[detailDialog.config?.totalKey])}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="manager-empty-state">
+                  <strong>No line items found</strong>
+                  <p>This document does not currently have any detail rows to display.</p>
+                </div>
+              )}
+            </section>
+          </div>
+        ) : null}
       </div>
     </MainLayout>
   );

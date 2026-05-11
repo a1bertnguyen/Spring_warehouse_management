@@ -240,12 +240,19 @@ public class TaskServiceImpl implements TaskService {
         dto.setSaleprice(product.getSalePrice());
         dto.setStockQuantity(product.getStockQuantity());
         dto.setSupplierId(product.getSupplierId());
+        dto.setLowStockThreshold(product.getLowStockThreshold());
+        dto.setStatus(product.getStatus());
+        dto.setUnit(product.getUnit());
         dto.setDescription(product.getDescription());
         dto.setExpiryDate(product.getExpiryDate());
         dto.setImageUrl(product.getImageUrl());
         dto.setCreatedAt(product.getCreatedAt());
         if (product.getCategory() != null) {
             dto.setCategoryId(product.getCategory().getId());
+            dto.setCategoryName(product.getCategory().getName());
+        }
+        if (product.getSupplier() != null) {
+            dto.setSupplierName(product.getSupplier().getName());
         }
         return dto;
     }

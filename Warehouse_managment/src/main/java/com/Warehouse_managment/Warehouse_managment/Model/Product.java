@@ -1,5 +1,6 @@
 package com.Warehouse_managment.Warehouse_managment.Model;
 
+import com.Warehouse_managment.Warehouse_managment.Enum.ProductStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -51,6 +52,12 @@ public class Product {
     @Column(name = "low_stock_threshold")
     private Integer lowStockThreshold;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private ProductStatus status;
+
+    @Column(name = "unit", length = 50)
+    private String unit;
 
     @Column(name = "updated_at")
     LocalDateTime updatedAt;
@@ -65,6 +72,13 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @PrePersist
+    void onCreate() {
+        if (status == null) {
+            status = ProductStatus.active;
+        }
+    }
+
 
     @Override
     public String toString() {
@@ -77,6 +91,8 @@ public class Product {
                 ", stockQuantity=" + stockQuantity +
                 ", supplierId=" + supplierId +
                 ", lowStockThreshold=" + lowStockThreshold +
+                ", status=" + status +
+                ", unit='" + unit + '\'' +
                 ", description='" + description + '\'' +
                 ", expiryDate=" + expiryDate +
                 ", imageUrl='" + imageUrl + '\'' +

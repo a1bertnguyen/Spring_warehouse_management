@@ -1,5 +1,6 @@
 package com.Warehouse_managment.Warehouse_managment.Dtos;
 
+import com.Warehouse_managment.Warehouse_managment.Enum.ProductStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,8 @@ public class ProductDTO {
     private Long categoryId;
     private Long productId;
     private Long supplierId;
+    private String categoryName;
+    private String supplierName;
 
     private String name;
 
@@ -30,6 +33,9 @@ public class ProductDTO {
     private BigDecimal Saleprice;
 
     private Integer stockQuantity;
+    private Integer lowStockThreshold;
+    private ProductStatus status;
+    private String unit;
 
     private String description;
     private LocalDateTime expiryDate;

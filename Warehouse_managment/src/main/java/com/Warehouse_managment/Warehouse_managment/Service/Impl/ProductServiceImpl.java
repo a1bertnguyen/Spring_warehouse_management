@@ -2,12 +2,15 @@ package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 
 
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
+import com.Warehouse_managment.Warehouse_managment.Enum.ProductStatus;
 import com.Warehouse_managment.Warehouse_managment.Model.Category;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
+import com.Warehouse_managment.Warehouse_managment.Model.Supplier;
 import com.Warehouse_managment.Warehouse_managment.Repository.CategoryRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.InventoryMovementRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepository;
 import com.Warehouse_managment.Warehouse_managment.Repository.ProductRepository;
+import com.Warehouse_managment.Warehouse_managment.Repository.SupplierRepository;
 import com.Warehouse_managment.Warehouse_managment.Dtos.ProductDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Service.ProductService;
@@ -36,6 +39,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
     private final CategoryRepository categoryRepository;
+    private final SupplierRepository supplierRepository;
     private final InventoryRepository inventoryRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
 
@@ -45,13 +49,22 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(productDTO.getCategoryId())
                 .orElseThrow(() -> new NotFoundException("Category Not Found"));
 
+        if (productDTO.getSupplierId() != null) {
+            supplierRepository.findById(productDTO.getSupplierId())
+                    .orElseThrow(() -> new NotFoundException("Supplier Not Found"));
+        }
+
         //map our dto to product entity
         Product productToSave = Product.builder()
                 .name(productDTO.getName())
                 .sku(productDTO.getSku())
                 .purchaseprice(productDTO.getPurchaseprice())
                 .salePrice(productDTO.getSaleprice())
-                .stockQuantity(0)
+                .stockQuantity(safeInteger(productDTO.getStockQuantity(), 0))
+                .supplierId(productDTO.getSupplierId())
+                .lowStockThreshold(safeInteger(productDTO.getLowStockThreshold(), 0))
+                .status(productDTO.getStatus() != null ? productDTO.getStatus() : ProductStatus.active)
+                .unit(trimToNull(productDTO.getUnit()))
                 .description(productDTO.getDescription())
                 .expiryDate(productDTO.getExpiryDate())
                 .category(category)
@@ -91,6 +104,11 @@ public class ProductServiceImpl implements ProductService {
             existingProduct.setCategory(category);
         }
 
+        if (productDTO.getSupplierId() != null) {
+            supplierRepository.findById(productDTO.getSupplierId())
+                    .orElseThrow(() -> new NotFoundException("Supplier Not Found"));
+        }
+
         //check if product fields is to be changed and update
         if (productDTO.getName() != null && !productDTO.getName().isBlank()) {
             existingProduct.setName(productDTO.getName());
@@ -100,8 +118,12 @@ public class ProductServiceImpl implements ProductService {
             existingProduct.setSku(productDTO.getSku());
         }
 
-        if (productDTO.getDescription() != null && !productDTO.getDescription().isBlank()) {
-            existingProduct.setDescription(productDTO.getDescription());
+        if (productDTO.getDescription() != null) {
+            existingProduct.setDescription(trimToNull(productDTO.getDescription()));
+        }
+
+        if (productDTO.getSupplierId() != null) {
+            existingProduct.setSupplierId(productDTO.getSupplierId());
         }
 
         if (productDTO.getPurchaseprice() != null && productDTO.getPurchaseprice().compareTo(BigDecimal.ZERO) >= 0) {
@@ -109,6 +131,18 @@ public class ProductServiceImpl implements ProductService {
         }
         if (productDTO.getSaleprice() != null && productDTO.getSaleprice().compareTo(BigDecimal.ZERO) >= 0) {
             existingProduct.setSalePrice(productDTO.getSaleprice());
+        }
+
+        if (productDTO.getLowStockThreshold() != null && productDTO.getLowStockThreshold() >= 0) {
+            existingProduct.setLowStockThreshold(productDTO.getLowStockThreshold());
+        }
+
+        if (productDTO.getStatus() != null) {
+            existingProduct.setStatus(productDTO.getStatus());
+        }
+
+        if (productDTO.getUnit() != null) {
+            existingProduct.setUnit(trimToNull(productDTO.getUnit()));
         }
 
         if (productDTO.getExpiryDate() != null) {
@@ -208,6 +242,9 @@ public class ProductServiceImpl implements ProductService {
         productDTO.setSaleprice(product.getSalePrice());
         productDTO.setStockQuantity(product.getStockQuantity());
         productDTO.setSupplierId(product.getSupplierId());
+        productDTO.setLowStockThreshold(product.getLowStockThreshold());
+        productDTO.setStatus(product.getStatus());
+        productDTO.setUnit(product.getUnit());
         productDTO.setDescription(product.getDescription());
         productDTO.setExpiryDate(product.getExpiryDate());
         productDTO.setImageUrl(product.getImageUrl());
@@ -215,9 +252,29 @@ public class ProductServiceImpl implements ProductService {
 
         if (product.getCategory() != null) {
             productDTO.setCategoryId(product.getCategory().getId());
+            productDTO.setCategoryName(product.getCategory().getName());
+        }
+
+        if (product.getSupplierId() != null) {
+            supplierRepository.findById(product.getSupplierId())
+                    .map(Supplier::getName)
+                    .ifPresent(productDTO::setSupplierName);
         }
 
         return productDTO;
+    }
+
+    private Integer safeInteger(Integer value, Integer fallback) {
+        return value != null ? value : fallback;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
 

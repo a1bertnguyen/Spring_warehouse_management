@@ -7,7 +7,7 @@ import {
 } from "./apiClient";
 
 export async function addProduct(formData) {
-  const payload = prepareProductFormData(formData, { requireImage: true });
+  const payload = prepareProductFormData(formData);
   const response = await apiClient.post("/products/add", payload, {
     headers: { "Content-Type": "multipart/form-data" },
   });

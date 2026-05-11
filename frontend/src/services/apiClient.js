@@ -228,8 +228,10 @@ export function resolveApiAssetUrl(url) {
 export function normalizeProduct(product) {
   if (!product) return null;
 
-  const purchaseprice = product.purchaseprice ?? product.Purchaseprice ?? null;
-  const saleprice = product.saleprice ?? product.Saleprice ?? null;
+  const purchaseprice =
+    product.purchaseprice ?? product.purchasePrice ?? product.Purchaseprice ?? null;
+  const saleprice =
+    product.saleprice ?? product.salePrice ?? product.Saleprice ?? null;
   const price = product.price ?? saleprice ?? purchaseprice ?? 0;
 
   return {

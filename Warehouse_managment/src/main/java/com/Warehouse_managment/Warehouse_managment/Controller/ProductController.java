@@ -2,6 +2,7 @@ package com.Warehouse_managment.Warehouse_managment.Controller;
 
 import com.Warehouse_managment.Warehouse_managment.Dtos.ProductDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
+import com.Warehouse_managment.Warehouse_managment.Enum.ProductStatus;
 import com.Warehouse_managment.Warehouse_managment.Service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,15 +25,19 @@ public class ProductController {
     @PostMapping("/add")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<Response> saveProduct(
-            @RequestParam("imageFile") MultipartFile imageFile,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestParam("name") String name,
             @RequestParam("sku") String sku,
             @RequestParam(value = "purchaseprice", required = false) BigDecimal purchaseprice,
             @RequestParam(value = "saleprice", required = false) BigDecimal saleprice,
             @RequestParam(value = "price", required = false) BigDecimal price,
-            @RequestParam("stockQuantity") Integer stockQuantity,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
             @RequestParam("categoryId") Long categoryId,
-            @RequestParam("expiryDate") String expiryDate,
+            @RequestParam(value = "supplierId", required = false) Long supplierId,
+            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold,
+            @RequestParam(value = "status", required = false) ProductStatus status,
+            @RequestParam(value = "unit", required = false) String unit,
+            @RequestParam(value = "expiryDate", required = false) String expiryDate,
             @RequestParam(value = "description", required = false) String description
 
     ) {
@@ -43,7 +48,13 @@ public class ProductController {
         productDTO.setSaleprice(resolvePrice(saleprice, price));
         productDTO.setStockQuantity(stockQuantity);
         productDTO.setCategoryId(categoryId);
-        productDTO.setExpiryDate(parseExpiryDate(expiryDate));
+        productDTO.setSupplierId(supplierId);
+        productDTO.setLowStockThreshold(lowStockThreshold);
+        productDTO.setStatus(status);
+        productDTO.setUnit(unit);
+        if (expiryDate != null && !expiryDate.isBlank()) {
+            productDTO.setExpiryDate(parseExpiryDate(expiryDate));
+        }
         productDTO.setDescription(description);
 
         return ResponseEntity.ok(productService.saveProduct(productDTO, imageFile));
@@ -63,6 +74,10 @@ public class ProductController {
             @RequestParam(value = "price", required = false) BigDecimal price,
             @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
             @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "supplierId", required = false) Long supplierId,
+            @RequestParam(value = "lowStockThreshold", required = false) Integer lowStockThreshold,
+            @RequestParam(value = "status", required = false) ProductStatus status,
+            @RequestParam(value = "unit", required = false) String unit,
             @RequestParam(value = "expiryDate", required = false) String expiryDate,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam("productId") Long productId
@@ -75,6 +90,10 @@ public class ProductController {
         productDTO.setProductId(productId);
         productDTO.setStockQuantity(stockQuantity);
         productDTO.setCategoryId(categoryId);
+        productDTO.setSupplierId(supplierId);
+        productDTO.setLowStockThreshold(lowStockThreshold);
+        productDTO.setStatus(status);
+        productDTO.setUnit(unit);
         if (expiryDate != null && !expiryDate.isBlank()) {
             productDTO.setExpiryDate(parseExpiryDate(expiryDate));
         }

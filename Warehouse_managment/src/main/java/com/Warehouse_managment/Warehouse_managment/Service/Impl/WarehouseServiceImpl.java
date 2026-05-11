@@ -236,6 +236,9 @@ public class WarehouseServiceImpl implements WarehouseService {
         productDTO.setSaleprice(product.getSalePrice());
         productDTO.setStockQuantity(inventory.getQuantityOnHand());
         productDTO.setSupplierId(product.getSupplierId());
+        productDTO.setLowStockThreshold(product.getLowStockThreshold());
+        productDTO.setStatus(product.getStatus());
+        productDTO.setUnit(product.getUnit());
         productDTO.setDescription(product.getDescription());
         productDTO.setExpiryDate(product.getExpiryDate());
         productDTO.setImageUrl(product.getImageUrl());
@@ -243,6 +246,11 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         if (product.getCategory() != null) {
             productDTO.setCategoryId(product.getCategory().getId());
+            productDTO.setCategoryName(product.getCategory().getName());
+        }
+
+        if (product.getSupplier() != null) {
+            productDTO.setSupplierName(product.getSupplier().getName());
         }
 
         return productDTO;

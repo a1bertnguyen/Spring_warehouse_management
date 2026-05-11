@@ -539,6 +539,31 @@
   padding: 26px;
 }
 
+.manager-dialog-backdrop {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.56);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 40;
+}
+
+.manager-dialog {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 28px;
+  box-shadow: 0 28px 72px rgba(15, 23, 42, 0.28);
+  display: grid;
+  gap: 18px;
+  max-height: min(80vh, 820px);
+  max-width: min(920px, 100%);
+  overflow: auto;
+  padding: 26px;
+  width: 100%;
+}
+
 .manager-loading-grid {
   display: grid;
   gap: 18px;

@@ -24,7 +24,7 @@ const MANAGER_NAV_ITEMS = [
   },
   {
     path: PATHS.dashboardGoodsReceipts,
-    label: "Goods Receipts",
+    label: "Stock Inwards",
     icon: "receipts",
   },
 ];
