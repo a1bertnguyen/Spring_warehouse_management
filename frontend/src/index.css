@@ -94,17 +94,22 @@ button[type="submit"]:hover {
   color: #f8fafc;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 22px;
   padding: 28px 22px;
   box-shadow: 12px 0 32px rgba(15, 23, 42, 0.28);
   position: fixed;
   transition: all 0.3s ease;
+  overflow: hidden;
   z-index: 20;
 }
 
 .sidebar-shell {
-  display: grid;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   gap: 28px;
+  min-height: 0;
 }
 
 .sidebar-brand {
@@ -194,7 +199,26 @@ button[type="submit"]:hover {
 
 .sidebar-nav {
   border-top: 1px solid rgba(148, 163, 184, 0.18);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   padding-top: 22px;
+  padding-right: 4px;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  scrollbar-width: thin;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.32);
+  border-radius: 999px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .nav-links {
@@ -259,6 +283,8 @@ button[type="submit"]:hover {
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(248, 113, 113, 0.22);
   color: #fecaca;
+  flex-shrink: 0;
+  margin-top: auto;
   width: 100%;
 }
 
@@ -334,6 +360,135 @@ button[type="submit"]:hover {
   padding: 20px;
 }
 
+.manager-entity-page {
+  padding: 0;
+}
+
+.manager-page-shell {
+  display: grid;
+  gap: 22px;
+}
+
+.manager-page-banner {
+  align-items: end;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.22), transparent 34%),
+    linear-gradient(135deg, #0f172a 0%, #111827 55%, #18424a 100%);
+  border-radius: 28px;
+  color: #f8fafc;
+  display: grid;
+  min-height: 180px;
+  overflow: hidden;
+  padding: 28px;
+  position: relative;
+}
+
+.manager-page-banner::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 60%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.manager-page-banner > div {
+  position: relative;
+  z-index: 1;
+}
+
+.manager-page-eyebrow {
+  color: #9be6dc;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.manager-page-banner h1 {
+  font-size: clamp(2.2rem, 4vw, 3.1rem);
+  line-height: 1.02;
+  margin-top: 10px;
+}
+
+.manager-page-banner .page-subtitle {
+  color: rgba(226, 232, 240, 0.9);
+  margin-top: 12px;
+  max-width: 720px;
+}
+
+.manager-page-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  padding: 24px;
+}
+
+.manager-inline-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.manager-inline-toolbar input {
+  flex: 1;
+  min-width: 260px;
+}
+
+.manager-entity-list {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  margin-top: 0;
+  padding: 0;
+}
+
+.manager-entity-item {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  color: #334155;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin: 0;
+  padding: 22px;
+}
+
+.manager-entity-item strong {
+  color: #0f172a;
+  display: block;
+  font-size: 1.05rem;
+}
+
+.manager-entity-item p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+
+.manager-entity-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.manager-entity-actions button:first-child {
+  background: #fbbf24;
+  color: #1f2937;
+}
+
+.manager-entity-actions button:last-child {
+  background: #ef4444;
+  color: #ffffff;
+}
+
 .page-subtitle {
   color: #64748b;
   margin-top: 8px;
@@ -389,29 +544,24 @@ button[type="submit"]:hover {
 }
 
 .category-entry-card {
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  margin: 0 12px;
-  padding: 20px;
+  margin: 0;
 }
 
 .add-cat {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  gap: 14px;
 }
 
-.category-header input {
+.category-header input,
+.add-cat input {
   padding: 10px;
-  width: 300px;
+  width: 100%;
   border: 1px solid #ddd;
   font-size: 16px;
   border-radius: 10px;
 }
 
-.category-header button {
+.category-header button,
+.add-cat button {
   padding: 12px 12px;
   background-color: #008080;
   font-size: 16px;
@@ -427,14 +577,7 @@ button[type="submit"]:hover {
 }
 
 .category-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 18px;
-  margin: 5px;
   font-size: 20px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eee;
-  border-radius: 10px;
   color: #2F4F4F;
   font-weight: 550;
 }
@@ -444,18 +587,11 @@ button[type="submit"]:hover {
 }
 
 .category-actions button {
-  margin-left: 10px;
   padding: 5px 10px;
-  background-color: #008080;
   font-size: 16px;
   padding: 10px 20px;
-  color: white;
   border: none;
   cursor: pointer;
-}
-
-.category-actions button:last-child {
-  background-color: #dc3545;
 }
 
 
@@ -471,24 +607,11 @@ button[type="submit"]:hover {
 }
 
 .supplier-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 30px;
   color: #008080;
-  margin-left: 10px;
-}
-
-.supplier-header button {
-  padding: 12px 12px;
-  background-color: #008080;
-  font-size: 16px;
-  color: white;
-  border: none;
-  cursor: pointer;
 }
 
 .add-sup {
-  margin: 0 auto;
+  margin: 0;
 }
 
 .supplier-list {
@@ -499,14 +622,7 @@ button[type="submit"]:hover {
 
 
 .supplier-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 18px;
-  margin: 5px;
   font-size: 20px;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eee;
-  border-radius: 10px;
   color: #2F4F4F;
   font-weight: 550;
 }
@@ -516,18 +632,10 @@ button[type="submit"]:hover {
 }
 
 .supplier-actions button {
-
-  margin-left: 10px;
-  background-color: #008080;
   font-size: 16px;
   padding: 10px 20px;
-  color: white;
   border: none;
   cursor: pointer;
-}
-
-.supplier-actions button:last-child {
-  background-color: #dc3545;
 }
 
 
@@ -623,25 +731,36 @@ button[type="submit"]:hover {
 }
 
 .product-page-banner {
-  background: linear-gradient(180deg, #dbe9ff 0%, #edf4ff 100%);
-  border-radius: 24px;
-  padding: 24px 28px;
-  text-align: center;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.22), transparent 34%),
+    linear-gradient(135deg, #0f172a 0%, #111827 55%, #18424a 100%);
+  border-radius: 28px;
+  overflow: hidden;
+  padding: 28px;
+  position: relative;
+  text-align: left;
+}
+
+.product-page-banner::after {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 60%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
 }
 
 .product-page-banner h1 {
-  color: #2563eb;
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 800;
-  margin: 0;
+  color: #f8fafc;
+  position: relative;
+  z-index: 1;
 }
 
 .product-filter-card {
   background: #ffffff;
-  border: 1px solid #dce7f6;
-  border-radius: 22px;
-  box-shadow: 0 14px 34px rgba(37, 99, 235, 0.08);
-  padding: 24px 28px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  padding: 24px;
 }
 
 .product-filter-grid {
@@ -681,7 +800,7 @@ button[type="submit"]:hover {
 .product-filter-button,
 .product-export-btn {
   align-items: center;
-  background: #2563eb;
+  background: #0f766e;
   border: none;
   border-radius: 14px;
   color: #ffffff;
@@ -697,7 +816,7 @@ button[type="submit"]:hover {
 
 .product-filter-button:hover,
 .product-export-btn:hover {
-  background: #1d4ed8;
+  background: #115e59;
   transform: translateY(-1px);
 }
 
@@ -719,9 +838,9 @@ button[type="submit"]:hover {
 
 .product-warehouse-form {
   background: #ffffff;
-  border: 1px solid #dce7f6;
-  border-radius: 22px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
   display: grid;
   gap: 20px;
   padding: 24px 28px;
@@ -733,7 +852,7 @@ button[type="submit"]:hover {
 }
 
 .product-warehouse-form-label {
-  color: #2563eb;
+  color: #0f766e;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -881,9 +1000,9 @@ button[type="submit"]:hover {
 
 .product-table-shell {
   background: #ffffff;
-  border: 1px solid #dce7f6;
-  border-radius: 22px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
   overflow-x: auto;
 }
 
@@ -902,10 +1021,12 @@ button[type="submit"]:hover {
 }
 
 .product-table thead th {
-  background: #f8fbff;
-  color: #111827;
+  background: #f8fafc;
+  color: #0f766e;
   font-size: 0.98rem;
   font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .product-table tbody td {
@@ -1840,8 +1961,21 @@ button:hover {
   }
 
   .page-search-input,
-  .category-header input {
+  .category-header input,
+  .add-cat input {
     min-width: 100%;
+    width: 100%;
+  }
+
+  .manager-entity-item,
+  .manager-inline-toolbar,
+  .manager-entity-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manager-entity-actions button,
+  .manager-inline-toolbar button {
     width: 100%;
   }
 

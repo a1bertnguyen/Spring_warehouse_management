@@ -535,6 +535,26 @@
   margin-top: 4px;
 }
 
+.manager-quantity-cell {
+  font-weight: 800;
+}
+
+.manager-quantity-cell-positive {
+  color: #047857 !important;
+}
+
+.manager-quantity-cell-warning {
+  color: #b45309 !important;
+}
+
+.manager-quantity-cell-negative {
+  color: #b91c1c !important;
+}
+
+.manager-quantity-cell-neutral {
+  color: #334155 !important;
+}
+
 .manager-delta-positive {
   color: #047857 !important;
   font-weight: 700;

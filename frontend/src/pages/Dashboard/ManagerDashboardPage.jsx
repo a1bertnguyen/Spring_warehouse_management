@@ -53,52 +53,6 @@ const EMPTY_WAREHOUSE_FORM = {
   address: "",
 };
 
-const ROLE_SCOPE_ITEMS = [
-  {
-    path: PATHS.category,
-    label: "Categories",
-    description: "Maintain the product groups that define the warehouse catalog.",
-    countKey: "categories",
-  },
-  {
-    path: PATHS.supplier,
-    label: "Suppliers",
-    description: "Keep supplier records ready for purchasing and stock inward flows.",
-    countKey: "suppliers",
-  },
-  {
-    path: PATHS.product,
-    label: "Products",
-    description: "Control the product master data used across warehouses and orders.",
-    countKey: "products",
-  },
-  {
-    path: PATHS.dashboardWarehouses,
-    label: "Warehouses",
-    description: "Manage locations and assign products to the right warehouse.",
-    countKey: "warehouses",
-  },
-];
-
-const ROLE_FLOW_STEPS = [
-  {
-    title: "Master data",
-    description: "Categories, suppliers, and products are the foundation for every warehouse flow.",
-  },
-  {
-    title: "Warehouse setup",
-    description: "Create warehouses, keep addresses current, and attach products to locations.",
-  },
-  {
-    title: "Inventory control",
-    description: "Track current stock, low-stock risk, and empty shelves before fulfillment slips.",
-  },
-  {
-    title: "Order oversight",
-    description: "Monitor sales orders, purchase orders, and stock inward activity from one place.",
-  },
-];
-
 const ORDER_DETAIL_CONFIG = {
   salesOrder: {
     key: "salesOrderDetails",
@@ -156,6 +110,24 @@ function formatSignedQuantity(value) {
   }
 
   return String(amount);
+}
+
+function getInventoryStatusTone(status) {
+  const normalizedStatus = String(status || "").toUpperCase();
+
+  if (normalizedStatus === "OUT_OF_STOCK") {
+    return "negative";
+  }
+
+  if (normalizedStatus === "LOW_STOCK") {
+    return "warning";
+  }
+
+  if (normalizedStatus === "AVAILABLE") {
+    return "positive";
+  }
+
+  return "neutral";
 }
 
 function formatDate(value) {
@@ -473,11 +445,8 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   }
 
   const {
-    categories,
     warehouses,
     warehouseProducts,
-    suppliers,
-    products,
     inventories,
     inventoryMovements,
     salesOrders,
@@ -656,22 +625,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       inventorySummary.totalQuantityOnHand,
       warehouses.length,
     ]
-  );
-
-  const roleScopeCards = useMemo(
-    () =>
-      ROLE_SCOPE_ITEMS.map((item) => ({
-        ...item,
-        count:
-          item.countKey === "categories"
-            ? categories.length
-            : item.countKey === "suppliers"
-              ? suppliers.length
-              : item.countKey === "products"
-                ? products.length
-                : warehouses.length,
-      })),
-    [categories.length, products.length, suppliers.length, warehouses.length]
   );
 
   const activeCopy = SECTION_COPY[activeSection] || SECTION_COPY.overview;
@@ -860,20 +813,13 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           ))}
         </section>
 
-        <article className="manager-panel">
-          <div className="manager-panel-heading">
-            <div>
-              <span className="manager-panel-label">Priority items</span>
-              <h2>What needs attention</h2>
-            </div>
-            <div className="manager-form-actions">
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => navigate(PATHS.dashboardWarehouses)}
-              >
-                Warehouses
-              </button>
+        <section className="manager-two-column-grid manager-overview-grid">
+          <article className="manager-panel">
+            <div className="manager-panel-heading">
+              <div>
+                <span className="manager-panel-label">Priority items</span>
+                <h2>Low-stock watchlist</h2>
+              </div>
               <button
                 type="button"
                 className="ghost-button"
@@ -882,96 +828,73 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                 Inventory
               </button>
             </div>
-          </div>
 
-          {lowStockItems.length ? (
-            <div className="manager-list">
-              {lowStockItems.slice(0, 6).map((inventory) => (
-                <div key={inventory.inventoryId} className="manager-list-row">
-                  <div>
-                    <strong>{inventory.productName || "Unnamed product"}</strong>
-                    <p>
-                      {inventory.productSku || "No SKU"} -{" "}
-                      {inventory.warehouseName || "No warehouse"}
-                    </p>
+            {lowStockItems.length ? (
+              <div className="manager-list">
+                {lowStockItems.slice(0, 5).map((inventory) => (
+                  <div key={inventory.inventoryId} className="manager-list-row">
+                    <div>
+                      <strong>{inventory.productName || "Unnamed product"}</strong>
+                      <p>
+                        {inventory.productSku || "No SKU"} -{" "}
+                        {inventory.warehouseName || "No warehouse"}
+                      </p>
+                    </div>
+                    <div className="manager-row-metrics">
+                      <span className="manager-status-badge manager-status-badge-warning">
+                        {formatStatus(inventory.status)}
+                      </span>
+                      <strong>{inventory.quantityOnHand || 0}</strong>
+                    </div>
                   </div>
-                  <div className="manager-row-metrics">
-                    <span className="manager-status-badge manager-status-badge-warning">
-                      {formatStatus(inventory.status)}
-                    </span>
-                    <strong>{inventory.quantityOnHand || 0}</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : recentActivity.length ? (
-            <div className="manager-timeline">
-              {recentActivity.slice(0, 4).map((item) => (
-                <div key={item.id} className="manager-timeline-item">
-                  <span className="manager-timeline-dot" />
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>
-                      {item.type} - {item.subtitle}
-                    </p>
-                    <small>
-                      {item.status} - {formatDate(item.date)}
-                    </small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <TableEmptyState
-              title="No urgent updates"
-              description="Low-stock products or recent operations will appear here."
-            />
-          )}
-        </article>
-
-        <section className="manager-two-column-grid">
-          <article className="manager-panel manager-panel-emphasis">
-            <div className="manager-panel-heading">
-              <div>
-                <span className="manager-panel-label">Warehouse manager scope</span>
-                <h2>React modules mapped from the warehouse flow</h2>
+                ))}
               </div>
-            </div>
-
-            <div className="manager-quick-actions">
-              {roleScopeCards.map((card) => (
-                <button
-                  key={card.label}
-                  type="button"
-                  className="manager-action-card"
-                  onClick={() => navigate(card.path)}
-                >
-                  <span>{formatCompactNumber(card.count)}</span>
-                  <strong>{card.label}</strong>
-                  <p>{card.description}</p>
-                </button>
-              ))}
-            </div>
+            ) : (
+              <TableEmptyState
+                title="No low-stock alerts"
+                description="Products that need replenishment will appear here."
+              />
+            )}
           </article>
 
           <article className="manager-panel">
             <div className="manager-panel-heading">
               <div>
-                <span className="manager-panel-label">Operational flow</span>
-                <h2>How this role moves through the warehouse</h2>
+                <span className="manager-panel-label">Recent activity</span>
+                <h2>Latest warehouse operations</h2>
               </div>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => navigate(PATHS.dashboardInventoryMovements)}
+              >
+                Movements
+              </button>
             </div>
 
-            <div className="manager-card-stack">
-              {ROLE_FLOW_STEPS.map((step) => (
-                <div key={step.title} className="manager-insight-card">
-                  <div>
-                    <strong>{step.title}</strong>
-                    <p>{step.description}</p>
+            {recentActivity.length ? (
+              <div className="manager-timeline">
+                {recentActivity.slice(0, 5).map((item) => (
+                  <div key={item.id} className="manager-timeline-item">
+                    <span className="manager-timeline-dot" />
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>
+                        {item.type} - {item.subtitle}
+                      </p>
+                      <small>
+                        {item.status} - {formatDate(item.date)}
+                      </small>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <TableEmptyState
+                title="No recent activity"
+                description="Sales orders, purchase orders, and stock inwards will appear here."
+              />
+            )}
           </article>
         </section>
       </>
@@ -1130,13 +1053,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             <span className="manager-panel-label">Inventory watchlist</span>
             <h2>Current stock positions</h2>
           </div>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => navigate(PATHS.dashboardInventoryMovements)}
-          >
-            Open Movements
-          </button>
         </div>
 
         <div className="manager-toolbar">
@@ -1184,10 +1100,20 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                       <span>{inventory.productSku || "No SKU"}</span>
                     </td>
                     <td>{inventory.warehouseName || "Unassigned"}</td>
-                    <td>{inventory.quantityOnHand || 0}</td>
+                    <td
+                      className={`manager-quantity-cell manager-quantity-cell-${getInventoryStatusTone(
+                        inventory.status
+                      )}`}
+                    >
+                      {inventory.quantityOnHand || 0}
+                    </td>
                     <td>{inventory.lowStockThreshold || 0}</td>
                     <td>
-                      <span className="manager-status-badge manager-status-badge-neutral">
+                      <span
+                        className={`manager-status-badge manager-status-badge-${getInventoryStatusTone(
+                          inventory.status
+                        )}`}
+                      >
                         {formatStatus(inventory.status)}
                       </span>
                     </td>

@@ -99,60 +99,68 @@ const CategoryPage = () => {
   return (
     <MainLayout>
       {message && <div className="message">{message}</div>}
-      <div className="category-page">
-        <div className="category-header category-header-stack">
-          <div>
-            <h1>Categories</h1>
-            <p className="page-subtitle">Search, add, edit, and remove product categories.</p>
+      <div className="category-page manager-entity-page">
+        <div className="manager-page-shell">
+          <div className="manager-page-banner">
+            <div>
+              <span className="manager-page-eyebrow">Catalog</span>
+              <h1>Categories</h1>
+              <p className="page-subtitle">Search, add, edit, and remove product categories.</p>
+            </div>
           </div>
 
-          <div className="page-toolbar">
-            <input
-              className="page-search-input"
-              value={searchTerm}
-              type="text"
-              placeholder="Search categories"
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
+          <div className="manager-page-card">
+            <div className="page-toolbar">
+              <input
+                className="page-search-input"
+                value={searchTerm}
+                type="text"
+                placeholder="Search categories"
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
           </div>
+
+          <div className="category-entry-card manager-page-card">
+            <div className="add-cat manager-inline-toolbar">
+              <input
+                value={categoryName}
+                type="text"
+                placeholder="Category name"
+                onChange={(event) => setCategoryName(event.target.value)}
+              />
+
+              {!isEditing ? (
+                <button onClick={addCategory}>Add Category</button>
+              ) : (
+                <button onClick={editCategory}>Update Category</button>
+              )}
+            </div>
+          </div>
+
+          {filteredCategories.length ? (
+            <ul className="category-list manager-entity-list">
+              {filteredCategories.map((category) => (
+                <li className="category-item manager-entity-item" key={category.id}>
+                  <div>
+                    <strong>{category.name}</strong>
+                    <p>Used to organize the warehouse catalog and product grouping.</p>
+                  </div>
+
+                  <div className="category-actions manager-entity-actions">
+                    <button onClick={() => handleEditCategory(category)}>Edit</button>
+                    <button onClick={() => handleDeleteCategory(category.id)}>Delete</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="page-empty-state">
+              <strong>No categories found</strong>
+              <p>Try another search term or create a new category.</p>
+            </div>
+          )}
         </div>
-
-        <div className="category-entry-card">
-          <div className="add-cat">
-            <input
-              value={categoryName}
-              type="text"
-              placeholder="Category name"
-              onChange={(event) => setCategoryName(event.target.value)}
-            />
-
-            {!isEditing ? (
-              <button onClick={addCategory}>Add Category</button>
-            ) : (
-              <button onClick={editCategory}>Update Category</button>
-            )}
-          </div>
-        </div>
-
-        {filteredCategories.length ? (
-          <ul className="category-list">
-            {filteredCategories.map((category) => (
-              <li className="category-item" key={category.id}>
-                <span>{category.name}</span>
-
-                <div className="category-actions">
-                  <button onClick={() => handleEditCategory(category)}>Edit</button>
-                  <button onClick={() => handleDeleteCategory(category.id)}>Delete</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="page-empty-state">
-            <strong>No categories found</strong>
-            <p>Try another search term or create a new category.</p>
-          </div>
-        )}
       </div>
     </MainLayout>
   );
