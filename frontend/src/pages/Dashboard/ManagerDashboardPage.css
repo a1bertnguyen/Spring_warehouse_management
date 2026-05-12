@@ -396,6 +396,16 @@
   color: #334155;
 }
 
+.manager-status-badge-positive {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.manager-status-badge-negative {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
 .manager-timeline-item {
   column-gap: 16px;
   display: grid;
@@ -523,6 +533,16 @@
   color: #64748b;
   display: block;
   margin-top: 4px;
+}
+
+.manager-delta-positive {
+  color: #047857 !important;
+  font-weight: 700;
+}
+
+.manager-delta-negative {
+  color: #b91c1c !important;
+  font-weight: 700;
 }
 
 .manager-table-actions {

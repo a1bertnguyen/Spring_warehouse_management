@@ -16,6 +16,11 @@ const MANAGER_NAV_ITEMS = [
   { path: PATHS.supplier, label: "Suppliers", icon: "suppliers" },
   { path: PATHS.product, label: "Products", icon: "products" },
   { path: PATHS.dashboardInventory, label: "Inventory", icon: "inventory" },
+  {
+    path: PATHS.dashboardInventoryMovements,
+    label: "Inventory Movements",
+    icon: "movements",
+  },
   { path: PATHS.dashboardSalesOrders, label: "Sales Orders", icon: "sales" },
   {
     path: PATHS.dashboardPurchaseOrders,
@@ -68,6 +73,9 @@ function NavIcon({ name }) {
     ),
     inventory: (
       <path d="M5 5h14v4H5zm0 5h14v4H5zm0 5h14v4H5z" />
+    ),
+    movements: (
+      <path d="M4 7h6m4 0h6M7 4l3 3-3 3m10 4-3 3 3 3M4 17h6m4 0h6" />
     ),
     sales: (
       <path d="M5 17 11 11l3 3 5-6M17 8h2v2" />

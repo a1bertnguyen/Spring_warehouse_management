@@ -147,6 +147,10 @@ public class WarehouseServiceImpl implements WarehouseService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+
         Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
                 .orElse(Inventory.builder()
                         .warehouse(warehouse)
@@ -155,7 +159,7 @@ public class WarehouseServiceImpl implements WarehouseService {
                         .lastUpdated(new Timestamp(System.currentTimeMillis()))
                         .build());
 
-        int quantityToAdd = quantity != null ? quantity : 0;
+        int quantityToAdd = quantity;
         int quantityBefore = safeQuantity(inventory.getQuantityOnHand());
         int quantityAfter = quantityBefore + quantityToAdd;
         inventory.setQuantityOnHand(quantityAfter);

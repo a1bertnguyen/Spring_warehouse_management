@@ -32,6 +32,7 @@ function formatCurrency(value) {
 
 const ProductPage = () => {
   const [products, setProducts] = useState([]);
+  const [catalogProducts, setCatalogProducts] = useState([]);
   const [message, setMessage] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [statusInput, setStatusInput] = useState("all");
@@ -39,6 +40,12 @@ const ProductPage = () => {
   const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
+  const [showWarehouseAssignForm, setShowWarehouseAssignForm] = useState(false);
+  const [warehouseAssignForm, setWarehouseAssignForm] = useState({
+    productId: "",
+    quantity: "1",
+  });
+  const [isAssigningProduct, setIsAssigningProduct] = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -47,6 +54,7 @@ const ProductPage = () => {
 
   useEffect(() => {
     loadProducts();
+    loadCatalogProducts();
     setCurrentPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warehouseId]);
@@ -62,6 +70,25 @@ const ProductPage = () => {
       }
     } catch (error) {
       showMessage(error.response?.data?.message || `Error loading products: ${error}`);
+    }
+  }
+
+  async function loadCatalogProducts() {
+    if (!warehouseId) {
+      setCatalogProducts([]);
+      return;
+    }
+
+    try {
+      const productData = await ApiService.getAllProducts();
+
+      if (productData.status === 200 || Array.isArray(productData.products)) {
+        setCatalogProducts(productData.products || []);
+      }
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message || `Error loading product catalog: ${error}`
+      );
     }
   }
 
@@ -104,6 +131,24 @@ const ProductPage = () => {
   }, [currentPage, totalPages]);
 
   async function handleDeleteProduct(productId) {
+    if (warehouseId) {
+      if (!window.confirm("Are you sure you want to remove this product from the warehouse?")) {
+        return;
+      }
+
+      try {
+        await ApiService.removeProductFromWarehouse(warehouseId, productId);
+        showMessage("Product removed from warehouse successfully.");
+        await loadProducts();
+      } catch (error) {
+        showMessage(
+          error.response?.data?.message ||
+            `Error removing product from warehouse: ${error}`
+        );
+      }
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this product?")) {
       return;
     }
@@ -145,6 +190,56 @@ const ProductPage = () => {
     setAppliedSearchTerm(searchInput);
     setAppliedStatusFilter(statusInput);
     setCurrentPage(1);
+  }
+
+  function handleWarehouseAssignFormChange({ target: { name, value } }) {
+    setWarehouseAssignForm((currentValue) => ({
+      ...currentValue,
+      [name]: value,
+    }));
+  }
+
+  async function handleAddProductToWarehouse(event) {
+    event.preventDefault();
+
+    if (!warehouseId) {
+      showMessage("Select a warehouse before assigning products.");
+      return;
+    }
+
+    if (!warehouseAssignForm.productId) {
+      showMessage("Please choose a product.");
+      return;
+    }
+
+    const quantity = Number(warehouseAssignForm.quantity);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      showMessage("Quantity must be greater than 0.");
+      return;
+    }
+
+    setIsAssigningProduct(true);
+
+    try {
+      await ApiService.addProductToWarehouse(
+        warehouseId,
+        Number(warehouseAssignForm.productId),
+        quantity
+      );
+      showMessage("Product added to warehouse successfully.");
+      setWarehouseAssignForm({
+        productId: "",
+        quantity: "1",
+      });
+      await loadProducts();
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message || `Error adding product to warehouse: ${error}`
+      );
+    } finally {
+      setIsAssigningProduct(false);
+    }
   }
 
   function showMessage(nextMessage) {
@@ -213,9 +308,16 @@ const ProductPage = () => {
               <button
                 type="button"
                 className="add-product-btn"
-                onClick={() => navigate(PATHS.addProduct)}
+                onClick={() => {
+                  if (warehouseId) {
+                    setShowWarehouseAssignForm((currentValue) => !currentValue);
+                    return;
+                  }
+
+                  navigate(PATHS.addProduct);
+                }}
               >
-                + Add Product
+                {warehouseId ? "+ Add Product To Warehouse" : "+ Add Product"}
               </button>
 
               {warehouseId ? (
@@ -240,6 +342,58 @@ const ProductPage = () => {
               </button>
             </div>
           </div>
+
+          {warehouseId && showWarehouseAssignForm ? (
+            <form className="product-warehouse-form" onSubmit={handleAddProductToWarehouse}>
+              <div className="product-warehouse-form-copy">
+                <span className="product-warehouse-form-label">Warehouse assignment</span>
+                <h2>Add product to {warehouseName || "selected warehouse"}</h2>
+                <p>
+                  Choose an existing product and enter the quantity to increase stock in
+                  this warehouse.
+                </p>
+              </div>
+
+              <div className="product-warehouse-form-grid">
+                <div className="form-group">
+                  <label htmlFor="warehouse-product-id">Product</label>
+                  <select
+                    id="warehouse-product-id"
+                    name="productId"
+                    value={warehouseAssignForm.productId}
+                    onChange={handleWarehouseAssignFormChange}
+                    className="product-filter-select"
+                  >
+                    <option value="">Select a product</option>
+                    {catalogProducts.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {(product.sku || product.su || "N/A") + " - " + (product.name || "Unnamed product")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="warehouse-product-quantity">Quantity</label>
+                  <input
+                    id="warehouse-product-quantity"
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={warehouseAssignForm.quantity}
+                    onChange={handleWarehouseAssignFormChange}
+                    className="page-search-input product-search-input"
+                    placeholder="Enter quantity"
+                  />
+                </div>
+
+                <button type="submit" className="product-filter-button" disabled={isAssigningProduct}>
+                  {isAssigningProduct ? "Adding..." : "Add To Warehouse"}
+                </button>
+              </div>
+            </form>
+          ) : null}
 
           {paginatedProducts.length ? (
             <div className="product-table-shell">
@@ -288,7 +442,7 @@ const ProductPage = () => {
                             className="product-delete-btn"
                             onClick={() => handleDeleteProduct(product.id)}
                           >
-                            Delete
+                            {warehouseId ? "Remove" : "Delete"}
                           </button>
                         </div>
                       </td>

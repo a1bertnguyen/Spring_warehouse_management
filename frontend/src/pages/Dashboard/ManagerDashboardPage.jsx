@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import { PATHS } from "../../constants/paths";
 import ApiService from "../../services/ApiService";
@@ -21,6 +21,12 @@ const SECTION_COPY = {
     title: "Inventory health and stock alerts",
     description:
       "Review on-hand quantities, low-stock risk, and out-of-stock items before they affect fulfillment.",
+  },
+  inventoryMovements: {
+    eyebrow: "Inventory movements",
+    title: "Stock movement history",
+    description:
+      "Trace stock-in and stock-out activity by warehouse, product, actor, and reference document.",
   },
   salesOrders: {
     eyebrow: "Sales orders",
@@ -142,6 +148,16 @@ function formatStatus(value) {
     .join(" ");
 }
 
+function formatSignedQuantity(value) {
+  const amount = Number(value || 0);
+
+  if (amount > 0) {
+    return `+${amount}`;
+  }
+
+  return String(amount);
+}
+
 function formatDate(value) {
   if (!value) {
     return "No date";
@@ -233,6 +249,7 @@ function TableEmptyState({ title, description }) {
 
 const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const timeoutRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -242,6 +259,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [isSavingWarehouse, setIsSavingWarehouse] = useState(false);
   const [warehouseSearchTerm, setWarehouseSearchTerm] = useState("");
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [inventoryMovementSearchTerm, setInventoryMovementSearchTerm] = useState("");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
@@ -262,6 +280,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     suppliers: [],
     products: [],
     inventories: [],
+    inventoryMovements: [],
     salesOrders: [],
     purchaseOrders: [],
     goodsReceipts: [],
@@ -271,6 +290,17 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       outOfStockCount: 0,
     },
   });
+
+  const movementScope = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+
+    return {
+      warehouseId: params.get("warehouseId"),
+      warehouseName: params.get("warehouseName") || "",
+      productId: params.get("productId"),
+      productName: params.get("productName") || "",
+    };
+  }, [location.search]);
 
   useEffect(() => {
     loadDashboardData();
@@ -294,6 +324,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       productResult,
       inventoryResult,
       summaryResult,
+      movementResult,
       salesResult,
       purchaseResult,
       receiptResult,
@@ -304,6 +335,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       ApiService.getAllProducts(),
       ApiService.getAllInventories(),
       ApiService.getInventorySummary(),
+      ApiService.getInventoryMovements(),
       ApiService.getAllSalesOrders({ page: 0, size: 24 }),
       ApiService.getAllPurchaseOrders({ page: 0, size: 24 }),
       ApiService.getAllStockInwards(),
@@ -316,6 +348,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       productResult,
       inventoryResult,
       summaryResult,
+      movementResult,
       salesResult,
       purchaseResult,
       receiptResult,
@@ -394,6 +427,10 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         inventoryResult.status === "fulfilled"
           ? inventoryResult.value?.inventories || []
           : [],
+      inventoryMovements:
+        movementResult.status === "fulfilled"
+          ? normalizeTopLevelCollection(movementResult.value, "inventoryMovements")
+          : [],
       salesOrders:
         salesResult.status === "fulfilled" ? salesResult.value?.salesOrders || [] : [],
       purchaseOrders:
@@ -442,6 +479,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     suppliers,
     products,
     inventories,
+    inventoryMovements,
     salesOrders,
     purchaseOrders,
     goodsReceipts,
@@ -566,6 +604,33 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         ])
       ),
     [inventories, inventorySearchTerm]
+  );
+
+  const filteredInventoryMovements = useMemo(
+    () =>
+      inventoryMovements.filter((movement) =>
+        (!movementScope.warehouseId ||
+          String(movement?.warehouseId ?? "") === String(movementScope.warehouseId)) &&
+        (!movementScope.productId ||
+          String(movement?.productId ?? "") === String(movementScope.productId)) &&
+        matchesSearch(inventoryMovementSearchTerm, [
+          movement.productName,
+          movement.productSku,
+          movement.warehouseName,
+          movement.actorUserName,
+          movement.movementType,
+          movement.referenceType,
+          movement.referenceCode,
+          movement.referenceId,
+          movement.note,
+        ])
+      ),
+    [
+      inventoryMovementSearchTerm,
+      inventoryMovements,
+      movementScope.productId,
+      movementScope.warehouseId,
+    ]
   );
 
   const summaryCards = useMemo(
@@ -707,6 +772,28 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       warehouseName: warehouse.name || "Warehouse",
     });
     navigate(`${PATHS.product}?${params.toString()}`);
+  }
+
+  function openWarehouseMovements(warehouse) {
+    const params = new URLSearchParams({
+      warehouseId: String(warehouse.id),
+      warehouseName: warehouse.name || "Warehouse",
+    });
+    navigate(`${PATHS.dashboardInventoryMovements}?${params.toString()}`);
+  }
+
+  function openProductMovements(inventory) {
+    const params = new URLSearchParams({
+      warehouseId: String(inventory.warehouseId),
+      warehouseName: inventory.warehouseName || "Warehouse",
+      productId: String(inventory.productId),
+      productName: inventory.productName || "Product",
+    });
+    navigate(`${PATHS.dashboardInventoryMovements}?${params.toString()}`);
+  }
+
+  function clearMovementScope() {
+    navigate(PATHS.dashboardInventoryMovements);
   }
 
   function closeDetailDialog() {
@@ -1011,6 +1098,13 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                         >
                           Products
                         </button>
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => openWarehouseMovements(warehouse)}
+                        >
+                          View Movements
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1036,6 +1130,13 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             <span className="manager-panel-label">Inventory watchlist</span>
             <h2>Current stock positions</h2>
           </div>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => navigate(PATHS.dashboardInventoryMovements)}
+          >
+            Open Movements
+          </button>
         </div>
 
         <div className="manager-toolbar">
@@ -1072,6 +1173,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                   <th>On hand</th>
                   <th>Threshold</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1089,6 +1191,17 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                         {formatStatus(inventory.status)}
                       </span>
                     </td>
+                    <td>
+                      <div className="manager-table-actions">
+                        <button
+                          type="button"
+                          className="info-button"
+                          onClick={() => openProductMovements(inventory)}
+                        >
+                          View Movements
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1098,6 +1211,108 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           <TableEmptyState
             title="No inventory matches"
             description="Try another search term to find a product, SKU, warehouse, or status."
+          />
+        )}
+      </section>
+    );
+  }
+
+  function renderInventoryMovements() {
+    const hasMovementScope = movementScope.warehouseId || movementScope.productId;
+    const scopeSummary = [
+      movementScope.warehouseName ? `Warehouse: ${movementScope.warehouseName}` : null,
+      movementScope.productName ? `Product: ${movementScope.productName}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+
+    return (
+      <section className="manager-panel">
+        <div className="manager-panel-heading">
+          <div>
+            <span className="manager-panel-label">Inventory movements</span>
+            <h2>Recent stock adjustments</h2>
+            {scopeSummary ? (
+              <p className="manager-panel-description">{scopeSummary}</p>
+            ) : null}
+          </div>
+          {hasMovementScope ? (
+            <button type="button" className="ghost-button" onClick={clearMovementScope}>
+              Clear Context
+            </button>
+          ) : null}
+        </div>
+
+        <div className="manager-toolbar">
+          <input
+            className="manager-search-input manager-search-input-wide"
+            value={inventoryMovementSearchTerm}
+            onChange={(event) => setInventoryMovementSearchTerm(event.target.value)}
+            placeholder="Search product, warehouse, actor, reference, or movement type"
+          />
+        </div>
+
+        {filteredInventoryMovements.length ? (
+          <div className="manager-table-shell">
+            <table className="manager-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Product</th>
+                  <th>Warehouse</th>
+                  <th>Movement</th>
+                  <th>Reference</th>
+                  <th>Actor</th>
+                  <th>Before</th>
+                  <th>Delta</th>
+                  <th>After</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInventoryMovements.slice(0, 24).map((movement) => (
+                  <tr key={movement.movementId}>
+                    <td>{formatDate(movement.createdAt)}</td>
+                    <td>
+                      <strong>{movement.productName || "Unnamed product"}</strong>
+                      <span>{movement.productSku || "No SKU"}</span>
+                    </td>
+                    <td>{movement.warehouseName || "Unassigned"}</td>
+                    <td>
+                      <span
+                        className={`manager-status-badge ${
+                          Number(movement.quantityDelta || 0) >= 0
+                            ? "manager-status-badge-positive"
+                            : "manager-status-badge-negative"
+                        }`}
+                      >
+                        {formatStatus(movement.movementType)}
+                      </span>
+                    </td>
+                    <td>
+                      <strong>{movement.referenceCode || movement.referenceId || "Manual"}</strong>
+                      <span>{formatStatus(movement.referenceType) || "No reference type"}</span>
+                    </td>
+                    <td>{movement.actorUserName || "System"}</td>
+                    <td>{movement.quantityBefore || 0}</td>
+                    <td
+                      className={
+                        Number(movement.quantityDelta || 0) >= 0
+                          ? "manager-delta-positive"
+                          : "manager-delta-negative"
+                      }
+                    >
+                      {formatSignedQuantity(movement.quantityDelta)}
+                    </td>
+                    <td>{movement.quantityAfter || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <TableEmptyState
+            title="No inventory movements found"
+            description="Movement history will appear here after stock enters or leaves a warehouse."
           />
         )}
       </section>
@@ -1250,6 +1465,10 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
 
     if (activeSection === "inventory") {
       return renderInventory();
+    }
+
+    if (activeSection === "inventoryMovements") {
+      return renderInventoryMovements();
     }
 
     if (activeSection === "salesOrders") {

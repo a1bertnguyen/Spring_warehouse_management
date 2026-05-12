@@ -32,6 +32,10 @@ const protectedAppRoutes = (
       element={<ProtectedRoute element={<DashboardPage />} />}
     />
     <Route
+      path={PATHS.dashboardInventoryMovements}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
+    <Route
       path={PATHS.dashboardSalesOrders}
       element={<ProtectedRoute element={<DashboardPage />} />}
     />

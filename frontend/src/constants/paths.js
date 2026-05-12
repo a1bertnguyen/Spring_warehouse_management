@@ -4,6 +4,7 @@ export const PATHS = {
   dashboard: "/dashboard",
   dashboardWarehouses: "/dashboard/warehouses",
   dashboardInventory: "/dashboard/inventory",
+  dashboardInventoryMovements: "/dashboard/inventory-movements",
   dashboardSalesOrders: "/dashboard/sales-orders",
   dashboardPurchaseOrders: "/dashboard/purchase-orders",
   dashboardGoodsReceipts: "/dashboard/goods-receipts",

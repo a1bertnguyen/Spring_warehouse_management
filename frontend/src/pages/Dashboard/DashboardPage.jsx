@@ -10,6 +10,7 @@ const MANAGER_SECTION_BY_PATH = {
   [PATHS.dashboard]: "overview",
   [PATHS.dashboardWarehouses]: "warehouses",
   [PATHS.dashboardInventory]: "inventory",
+  [PATHS.dashboardInventoryMovements]: "inventoryMovements",
   [PATHS.dashboardSalesOrders]: "salesOrders",
   [PATHS.dashboardPurchaseOrders]: "purchaseOrders",
   [PATHS.dashboardGoodsReceipts]: "goodsReceipts",

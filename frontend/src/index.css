@@ -717,6 +717,59 @@ button[type="submit"]:hover {
   gap: 14px;
 }
 
+.product-warehouse-form {
+  background: #ffffff;
+  border: 1px solid #dce7f6;
+  border-radius: 22px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 20px;
+  padding: 24px 28px;
+}
+
+.product-warehouse-form-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.product-warehouse-form-label {
+  color: #2563eb;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.product-warehouse-form-copy h2 {
+  color: #111827;
+  font-size: 1.45rem;
+  margin: 0;
+}
+
+.product-warehouse-form-copy p {
+  color: #4b5563;
+  margin: 0;
+}
+
+.product-warehouse-form-grid {
+  align-items: end;
+  display: grid;
+  gap: 18px 24px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(180px, 0.55fr) minmax(190px, 0.45fr);
+}
+
+.product-warehouse-form-grid .form-group {
+  margin: 0;
+}
+
+.product-warehouse-form-grid label {
+  color: #374151;
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
 .product-header {
   display: flex;
   justify-content: space-between;
@@ -1755,6 +1808,14 @@ button:hover {
     grid-column: 1 / -1;
   }
 
+  .product-warehouse-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .product-warehouse-form-grid .product-filter-button {
+    grid-column: 1 / -1;
+  }
+
   .product-list {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1786,6 +1847,7 @@ button:hover {
 
   .product-page-banner,
   .product-filter-card,
+  .product-warehouse-form,
   .product-table-shell {
     border-radius: 18px;
   }
@@ -1798,7 +1860,15 @@ button:hover {
     padding: 20px 18px;
   }
 
+  .product-warehouse-form {
+    padding: 20px 18px;
+  }
+
   .product-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-warehouse-form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1811,7 +1881,8 @@ button:hover {
   .product-table-toolbar,
   .product-table-actions-left,
   .product-table-actions-right,
-  .product-row-actions {
+  .product-row-actions,
+  .product-warehouse-form-grid {
     align-items: stretch;
     flex-direction: column;
   }
