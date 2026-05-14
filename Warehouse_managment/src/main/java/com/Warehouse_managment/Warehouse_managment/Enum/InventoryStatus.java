@@ -8,6 +8,7 @@ public enum InventoryStatus {
     LOW_STOCK("Almost low stock"),
     AVAILABLE("Available");
 
+
     private final String label;
 
     InventoryStatus(String label) {
