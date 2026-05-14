@@ -1,6 +1,7 @@
 package com.Warehouse_managment.Warehouse_managment.Service;
 
 
+import com.Warehouse_managment.Warehouse_managment.Dtos.ChangePasswordRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.LoginRequest;
 import com.Warehouse_managment.Warehouse_managment.Model.User;
 import com.Warehouse_managment.Warehouse_managment.Dtos.RegisterRequest;
@@ -22,6 +23,8 @@ public interface UserService {
     Response getUserById(Long id);
 
     Response updateUser(Long id, UserDTO userDTO);
+
+    Response changeCurrentUserPassword(ChangePasswordRequest request);
 
     Response deleteUser(Long id);
 

@@ -1900,15 +1900,11 @@ button:hover {
 }
 
 .profile-panel {
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: var(--wm-surface);
+  border: 1px solid var(--wm-border);
   border-radius: 24px;
-  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--wm-shadow-soft);
   padding: 28px;
-}
-
-.profile-panel-accent {
-  background: linear-gradient(180deg, #ffffff 0%, #f2fbfa 100%);
 }
 
 .profile-panel-heading {
@@ -1916,7 +1912,7 @@ button:hover {
 }
 
 .profile-panel h2 {
-  color: #102137;
+  color: var(--wm-text);
   margin-top: 8px;
 }
 
@@ -1927,8 +1923,8 @@ button:hover {
 
 .profile-item {
   align-items: center;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7fbfd;
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 18px;
   display: flex;
   justify-content: space-between;
@@ -1937,48 +1933,50 @@ button:hover {
 }
 
 .profile-item label {
-  color: #0f766e;
+  color: var(--wm-accent-strong);
   font-size: 0.95rem;
   font-weight: 700;
 }
 
 .profile-item span {
-  color: #1f2937;
+  color: var(--wm-text);
   font-weight: 600;
   text-align: right;
 }
 
-.profile-stat-grid {
+.profile-password-form {
   display: grid;
   gap: 16px;
 }
 
-.profile-stat-card {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 20px;
+.profile-password-form label {
+  color: var(--wm-text);
   display: grid;
-  gap: 8px;
-  padding: 18px;
+  gap: 10px;
+  font-size: 0.98rem;
+  font-weight: 600;
 }
 
-.profile-stat-card span {
-  color: #0f766e;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.profile-password-form input {
+  background: var(--wm-surface-strong);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  color: var(--wm-text);
+  min-height: 54px;
+  padding: 14px 16px;
 }
 
-.profile-stat-card strong {
-  color: #0f172a;
-  font-size: 1.3rem;
-  line-height: 1.35;
+.profile-password-form input:focus {
+  border-color: rgba(15, 139, 141, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.12);
+  outline: none;
 }
 
-.profile-stat-card p {
-  color: #475569;
-  margin: 0;
+.profile-password-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 
@@ -2313,5 +2311,14 @@ button:hover {
   .profile-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .profile-password-actions {
+    flex-direction: column-reverse;
+  }
+
+  .profile-password-actions .secondary-page-button,
+  .profile-password-actions .manager-primary-button {
+    width: 100%;
   }
 }

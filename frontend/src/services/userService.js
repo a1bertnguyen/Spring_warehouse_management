@@ -32,6 +32,11 @@ export async function updateUser(userId, userData) {
   return response.data;
 }
 
+export async function changeCurrentUserPassword(payload) {
+  const response = await apiClient.put("/users/current/password", payload);
+  return response.data;
+}
+
 export async function deleteUser(userId) {
   const response = await apiClient.delete(`/users/delete/${userId}`);
   return response.data;

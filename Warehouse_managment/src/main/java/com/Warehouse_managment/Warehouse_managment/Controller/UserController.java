@@ -1,8 +1,10 @@
 package com.Warehouse_managment.Warehouse_managment.Controller;
 
+import com.Warehouse_managment.Warehouse_managment.Dtos.ChangePasswordRequest;
 import com.Warehouse_managment.Warehouse_managment.Model.User;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Dtos.UserDTO;
+import jakarta.validation.Valid;
 import com.Warehouse_managment.Warehouse_managment.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,13 @@ public class UserController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Response> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userDTO));
+    }
+
+    @PutMapping("/current/password")
+    public ResponseEntity<Response> changeCurrentUserPassword(
+            @RequestBody @Valid ChangePasswordRequest request
+    ) {
+        return ResponseEntity.ok(userService.changeCurrentUserPassword(request));
     }
 
     @DeleteMapping("/delete/{id}")

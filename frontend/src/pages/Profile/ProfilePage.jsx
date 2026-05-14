@@ -14,24 +14,16 @@ function formatRoleLabel(role) {
     .join(" ");
 }
 
-function formatDate(value) {
-  if (!value) {
-    return "Not available";
-  }
-
-  const parsedDate = new Date(value);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Not available";
-  }
-
-  return parsedDate.toLocaleDateString();
-}
-
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -79,6 +71,52 @@ const ProfilePage = () => {
     ],
     [user]
   );
+
+  const handlePasswordFieldChange = ({ target: { name, value } }) => {
+    setPasswordForm((currentValue) => ({
+      ...currentValue,
+      [name]: value,
+    }));
+  };
+
+  const resetPasswordForm = () => {
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+  };
+
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!passwordForm.currentPassword.trim() || !passwordForm.newPassword.trim()) {
+      showMessage("Current password and new password are required.");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showMessage("New password and confirmation do not match.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+
+    try {
+      const response = await ApiService.changeCurrentUserPassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      showMessage(response?.message || "Password updated successfully.");
+      resetPasswordForm();
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message || "Unable to update your password right now."
+      );
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -130,35 +168,75 @@ const ProfilePage = () => {
                 </div>
               </article>
 
-              <article className="profile-panel profile-panel-accent">
+              <article className="profile-panel">
                 <div className="profile-panel-heading">
                   <div>
-                    <span className="profile-section-label">Overview</span>
-                    <h2>Account Status</h2>
+                    <span className="profile-section-label">Security</span>
+                    <h2>Change Password</h2>
                   </div>
                 </div>
 
-                <div className="profile-stat-grid">
-                  <div className="profile-stat-card">
-                    <span>Status</span>
-                    <strong>
-                      {user.active === false ? "Disabled" : "Active"}
-                    </strong>
-                    <p>The current access state of this account.</p>
-                  </div>
+                <form className="profile-password-form" onSubmit={handlePasswordSubmit}>
+                  <label htmlFor="profile-current-password">
+                    Current Password
+                    <input
+                      id="profile-current-password"
+                      name="currentPassword"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordFieldChange}
+                      placeholder="Enter current password"
+                      autoComplete="current-password"
+                      required
+                    />
+                  </label>
 
-                  <div className="profile-stat-card">
-                    <span>Created On</span>
-                    <strong>{formatDate(user.createdAt)}</strong>
-                    <p>When this account was added to the system.</p>
-                  </div>
+                  <label htmlFor="profile-new-password">
+                    New Password
+                    <input
+                      id="profile-new-password"
+                      name="newPassword"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordFieldChange}
+                      placeholder="Enter new password"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </label>
 
-                  <div className="profile-stat-card">
-                    <span>Current Role</span>
-                    <strong>{formatRoleLabel(user.role)}</strong>
-                    <p>Your role determines which areas and tasks are available.</p>
+                  <label htmlFor="profile-confirm-password">
+                    Confirm New Password
+                    <input
+                      id="profile-confirm-password"
+                      name="confirmPassword"
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordFieldChange}
+                      placeholder="Re-enter new password"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </label>
+
+                  <div className="profile-password-actions">
+                    <button
+                      type="button"
+                      className="secondary-page-button"
+                      onClick={resetPasswordForm}
+                      disabled={isUpdatingPassword}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="submit"
+                      className="manager-primary-button"
+                      disabled={isUpdatingPassword}
+                    >
+                      {isUpdatingPassword ? "Updating..." : "Update Password"}
+                    </button>
                   </div>
-                </div>
+                </form>
               </article>
             </div>
           </div>

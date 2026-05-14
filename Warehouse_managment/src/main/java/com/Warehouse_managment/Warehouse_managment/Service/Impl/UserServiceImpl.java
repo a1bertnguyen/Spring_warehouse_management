@@ -1,5 +1,6 @@
 package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 import com.Warehouse_managment.Warehouse_managment.Config.JwtUtils;
+import com.Warehouse_managment.Warehouse_managment.Dtos.ChangePasswordRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.LoginRequest;
 import com.Warehouse_managment.Warehouse_managment.Enum.UserRole;
 import com.Warehouse_managment.Warehouse_managment.Enum.ActivityAction;
@@ -225,6 +226,18 @@ public class UserServiceImpl implements UserService {
         return Response.builder()
                 .status(200)
                 .message("User successfully updated")
+                .build();
+    }
+
+    @Override
+    public Response changeCurrentUserPassword(ChangePasswordRequest request) {
+        User currentUser = getCurrentLoggedInUser();
+        updatePassword(currentUser, request.getCurrentPassword() + ":" + request.getNewPassword());
+        userRepository.save(currentUser);
+
+        return Response.builder()
+                .status(200)
+                .message("Password updated successfully")
                 .build();
     }
 
