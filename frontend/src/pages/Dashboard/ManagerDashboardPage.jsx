@@ -231,6 +231,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [isSavingWarehouse, setIsSavingWarehouse] = useState(false);
   const [warehouseSearchTerm, setWarehouseSearchTerm] = useState("");
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [isExportingInventory, setIsExportingInventory] = useState(false);
   const [inventoryMovementSearchTerm, setInventoryMovementSearchTerm] = useState("");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
@@ -749,6 +750,29 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     navigate(PATHS.dashboardInventoryMovements);
   }
 
+  async function handleExportInventories() {
+    setIsExportingInventory(true);
+
+    try {
+      const blob = await ApiService.exportInventories({
+        productName: inventorySearchTerm || undefined,
+      });
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "inventories.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      showMessage(error.response?.data?.message || "Unable to export inventory data.");
+    } finally {
+      setIsExportingInventory(false);
+    }
+  }
+
   function closeDetailDialog() {
     setDetailDialog({
       isOpen: false,
@@ -1053,6 +1077,9 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             <span className="manager-panel-label">Inventory watchlist</span>
             <h2>Current stock positions</h2>
           </div>
+          <button type="button" className="info-button" onClick={handleExportInventories}>
+            {isExportingInventory ? "Exporting..." : "Export Excel"}
+          </button>
         </div>
 
         <div className="manager-toolbar">

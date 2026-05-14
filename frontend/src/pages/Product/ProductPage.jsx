@@ -169,6 +169,7 @@ const ProductPage = () => {
       const blob = await ApiService.exportProducts({
         search: appliedSearchTerm || undefined,
         status: appliedStatusFilter !== "all" ? appliedStatusFilter : undefined,
+        warehouseId: warehouseId || undefined,
       });
 
       const downloadUrl = window.URL.createObjectURL(blob);

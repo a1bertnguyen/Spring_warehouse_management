@@ -128,20 +128,25 @@ public class ProductController {
         return ResponseEntity.ok(productService.searchProduct(input));
     }
 
-  /*  @GetMapping("/export")
+    @GetMapping("/export")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<byte[]> exportProductsToExcel(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) ProductStatus status
+            @RequestParam(required = false) ProductStatus status,
+            @RequestParam(required = false) Integer warehouseId
     ) {
-        byte[] excelFile = productService.exportProductsToExcel(search, status != null ? status.name() : null);
+        byte[] excelFile = productService.exportProductsToExcel(
+                search,
+                status != null ? status.name() : null,
+                warehouseId
+        );
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=products.xlsx")
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelFile);
-    }*/
+    }
 
     private BigDecimal resolvePrice(BigDecimal primary, BigDecimal fallback) {
         return primary != null ? primary : fallback;
@@ -165,4 +170,3 @@ public class ProductController {
         }
     }
 }
-

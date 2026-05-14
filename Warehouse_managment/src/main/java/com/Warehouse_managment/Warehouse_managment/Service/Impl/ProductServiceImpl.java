@@ -4,6 +4,7 @@ package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Enum.ProductStatus;
 import com.Warehouse_managment.Warehouse_managment.Model.Category;
+import com.Warehouse_managment.Warehouse_managment.Model.Inventory;
 import com.Warehouse_managment.Warehouse_managment.Model.Product;
 import com.Warehouse_managment.Warehouse_managment.Model.Supplier;
 import com.Warehouse_managment.Warehouse_managment.Repository.CategoryRepository;
@@ -238,16 +239,26 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
-   /* @Override
-    public byte[] exportProductsToExcel(String search, String status) {
+    @Override
+    public byte[] exportProductsToExcel(String search, String status, Integer warehouseId) {
         String normalizedSearch = search == null || search.isBlank() ? null : search.trim().toLowerCase();
-        ProductStatus normalizedStatus = null;
+        ProductStatus parsedStatus = null;
 
         if (status != null && !status.isBlank()) {
-            normalizedStatus = ProductStatus.valueOf(status.trim().toLowerCase());
+            parsedStatus = ProductStatus.valueOf(status.trim().toLowerCase());
         }
+        final ProductStatus normalizedStatus = parsedStatus;
 
-        List<ProductDTO> productDTOList = productRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+        List<Product> productsToExport =
+                warehouseId != null
+                        ? inventoryRepository.findByWarehouse_Id(warehouseId).stream()
+                        .map(Inventory::getProduct)
+                        .filter(product -> product != null && product.getId() != null)
+                        .distinct()
+                        .toList()
+                        : productRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+
+        List<ProductDTO> productDTOList = productsToExport.stream()
                 .filter(product -> matchesSearch(product, normalizedSearch))
                 .filter(product -> normalizedStatus == null || product.getStatus() == normalizedStatus)
                 .map(this::toProductDTO)
@@ -301,7 +312,7 @@ public class ProductServiceImpl implements ProductService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to export products to Excel", e);
         }
-    }*/
+    }
 
     private ProductDTO toProductDTO(Product product) {
         ProductDTO productDTO = new ProductDTO();
