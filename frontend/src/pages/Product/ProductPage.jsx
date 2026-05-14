@@ -257,7 +257,14 @@ const ProductPage = () => {
       <div className="product-page product-page-table">
         <div className="product-page-shell">
           <div className="product-page-banner">
-            <h1>{warehouseName ? `${warehouseName} Product List` : "Product List"}</h1>
+            <div>
+              <span className="manager-page-eyebrow">Catalog</span>
+              <h1>{warehouseName ? `${warehouseName} Product List` : "Product List"}</h1>
+              <p className="page-subtitle">
+                Search, filter, export, and manage product records with one shared manager
+                workspace.
+              </p>
+            </div>
           </div>
 
           <div className="product-filter-card">

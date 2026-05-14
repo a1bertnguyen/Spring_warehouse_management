@@ -90,7 +90,11 @@ const SupplierPage = () => {
                 placeholder="Search by supplier name, contact info, or address"
               />
 
-              <button type="button" onClick={() => navigate(PATHS.addSupplier)}>
+              <button
+                type="button"
+                className="manager-primary-button"
+                onClick={() => navigate(PATHS.addSupplier)}
+              >
                 Add Supplier
               </button>
             </div>

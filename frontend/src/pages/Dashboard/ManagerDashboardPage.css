@@ -7,8 +7,9 @@
 .manager-hero {
   align-items: stretch;
   background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.2), transparent 32%),
-    linear-gradient(135deg, #0f172a 0%, #111827 52%, #16363a 100%);
+    radial-gradient(circle at top right, rgba(111, 227, 217, 0.18), transparent 32%),
+    linear-gradient(135deg, #13202c 0%, #1c2d3a 52%, #0f565f 100%);
+  border: 1px solid rgba(111, 227, 217, 0.08);
   border-radius: 28px;
   color: #f8fafc;
   display: grid;
@@ -17,6 +18,7 @@
   overflow: hidden;
   padding: 32px;
   position: relative;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
 }
 
 .manager-hero::after {
@@ -87,8 +89,8 @@
 .manager-panel,
 .manager-action-card,
 .manager-insight-card {
-  background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 24px;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
 }
@@ -100,13 +102,13 @@
 }
 
 .manager-metric-card strong {
-  color: #0f172a;
+  color: #12202d;
   font-size: 2rem;
   line-height: 1;
 }
 
 .manager-metric-card p {
-  color: #475569;
+  color: #5b6b7a;
   line-height: 1.6;
 }
 
@@ -143,7 +145,7 @@
 }
 
 .manager-panel-emphasis {
-  background: linear-gradient(180deg, #ffffff 0%, #f5fcfb 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f6fbfd 100%);
 }
 
 .manager-panel-heading {
@@ -154,7 +156,7 @@
 }
 
 .manager-panel-heading h2 {
-  color: #0f172a;
+  color: #12202d;
   margin-top: 8px;
   overflow-wrap: anywhere;
 }
@@ -168,8 +170,8 @@
 }
 
 .manager-warehouse-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7fbfd;
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 22px;
   cursor: pointer;
   display: grid;
@@ -181,7 +183,7 @@
 
 .manager-warehouse-card:hover,
 .manager-warehouse-card.active {
-  border-color: rgba(20, 184, 166, 0.32);
+  border-color: rgba(15, 139, 141, 0.32);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
   transform: translateY(-2px);
 }
@@ -199,14 +201,14 @@
 }
 
 .manager-inline-form-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7fbfd;
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 20px;
   padding: 18px;
 }
 
 .manager-inline-form label {
-  color: #334155;
+  color: #12202d;
   display: grid;
   gap: 8px;
   font-weight: 600;
@@ -214,17 +216,18 @@
 
 .manager-inline-form input,
 .manager-inline-form select {
-  background: #f8fafc;
-  border: 1px solid #dbe4ee;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 14px;
-  color: #0f172a;
+  color: #12202d;
   font-size: 0.95rem;
   padding: 12px 14px;
 }
 
 .manager-inline-form input:focus,
 .manager-inline-form select:focus {
-  border-color: #14b8a6;
+  border-color: rgba(15, 139, 141, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.12);
   outline: none;
 }
 
@@ -242,13 +245,19 @@
 
 .manager-search-input {
   background: #ffffff;
-  border: 1px solid #dbe4ee;
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 14px;
-  color: #0f172a;
+  color: #12202d;
   font-size: 0.95rem;
   min-height: 44px;
   min-width: 280px;
   padding: 0 14px;
+}
+
+.manager-search-input:focus {
+  border-color: rgba(15, 139, 141, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.12);
+  outline: none;
 }
 
 .manager-search-input-wide {
@@ -272,40 +281,40 @@
 
 .ghost-button {
   background: #ffffff;
-  border: 1px solid #cbd5e1 !important;
-  color: #1f2937;
+  border: 1px solid rgba(148, 163, 184, 0.34) !important;
+  color: #12202d;
 }
 
 .ghost-button:hover {
-  border-color: #94a3b8 !important;
+  border-color: rgba(15, 139, 141, 0.22) !important;
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
 .warn-button {
-  background: #fbbf24;
-  color: #1f2937;
+  background: #ffe08a;
+  color: #6f4d00;
 }
 
 .warn-button:hover {
-  background: #f59e0b;
+  background: #ffd66b;
 }
 
 .info-button {
-  background: #22c1dc;
+  background: linear-gradient(135deg, #0f8b8d 0%, #18a6a9 100%);
   color: #ffffff;
 }
 
 .info-button:hover {
-  background: #0891b2;
+  background: linear-gradient(135deg, #0c6f72 0%, #148f91 100%);
 }
 
 .danger-button {
-  background: #7f1d1d;
+  background: #ff6b7a;
   color: #ffffff;
 }
 
 .danger-button:hover {
-  background: #991b1b;
+  background: #f25566;
 }
 
 .manager-product-thumb {
@@ -329,8 +338,8 @@
 }
 
 .manager-list-row {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7fbfd;
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 20px;
 }
 
@@ -342,7 +351,7 @@
 }
 
 .manager-list-row-button:hover {
-  border-color: rgba(20, 184, 166, 0.28);
+  border-color: rgba(15, 139, 141, 0.28);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
   transform: translateY(-2px);
 }
@@ -351,14 +360,14 @@
 .manager-insight-card strong,
 .manager-timeline-item strong,
 .manager-empty-state strong {
-  color: #0f172a;
+  color: #12202d;
 }
 
 .manager-list-row p,
 .manager-insight-card p,
 .manager-timeline-item p,
 .manager-empty-state p {
-  color: #64748b;
+  color: #5b6b7a;
   line-height: 1.6;
   margin-top: 4px;
 }
@@ -372,14 +381,14 @@
 }
 
 .manager-row-metrics strong {
-  color: #0f172a;
+  color: #12202d;
   font-size: 1.3rem;
 }
 
 .manager-status-badge {
-  background: rgba(20, 184, 166, 0.12);
+  background: rgba(15, 139, 141, 0.12);
   border-radius: 999px;
-  color: #0f766e;
+  color: #0c6f72;
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
@@ -387,8 +396,8 @@
 }
 
 .manager-status-badge-warning {
-  background: rgba(251, 191, 36, 0.18);
-  color: #b45309;
+  background: #fff5d9;
+  color: #b7791f;
 }
 
 .manager-status-badge-neutral {
@@ -397,13 +406,13 @@
 }
 
 .manager-status-badge-positive {
-  background: rgba(16, 185, 129, 0.14);
-  color: #047857;
+  background: #e9fbf5;
+  color: #14795b;
 }
 
 .manager-status-badge-negative {
-  background: rgba(239, 68, 68, 0.14);
-  color: #b91c1c;
+  background: #ffe7e8;
+  color: #c0394d;
 }
 
 .manager-timeline-item {
@@ -413,7 +422,7 @@
 }
 
 .manager-timeline-dot {
-  background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+  background: linear-gradient(180deg, #18a6a9 0%, #0c6f72 100%);
   border-radius: 999px;
   display: inline-flex;
   height: 12px;
@@ -448,18 +457,18 @@
 
 .manager-action-card:hover,
 .manager-insight-card:hover {
-  border-color: rgba(20, 184, 166, 0.28);
+  border-color: rgba(15, 139, 141, 0.28);
   box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
   transform: translateY(-3px);
 }
 
 .manager-action-card strong {
-  color: #0f172a;
+  color: #12202d;
   font-size: 1rem;
 }
 
 .manager-action-card p {
-  color: #64748b;
+  color: #5b6b7a;
   line-height: 1.6;
 }
 
@@ -472,8 +481,8 @@
 
 .manager-highlight-grid div,
 .manager-summary-strip div {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #f7fbfd;
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 20px;
   display: grid;
   gap: 8px;
@@ -482,7 +491,7 @@
 
 .manager-highlight-grid span,
 .manager-summary-strip span {
-  color: #0f766e;
+  color: #0c6f72;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -491,7 +500,7 @@
 
 .manager-highlight-grid strong,
 .manager-summary-strip strong {
-  color: #0f172a;
+  color: #12202d;
   font-size: 1.45rem;
 }
 
@@ -506,14 +515,14 @@
 
 .manager-table th,
 .manager-table td {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.82);
   padding: 16px 12px;
   text-align: left;
   vertical-align: top;
 }
 
 .manager-table th {
-  color: #0f766e;
+  color: #0c6f72;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -521,16 +530,16 @@
 }
 
 .manager-table td {
-  color: #334155;
+  color: #5b6b7a;
 }
 
 .manager-table td strong {
-  color: #0f172a;
+  color: #12202d;
   display: block;
 }
 
 .manager-table td span {
-  color: #64748b;
+  color: #5b6b7a;
   display: block;
   margin-top: 4px;
 }

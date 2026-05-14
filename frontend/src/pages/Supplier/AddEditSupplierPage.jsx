@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";
 import { useNavigate, useParams } from "react-router-dom";
+import { PATHS } from "../../constants/paths";
 
 const AddEditSupplierPage = () => {
   const { supplierId } = useParams("");
@@ -45,11 +46,11 @@ const AddEditSupplierPage = () => {
       if (isEditing) {
         await ApiService.updateSupplier(supplierId, supplierData);
         showMessage("Supplier Edited succesfully");
-        navigate("/supplier")
+        navigate(PATHS.supplier);
       } else {
         await ApiService.addSupplier(supplierData);
         showMessage("Supplier Added succesfully");
-        navigate("/supplier")
+        navigate(PATHS.supplier);
       }
     } catch (error) {
       showMessage(
@@ -70,43 +71,70 @@ const AddEditSupplierPage = () => {
   return (
     <MainLayout>
       {message && <div className="message">{message}</div>}
-      <div className="supplier-form-page">
-        <h1>{isEditing ? "Edit Supplier" : "Add Supplier"}</h1>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Supplier Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              type="text"
-            />
+      <div className="manager-page-shell">
+        <div className="manager-page-banner">
+          <div>
+            <span className="manager-page-eyebrow">Procurement</span>
+            <h1>{isEditing ? "Update Supplier" : "Add Supplier"}</h1>
+            <p className="page-subtitle">
+              Keep supplier records consistent with the same visual system used across the
+              warehouse manager workspace.
+            </p>
           </div>
+        </div>
 
-          <div className="form-group">
-            <label>Contact Info</label>
-            <input
-              value={contactInfo}
-              onChange={(e) => setContactInfo(e.target.value)}
-              required
-              type="text"
-            />
-          </div>
+        <div className="manager-page-card manager-form-card">
+          <form onSubmit={handleSubmit} className="manager-form-grid">
+            <div className="form-group">
+              <label htmlFor="supplier-name">Supplier Name</label>
+              <input
+                id="supplier-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                type="text"
+                placeholder="Enter supplier name"
+              />
+            </div>
 
-          <div className="form-group">
-            <label>Address</label>
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              required
-              type="text"
-            />
-          </div>
-          <button type="submit">
-            {isEditing ? "Edit Supplier" : "Add Supplier"}
-          </button>
-        </form>
+            <div className="form-group">
+              <label htmlFor="supplier-contact-info">Contact Info</label>
+              <input
+                id="supplier-contact-info"
+                value={contactInfo}
+                onChange={(e) => setContactInfo(e.target.value)}
+                required
+                type="text"
+                placeholder="Email, phone number, or representative"
+              />
+            </div>
+
+            <div className="form-group form-group-full">
+              <label htmlFor="supplier-address">Address</label>
+              <input
+                id="supplier-address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                type="text"
+                placeholder="Enter supplier address"
+              />
+            </div>
+
+            <div className="manager-form-actions">
+              <button
+                type="button"
+                className="secondary-page-button"
+                onClick={() => navigate(PATHS.supplier)}
+              >
+                Back
+              </button>
+              <button type="submit" className="manager-primary-button">
+                {isEditing ? "Update Supplier" : "Add Supplier"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </MainLayout>
   );

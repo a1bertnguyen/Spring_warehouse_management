@@ -126,7 +126,11 @@ const CategoryPage = () => {
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
 
-              <button type="button" onClick={() => setShowCategoryForm((currentValue) => !currentValue)}>
+              <button
+                type="button"
+                className="manager-primary-button"
+                onClick={() => setShowCategoryForm((currentValue) => !currentValue)}
+              >
                 {showCategoryForm && !isEditing ? "Hide Form" : "Add Category"}
               </button>
             </div>
@@ -143,9 +147,13 @@ const CategoryPage = () => {
                 />
 
                 {!isEditing ? (
-                  <button onClick={addCategory}>Save Category</button>
+                  <button className="manager-primary-button" onClick={addCategory}>
+                    Save Category
+                  </button>
                 ) : (
-                  <button onClick={editCategory}>Update Category</button>
+                  <button className="manager-primary-button" onClick={editCategory}>
+                    Update Category
+                  </button>
                 )}
 
                 <button type="button" className="secondary-page-button" onClick={resetCategoryForm}>
@@ -165,8 +173,15 @@ const CategoryPage = () => {
                   </div>
 
                   <div className="category-actions manager-entity-actions">
-                    <button onClick={() => handleEditCategory(category)}>Edit</button>
-                    <button onClick={() => handleDeleteCategory(category.id)}>Delete</button>
+                    <button className="table-edit-btn" onClick={() => handleEditCategory(category)}>
+                      Edit
+                    </button>
+                    <button
+                      className="table-delete-btn"
+                      onClick={() => handleDeleteCategory(category.id)}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </li>
               ))}
