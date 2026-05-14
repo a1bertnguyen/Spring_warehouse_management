@@ -97,29 +97,49 @@ const SupplierPage = () => {
           </div>
 
           {filteredSuppliers.length ? (
-            <ul className="supplier-list manager-entity-list">
-              {filteredSuppliers.map((supplier) => (
-                <li className="supplier-item manager-entity-item" key={supplier.id}>
-                  <div>
-                    <strong>{supplier.name}</strong>
-                    {supplier.contactInfo ? <p>{supplier.contactInfo}</p> : null}
-                    {supplier.address ? <p>{supplier.address}</p> : null}
-                  </div>
-
-                  <div className="supplier-actions manager-entity-actions">
-                    <button
-                      type="button"
-                      onClick={() => navigate(buildEditSupplierPath(supplier.id))}
-                    >
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => handleDeleteSupplier(supplier.id)}>
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="manager-data-table-shell">
+              <table className="manager-data-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Supplier Name</th>
+                    <th>Contact Info</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSuppliers.map((supplier, index) => (
+                    <tr key={supplier.id}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <strong>{supplier.name}</strong>
+                      </td>
+                      <td>{supplier.contactInfo || "N/A"}</td>
+                      <td>{supplier.address || "N/A"}</td>
+                      <td>
+                        <div className="manager-table-actions-inline">
+                          <button
+                            type="button"
+                            className="table-edit-btn"
+                            onClick={() => navigate(buildEditSupplierPath(supplier.id))}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="table-delete-btn"
+                            onClick={() => handleDeleteSupplier(supplier.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="page-empty-state">
               <strong>No suppliers found</strong>

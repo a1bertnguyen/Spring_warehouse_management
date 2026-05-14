@@ -9,6 +9,7 @@ const CategoryPage = () => {
   const [message, setMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
 
   const showMessage = useCallback((msg) => {
     setMessage(msg);
@@ -52,7 +53,7 @@ const CategoryPage = () => {
     try {
       await ApiService.createCategory({ name: categoryName.trim() });
       showMessage("Category successfully added");
-      setCategoryName("");
+      resetCategoryForm();
       await loadCategories();
     } catch (error) {
       showMessage(error.response?.data?.message || "Error adding category: " + error);
@@ -69,9 +70,7 @@ const CategoryPage = () => {
         name: categoryName.trim(),
       });
       showMessage("Category successfully updated");
-      setIsEditing(false);
-      setEditingCategoryId(null);
-      setCategoryName("");
+      resetCategoryForm();
       await loadCategories();
     } catch (error) {
       showMessage(error.response?.data?.message || "Error updating category: " + error);
@@ -82,6 +81,14 @@ const CategoryPage = () => {
     setIsEditing(true);
     setEditingCategoryId(category.id);
     setCategoryName(category.name);
+    setShowCategoryForm(true);
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryName("");
+    setIsEditing(false);
+    setEditingCategoryId(null);
+    setShowCategoryForm(false);
   };
 
   const handleDeleteCategory = async (categoryId) => {
@@ -110,7 +117,7 @@ const CategoryPage = () => {
           </div>
 
           <div className="manager-page-card">
-            <div className="page-toolbar">
+            <div className="page-toolbar manager-inline-toolbar">
               <input
                 className="page-search-input"
                 value={searchTerm}
@@ -118,25 +125,35 @@ const CategoryPage = () => {
                 placeholder="Search categories"
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
+
+              <button type="button" onClick={() => setShowCategoryForm((currentValue) => !currentValue)}>
+                {showCategoryForm && !isEditing ? "Hide Form" : "Add Category"}
+              </button>
             </div>
           </div>
 
-          <div className="category-entry-card manager-page-card">
-            <div className="add-cat manager-inline-toolbar">
-              <input
-                value={categoryName}
-                type="text"
-                placeholder="Category name"
-                onChange={(event) => setCategoryName(event.target.value)}
-              />
+          {showCategoryForm ? (
+            <div className="category-entry-card manager-page-card">
+              <div className="add-cat manager-inline-toolbar">
+                <input
+                  value={categoryName}
+                  type="text"
+                  placeholder="Category name"
+                  onChange={(event) => setCategoryName(event.target.value)}
+                />
 
-              {!isEditing ? (
-                <button onClick={addCategory}>Add Category</button>
-              ) : (
-                <button onClick={editCategory}>Update Category</button>
-              )}
+                {!isEditing ? (
+                  <button onClick={addCategory}>Save Category</button>
+                ) : (
+                  <button onClick={editCategory}>Update Category</button>
+                )}
+
+                <button type="button" className="secondary-page-button" onClick={resetCategoryForm}>
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {filteredCategories.length ? (
             <ul className="category-list manager-entity-list">
