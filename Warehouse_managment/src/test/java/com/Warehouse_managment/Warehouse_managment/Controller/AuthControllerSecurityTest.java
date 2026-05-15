@@ -64,13 +64,15 @@ class AuthControllerSecurityTest {
     }
 
     @Test
-    void registerRejectsAnonymousUsers() throws Exception {
+    void registerAllowsAnonymousUsers() throws Exception {
         RegisterRequest registerRequest = new RegisterRequest("New User", "new@example.com", "Password@123", "0900000000", null);
+        when(userService.registerUser(eq(registerRequest)))
+                .thenReturn(Response.builder().status(200).message("created").build());
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     @Test

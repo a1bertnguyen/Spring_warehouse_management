@@ -56,6 +56,10 @@ public class UserServiceImpl implements UserService {
             role = registerRequest.getRole();
         }
 
+        if (role == UserRole.ADMIN && !canCreateAdminAccount()) {
+            throw new IllegalArgumentException("Only an authenticated admin can create another admin account");
+        }
+
         User userToSave = User.builder()
                 .name(registerRequest.getName())
                 .email(registerRequest.getEmail())
@@ -274,6 +278,10 @@ public class UserServiceImpl implements UserService {
         return authentication != null
                 && authentication.getAuthorities().stream()
                 .anyMatch(authority -> UserRole.ADMIN.name().equals(authority.getAuthority()));
+    }
+
+    private boolean canCreateAdminAccount() {
+        return isCurrentUserAdmin() || !userRepository.existsByRole(UserRole.ADMIN);
     }
 
     @Override

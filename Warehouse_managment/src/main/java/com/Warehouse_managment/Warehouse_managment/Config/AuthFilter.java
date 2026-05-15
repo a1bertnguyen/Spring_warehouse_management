@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -32,24 +33,42 @@ public class AuthFilter extends OncePerRequestFilter {
         String token = getTokenFromRequest(request);
 
         if (token != null) {
-            String email = jwtUtils.getUsernameFromToken(token);
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+            try {
+                String email = jwtUtils.getUsernameFromToken(token);
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-            if (StringUtils.hasText(email)
-                    && userDetails.isEnabled()
-                    && jwtUtils.isTokeValid(token, userDetails)) {
-                log.info("Valid Token, {}", email);
+                if (StringUtils.hasText(email)
+                        && userDetails.isEnabled()
+                        && jwtUtils.isTokeValid(token, userDetails)) {
+                    log.info("Valid Token, {}", email);
 
-                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                }
+            } catch (Exception ex) {
+                SecurityContextHolder.clearContext();
+                log.warn("Ignoring invalid JWT for path {}: {}", request.getRequestURI(), ex.getMessage());
             }
         }
 
         filterChain.doFilter(request, response);
 
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
+
+        return RequestMethod.OPTIONS.name().equalsIgnoreCase(request.getMethod())
+                || "/api/auth/login".equals(requestUri)
+                || "/swagger-ui.html".equals(requestUri)
+                || requestUri.startsWith("/swagger-ui/")
+                || "/v3/api-docs".equals(requestUri)
+                || requestUri.startsWith("/v3/api-docs/")
+                || "/v3/api-docs.yaml".equals(requestUri);
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
