@@ -93,6 +93,12 @@ const STATUS_LABELS = {
 };
 
 const PAGE_SIZE = 10;
+const PURCHASE_ORDER_STATUS_OPTIONS = [
+  { value: "ordered", label: "Ordered" },
+  { value: "partially_received", label: "Partially Received" },
+  { value: "received", label: "Received" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 const EMPTY_INWARD_ITEM = {
   productId: "",
@@ -239,6 +245,29 @@ function PurchaseEmptyState({ title, description }) {
   );
 }
 
+function PurchaseSectionHeader({
+  eyebrow,
+  title,
+  description,
+  meta,
+  action = null,
+}) {
+  return (
+    <div className="purchase-section-header">
+      <div className="purchase-section-copy">
+        <p className="purchase-section-eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+
+      <div className="purchase-section-actions">
+        {meta ? <span className="purchase-section-meta">{meta}</span> : null}
+        {action}
+      </div>
+    </div>
+  );
+}
+
 function Pagination({ currentPage, totalItems, onChange }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
@@ -315,6 +344,19 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     error: "",
     items: [],
     config: null,
+  });
+  const [purchaseOrderEditor, setPurchaseOrderEditor] = useState({
+    isOpen: false,
+    isLoading: false,
+    isSubmitting: false,
+    orderId: null,
+    orderCode: "",
+    requesterName: "",
+    warehouseName: "",
+    orderDate: "",
+    status: "ordered",
+    supplierId: "",
+    notes: "",
   });
   const [dashboardData, setDashboardData] = useState({
     suppliers: [],
@@ -455,6 +497,22 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     });
   }
 
+  function closePurchaseOrderEditor() {
+    setPurchaseOrderEditor({
+      isOpen: false,
+      isLoading: false,
+      isSubmitting: false,
+      orderId: null,
+      orderCode: "",
+      requesterName: "",
+      warehouseName: "",
+      orderDate: "",
+      status: "ordered",
+      supplierId: "",
+      notes: "",
+    });
+  }
+
   async function openOrderDetails(kind, row) {
     const config = ORDER_DETAIL_CONFIG[kind];
 
@@ -489,6 +547,47 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
           error.response?.data?.message ||
           `Unable to load ${config.typeLabel.toLowerCase()}.`,
       }));
+    }
+  }
+
+  async function openPurchaseOrderEditor(orderId) {
+    closeDetailDialog();
+    setPurchaseOrderEditor({
+      isOpen: true,
+      isLoading: true,
+      isSubmitting: false,
+      orderId,
+      orderCode: "",
+      requesterName: "",
+      warehouseName: "",
+      orderDate: "",
+      status: "ordered",
+      supplierId: "",
+      notes: "",
+    });
+
+    try {
+      const response = await ApiService.getPurchaseOrderById(orderId);
+      const purchaseOrder = response?.purchaseOrder || response?.data;
+
+      setPurchaseOrderEditor({
+        isOpen: true,
+        isLoading: false,
+        isSubmitting: false,
+        orderId: purchaseOrder?.id ?? orderId,
+        orderCode: purchaseOrder?.orderCode || "",
+        requesterName: purchaseOrder?.requesterName || "",
+        warehouseName: purchaseOrder?.warehouseName || "",
+        orderDate: purchaseOrder?.orderDate || "",
+        status: purchaseOrder?.status || "ordered",
+        supplierId: String(purchaseOrder?.supplierId ?? ""),
+        notes: purchaseOrder?.notes || "",
+      });
+    } catch (error) {
+      closePurchaseOrderEditor();
+      showMessage(
+        error.response?.data?.message || "Unable to load purchase order for editing."
+      );
     }
   }
 
@@ -712,6 +811,14 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     );
   }, [selectedPurchaseOrder, suppliers]);
 
+  const selectedEditSupplier = useMemo(
+    () =>
+      suppliers.find(
+        (supplier) => String(supplier.id) === String(purchaseOrderEditor.supplierId)
+      ) || null,
+    [purchaseOrderEditor.supplierId, suppliers]
+  );
+
   const activeCopy = SECTION_COPY[activeSection] || SECTION_COPY.overview;
 
   function paginate(rows, section) {
@@ -738,6 +845,14 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
   function handleStockInwardChange(event) {
     const { name, value } = event.target;
     setStockInwardForm((currentValue) => ({
+      ...currentValue,
+      [name]: value,
+    }));
+  }
+
+  function handlePurchaseOrderEditChange(event) {
+    const { name, value } = event.target;
+    setPurchaseOrderEditor((currentValue) => ({
       ...currentValue,
       [name]: value,
     }));
@@ -859,6 +974,53 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     }
   }
 
+  async function submitPurchaseOrderEditor(mode = "save") {
+    if (!purchaseOrderEditor.orderId) {
+      return;
+    }
+
+    if (!purchaseOrderEditor.supplierId) {
+      showMessage("Supplier is required.");
+      return;
+    }
+
+    const nextStatus =
+      mode === "send" ? "ordered" : String(purchaseOrderEditor.status || "ordered");
+
+    if (mode === "send" && String(purchaseOrderEditor.status || "").toLowerCase() !== "ordered") {
+      showMessage("Choose Ordered status before sending the purchase order.");
+      return;
+    }
+
+    setPurchaseOrderEditor((currentValue) => ({
+      ...currentValue,
+      isSubmitting: true,
+    }));
+
+    try {
+      await ApiService.updatePurchaseOrder(purchaseOrderEditor.orderId, {
+        supplierId: Number(purchaseOrderEditor.supplierId),
+        notes: purchaseOrderEditor.notes.trim(),
+        status: nextStatus,
+      });
+      await loadDashboardData();
+      closePurchaseOrderEditor();
+      showMessage(
+        mode === "send"
+          ? "Purchase order sent successfully."
+          : "Purchase order updated successfully."
+      );
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message || "Unable to update the purchase order."
+      );
+      setPurchaseOrderEditor((currentValue) => ({
+        ...currentValue,
+        isSubmitting: false,
+      }));
+    }
+  }
+
   function renderOverview() {
     return (
       <>
@@ -953,6 +1115,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     return (
       <section className="purchase-section-card">
+        <PurchaseSectionHeader
+          eyebrow="Supplier Directory"
+          title="Supplier Records"
+          description="Keep contact details and supplier addresses aligned with the inbound purchasing workflow."
+          meta={`${formatCompactNumber(filteredSuppliers.length)} records`}
+        />
+
         <div className="purchase-toolbar">
           <input
             className="purchase-search-input"
@@ -1009,6 +1178,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     return (
       <section className="purchase-section-card">
+        <PurchaseSectionHeader
+          eyebrow="Live Inventory"
+          title="Inventory Snapshot"
+          description="Review stock by product and warehouse before creating a new receipt or following up with suppliers."
+          meta={`${formatCompactNumber(filteredInventories.length)} inventory rows`}
+        />
+
         <div className="purchase-toolbar">
           <input
             className="purchase-search-input"
@@ -1077,6 +1253,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     return (
       <section className="purchase-section-card">
+        <PurchaseSectionHeader
+          eyebrow="Procurement Flow"
+          title="Purchase Order Tracking"
+          description="Monitor approved supplier orders, receipt progress, and the latest warehouse follow-up activity."
+          meta={`${formatCompactNumber(filteredPurchaseOrderRows.length)} orders`}
+        />
+
         <div className="purchase-toolbar">
           <input
             className="purchase-search-input"
@@ -1104,7 +1287,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
                 </thead>
                 <tbody>
                   {rows.map((row, index) => (
-                    <tr key={row.id}>
+                  <tr key={row.id}>
                       <td>{startIndex + index + 1}</td>
                       <td>
                         <strong>{row.code}</strong>
@@ -1119,13 +1302,22 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
                       </td>
                       <td>{formatDate(row.updatedAt)}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="purchase-row-action"
-                          onClick={() => openOrderDetails("purchaseOrder", row)}
-                        >
-                          Details
-                        </button>
+                        <div className="purchase-row-actions">
+                          <button
+                            type="button"
+                            className="purchase-row-action"
+                            onClick={() => openOrderDetails("purchaseOrder", row)}
+                          >
+                            Details
+                          </button>
+                          <button
+                            type="button"
+                            className="purchase-row-action secondary"
+                            onClick={() => openPurchaseOrderEditor(row.id)}
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1156,6 +1348,22 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     return (
       <section className="purchase-section-card">
+        <PurchaseSectionHeader
+          eyebrow="Receiving Workspace"
+          title="Stock Inward Dashboard"
+          description="Review completed receipts and launch the receiving form directly from the stock inward workspace."
+          meta={`${formatCompactNumber(filteredGoodsReceiptRows.length)} receipts`}
+          action={
+            <button
+              type="button"
+              className="purchase-primary-action"
+              onClick={() => navigate(PATHS.dashboardCreateStockInward)}
+            >
+              Create Stock Inward
+            </button>
+          }
+        />
+
         <div className="purchase-toolbar">
           <input
             className="purchase-search-input"
@@ -1163,13 +1371,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
             onChange={(event) => setGoodsReceiptSearchTerm(event.target.value)}
             placeholder="Search by code, supplier, warehouse, or status"
           />
-          <button
-            type="button"
-            className="purchase-primary-action"
-            onClick={() => navigate(PATHS.dashboardCreateStockInward)}
-          >
-            Create Stock Inward
-          </button>
         </div>
 
         {rows.length ? (
@@ -1242,6 +1443,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     return (
       <section className="purchase-section-card">
+        <PurchaseSectionHeader
+          eyebrow="Audit Trail"
+          title="Inventory Movement History"
+          description="Trace stock increases and decreases across warehouses, purchase receipts, and operator actions."
+          meta={`${formatCompactNumber(filteredInventoryMovements.length)} movements`}
+        />
+
         <div className="purchase-toolbar">
           <input
             className="purchase-search-input"
@@ -1322,6 +1530,21 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
   function renderCreateStockInward() {
     return (
       <section className="purchase-section-card purchase-section-card-form">
+        <PurchaseSectionHeader
+          eyebrow="Receiving Form"
+          title="Create Stock Inward"
+          description="Use the purchase order details below to record received quantities and push inventory updates into the warehouse ledger."
+          action={
+            <button
+              type="button"
+              className="purchase-secondary-action"
+              onClick={() => navigate(PATHS.dashboardGoodsReceipts)}
+            >
+              Back to Stock Inwards
+            </button>
+          }
+        />
+
         <form className="stock-inward-form" onSubmit={handleSubmitStockInward}>
           <div className="stock-inward-form-grid">
             <div className="stock-inward-form-main">
@@ -1681,6 +1904,168 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
                 description="This document does not contain any line items yet."
               />
             )}
+          </section>
+        </div>
+      ) : null}
+
+      {purchaseOrderEditor.isOpen ? (
+        <div
+          className="purchase-dialog-backdrop"
+          role="presentation"
+          onClick={closePurchaseOrderEditor}
+        >
+          <section
+            className="purchase-dialog purchase-order-editor-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="purchase-order-editor-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <PurchaseSectionHeader
+              eyebrow="Edit Purchase Order"
+              title="Purchase Order Adjustment"
+              description="Review supplier assignment, notes, and order status before saving or sending the purchase order."
+            />
+
+            {purchaseOrderEditor.isLoading ? (
+              <PurchaseEmptyState
+                title="Loading purchase order"
+                description="Fetching the latest purchase order data."
+              />
+            ) : (
+              <div className="purchase-order-editor-grid">
+                <div className="purchase-order-editor-main">
+                  <label>
+                    Order Code
+                    <input
+                      className="purchase-form-control is-readonly"
+                      value={purchaseOrderEditor.orderCode}
+                      readOnly
+                    />
+                  </label>
+
+                  <label>
+                    Requester
+                    <input
+                      className="purchase-form-control is-readonly"
+                      value={purchaseOrderEditor.requesterName}
+                      readOnly
+                    />
+                  </label>
+
+                  <label>
+                    Warehouse
+                    <input
+                      className="purchase-form-control is-readonly"
+                      value={purchaseOrderEditor.warehouseName}
+                      readOnly
+                    />
+                  </label>
+
+                  <label>
+                    Order Date
+                    <input
+                      className="purchase-form-control is-readonly"
+                      value={formatDate(purchaseOrderEditor.orderDate)}
+                      readOnly
+                    />
+                  </label>
+
+                  <label>
+                    Status
+                    <select
+                      className="purchase-form-control"
+                      name="status"
+                      value={purchaseOrderEditor.status}
+                      onChange={handlePurchaseOrderEditChange}
+                    >
+                      {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="purchase-order-editor-side">
+                  <label>
+                    Supplier
+                    <select
+                      className="purchase-form-control"
+                      name="supplierId"
+                      value={purchaseOrderEditor.supplierId}
+                      onChange={handlePurchaseOrderEditChange}
+                    >
+                      <option value="">Select supplier</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="purchase-order-editor-card">
+                    <strong>Supplier Information</strong>
+                    {selectedEditSupplier ? (
+                      <div className="purchase-order-editor-card-copy">
+                        <p>
+                          <span>Contact</span>
+                          {selectedEditSupplier.contactInfo || "Not Available"}
+                        </p>
+                        <p>
+                          <span>Address</span>
+                          {selectedEditSupplier.address || "Not Available"}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="stock-inward-supplier-placeholder">
+                        Select a supplier to review contact details.
+                      </p>
+                    )}
+                  </div>
+
+                  <label>
+                    Notes
+                    <textarea
+                      className="purchase-form-control purchase-form-textarea"
+                      name="notes"
+                      value={purchaseOrderEditor.notes}
+                      onChange={handlePurchaseOrderEditChange}
+                      rows={5}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="purchase-order-editor-actions">
+              <button
+                type="button"
+                className="purchase-secondary-action"
+                onClick={closePurchaseOrderEditor}
+                disabled={purchaseOrderEditor.isSubmitting}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="purchase-primary-action"
+                onClick={() => submitPurchaseOrderEditor("save")}
+                disabled={purchaseOrderEditor.isLoading || purchaseOrderEditor.isSubmitting}
+              >
+                {purchaseOrderEditor.isSubmitting ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                type="button"
+                className="purchase-primary-action purchase-primary-action-alt"
+                onClick={() => submitPurchaseOrderEditor("send")}
+                disabled={purchaseOrderEditor.isLoading || purchaseOrderEditor.isSubmitting}
+              >
+                Send Order
+              </button>
+            </div>
           </section>
         </div>
       ) : null}

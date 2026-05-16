@@ -1,6 +1,7 @@
 package com.Warehouse_managment.Warehouse_managment.Controller;
 
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderRequest;
+import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderUpdateRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrder;
 import com.Warehouse_managment.Warehouse_managment.Service.PurchaseOrderDetailService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,6 +54,13 @@ public class PurchaseOrderController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF')")
     public ResponseEntity<Response> getPurchaseOrderById(@PathVariable Integer id) {
         return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderById(id));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF')")
+    public ResponseEntity<Response> updatePurchaseOrder(@PathVariable Integer id,
+                                                        @RequestBody @Valid PurchaseOrderUpdateRequest purchaseOrderUpdateRequest) {
+        return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrder(id, purchaseOrderUpdateRequest));
     }
 
     @GetMapping("/{id}/details")

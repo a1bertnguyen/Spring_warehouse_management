@@ -23,13 +23,13 @@ public class WarehouseController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getAllWarehouses() {
         return ResponseEntity.ok(warehouseService.getAllWarehouses());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getWarehouseById(@PathVariable Integer id) {
         return ResponseEntity.ok(warehouseService.getWarehouseById(id));
     }
@@ -48,7 +48,7 @@ public class WarehouseController {
     }
 
     @GetMapping("/{id}/products")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getProductsByWarehouse(@PathVariable Integer id) {
         return ResponseEntity.ok(warehouseService.getProductsByWarehouseId(id));
     }

@@ -1,6 +1,7 @@
 package com.Warehouse_managment.Warehouse_managment.Service;
 
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderRequest;
+import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderUpdateRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Model.PurchaseOrder;
 
@@ -17,6 +18,8 @@ public interface PurchaseOrderService {
                                   PurchaseOrder.OrderStatus status);
 
     Response getPurchaseOrderById(Integer id);
+
+    Response updatePurchaseOrder(Integer id, PurchaseOrderUpdateRequest purchaseOrderUpdateRequest);
 
     Response updatePurchaseOrderStatus(Integer id, PurchaseOrder.OrderStatus status);
 

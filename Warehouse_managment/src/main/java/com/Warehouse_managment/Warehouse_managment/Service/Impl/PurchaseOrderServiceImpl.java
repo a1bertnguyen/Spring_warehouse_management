@@ -3,6 +3,7 @@ package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderDetailDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderRequest;
+import com.Warehouse_managment.Warehouse_managment.Dtos.PurchaseOrderUpdateRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
 import com.Warehouse_managment.Warehouse_managment.Enum.InventoryMovementType;
 import com.Warehouse_managment.Warehouse_managment.Enum.InventoryReferenceType;
@@ -180,24 +181,39 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     @Transactional
+    public Response updatePurchaseOrder(Integer id, PurchaseOrderUpdateRequest purchaseOrderUpdateRequest) {
+        PurchaseOrder purchaseOrder = getOrderEntity(id);
+
+        if (purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.partially_received
+                || purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.received) {
+            throw new IllegalStateException("Cannot edit a purchase order that has already been received");
+        }
+
+        if (purchaseOrderUpdateRequest.getSupplierId() != null) {
+            supplierRepository.findById(purchaseOrderUpdateRequest.getSupplierId())
+                    .orElseThrow(() -> new NotFoundException("Supplier Not Found"));
+            purchaseOrder.setSupplierId(purchaseOrderUpdateRequest.getSupplierId());
+        }
+
+        if (purchaseOrderUpdateRequest.getNotes() != null) {
+            purchaseOrder.setNotes(purchaseOrderUpdateRequest.getNotes().trim());
+        }
+
+        applyPurchaseOrderStatusChange(purchaseOrder, purchaseOrderUpdateRequest.getStatus());
+        PurchaseOrder updatedOrder = purchaseOrderRepository.save(purchaseOrder);
+
+        return Response.builder()
+                .status(200)
+                .message("Purchase Order Updated Successfully")
+                .data(toDto(updatedOrder))
+                .build();
+    }
+
+    @Override
+    @Transactional
     public Response updatePurchaseOrderStatus(Integer id, PurchaseOrder.OrderStatus status) {
         PurchaseOrder purchaseOrder = getOrderEntity(id);
-        PurchaseOrder.OrderStatus previousStatus = purchaseOrder.getStatus();
-
-        if (status == previousStatus) {
-            return Response.builder()
-                    .status(200)
-                    .message("Purchase Order Status Updated Successfully")
-                    .data(toDto(purchaseOrder))
-                    .build();
-        }
-
-        validateStatusTransition(previousStatus, status);
-        purchaseOrder.setStatus(status);
-
-        if (status == PurchaseOrder.OrderStatus.received && previousStatus != PurchaseOrder.OrderStatus.received) {
-            applyReceivedInventory(purchaseOrder);
-        }
+        applyPurchaseOrderStatusChange(purchaseOrder, status);
 
         PurchaseOrder updatedOrder = purchaseOrderRepository.save(purchaseOrder);
 
@@ -206,6 +222,21 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .message("Purchase Order Status Updated Successfully")
                 .data(toDto(updatedOrder))
                 .build();
+    }
+
+    private void applyPurchaseOrderStatusChange(PurchaseOrder purchaseOrder, PurchaseOrder.OrderStatus status) {
+        PurchaseOrder.OrderStatus previousStatus = purchaseOrder.getStatus();
+
+        if (status == null || status == previousStatus) {
+            return;
+        }
+
+        validateStatusTransition(previousStatus, status);
+        purchaseOrder.setStatus(status);
+
+        if (status == PurchaseOrder.OrderStatus.received && previousStatus != PurchaseOrder.OrderStatus.received) {
+            applyReceivedInventory(purchaseOrder);
+        }
     }
 
     @Override

@@ -15,6 +15,11 @@ export async function getPurchaseOrderById(orderId) {
   return withItemAlias(response.data, "purchaseOrder");
 }
 
+export async function updatePurchaseOrder(orderId, orderData) {
+  const response = await apiClient.put(`/purchase-orders/${orderId}`, orderData);
+  return response.data;
+}
+
 export async function getPurchaseOrderDetails(orderId) {
   const response = await apiClient.get(`/purchase-orders/${orderId}/details`);
   return withCollectionAlias(response.data, "purchaseOrderDetails");
