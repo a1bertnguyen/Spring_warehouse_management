@@ -1,5 +1,7 @@
 package com.Warehouse_managment.Warehouse_managment.Service;
 
+import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
+import com.Warehouse_managment.Warehouse_managment.Dtos.StockInwardCreateRequest;
 import com.Warehouse_managment.Warehouse_managment.Dtos.StockInwardDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.StockInwardDetailDTO;
 import com.Warehouse_managment.Warehouse_managment.Enum.StockInwardStatus;
@@ -48,5 +50,7 @@ public interface StockInwardService {
     StockInwardDTO getStockInwardById(Integer id);
 
     List<StockInwardDetailDTO> getDetailsByStockInwardId(Integer stockInwardId);
+
+    Response createStockInward(StockInwardCreateRequest request);
 
 }

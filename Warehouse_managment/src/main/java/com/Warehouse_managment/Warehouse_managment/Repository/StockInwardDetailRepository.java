@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface StockInwardDetailRepository extends JpaRepository<StockInwardDetail, Integer> {
     List<StockInwardDetail> findByStockInward_StockInwardId(Integer stockInwardId);
+    List<StockInwardDetail> findByStockInward_PurchaseOrder_Id(Integer purchaseOrderId);
 }

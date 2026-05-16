@@ -17,32 +17,32 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getAllInventories() {
         return ResponseEntity.ok(inventoryService.getAllInventories());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getInventoryById(@PathVariable Integer id) {
         return ResponseEntity.ok(inventoryService.getInventoryById(id));
     }
 
     @GetMapping("/warehouse/{warehouseId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getInventoriesByWarehouseId(@PathVariable Integer warehouseId) {
         return ResponseEntity.ok(inventoryService.getInventoriesByWarehouseId(warehouseId));
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> searchInventories(@RequestParam(required = false) Integer warehouseId,
                                                       @RequestParam(required = false) String productName) {
         return ResponseEntity.ok(inventoryService.searchInventories(warehouseId, productName));
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getInventorySummary() {
         return ResponseEntity.ok(inventoryService.getInventorySummary());
     }

@@ -5,6 +5,11 @@ export async function getAllStockInwards() {
   return withTopLevelAlias(response.data, "stockInwards", "stockInwards");
 }
 
+export async function createStockInward(stockInwardData) {
+  const response = await apiClient.post("/stock-inwards", stockInwardData);
+  return response.data;
+}
+
 export async function getStockInwardById(stockInwardId) {
   const response = await apiClient.get(`/stock-inwards/${stockInwardId}`);
   return withTopLevelAlias(response.data, "stockInward", "stockInward");

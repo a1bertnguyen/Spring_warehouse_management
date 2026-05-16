@@ -1,5 +1,8 @@
 package com.Warehouse_managment.Warehouse_managment.Controller;
 
+import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
+import com.Warehouse_managment.Warehouse_managment.Dtos.StockInwardCreateRequest;
+import jakarta.validation.Valid;
 import com.Warehouse_managment.Warehouse_managment.Service.StockInwardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,12 @@ public class StockInwardController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Map<String, Object>> getAllStockInwards() {
         return ResponseEntity.ok(payload("stockInwards", stockInwardService.getAllStockInwards()));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
+    public ResponseEntity<Response> createStockInward(@RequestBody @Valid StockInwardCreateRequest request) {
+        return ResponseEntity.ok(stockInwardService.createStockInward(request));
     }
 
     @GetMapping("/{id}")
