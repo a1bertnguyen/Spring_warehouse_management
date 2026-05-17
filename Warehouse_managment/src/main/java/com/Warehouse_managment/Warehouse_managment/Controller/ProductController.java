@@ -148,6 +148,14 @@ public class ProductController {
                 .body(excelFile);
     }
 
+    @PostMapping("/import")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<Response> importProductsFromExcel(
+            @RequestParam("excelFile") MultipartFile excelFile
+    ) {
+        return ResponseEntity.ok(productService.importProductsFromExcel(excelFile));
+    }
+
     private BigDecimal resolvePrice(BigDecimal primary, BigDecimal fallback) {
         return primary != null ? primary : fallback;
     }

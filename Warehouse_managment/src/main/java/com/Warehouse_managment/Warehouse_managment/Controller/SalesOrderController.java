@@ -60,7 +60,7 @@ public class SalesOrderController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> updateSalesOrderStatus(@PathVariable Integer id,
                                                            @RequestParam SalesOrderStatus status) {
         return ResponseEntity.ok(salesOrderService.updateSalesOrderStatus(id, status));

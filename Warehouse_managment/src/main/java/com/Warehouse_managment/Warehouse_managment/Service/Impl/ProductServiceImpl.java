@@ -18,6 +18,7 @@ import com.Warehouse_managment.Warehouse_managment.Service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -29,11 +30,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -314,6 +317,83 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    @Override
+    public Response importProductsFromExcel(MultipartFile excelFile) {
+        if (excelFile == null || excelFile.isEmpty()) {
+            throw new IllegalArgumentException("Excel file is required");
+        }
+
+        int importedCount = 0;
+        DataFormatter formatter = new DataFormatter();
+
+        try (InputStream inputStream = excelFile.getInputStream();
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getNumberOfSheets() > 0 ? workbook.getSheetAt(0) : null;
+
+            if (sheet == null) {
+                throw new IllegalArgumentException("Excel file does not contain any sheet");
+            }
+
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (row == null || isImportRowEmpty(row, formatter)) {
+                    continue;
+                }
+
+                String sku = normalizeImportText(readCell(row, 1, formatter));
+                String name = normalizeImportText(readCell(row, 2, formatter));
+                String purchasePriceValue = normalizeImportText(readCell(row, 3, formatter));
+                String salePriceValue = normalizeImportText(readCell(row, 4, formatter));
+                String statusValue = normalizeImportText(readCell(row, 5, formatter));
+                String supplierName = normalizeImportText(readCell(row, 6, formatter));
+                String categoryName = normalizeImportText(readCell(row, 7, formatter));
+                String unit = normalizeImportText(readCell(row, 8, formatter));
+                String lowStockThresholdValue = normalizeImportText(readCell(row, 9, formatter));
+
+                if (sku == null || name == null || categoryName == null) {
+                    continue;
+                }
+
+                if (productRepository.findBySkuIgnoreCase(sku).isPresent()) {
+                    continue;
+                }
+
+                Category category = categoryRepository.findByNameIgnoreCase(categoryName)
+                        .orElseThrow(() -> new NotFoundException("Category Not Found: " + categoryName));
+
+                Supplier supplier = supplierName != null
+                        ? supplierRepository.findByNameIgnoreCase(supplierName)
+                        .orElseThrow(() -> new NotFoundException("Supplier Not Found: " + supplierName))
+                        : null;
+
+                Product product = Product.builder()
+                        .sku(sku)
+                        .name(name)
+                        .purchaseprice(parseDecimalValue(purchasePriceValue))
+                        .salePrice(parseDecimalValue(salePriceValue))
+                        .status(resolveImportedStatus(statusValue))
+                        .supplierId(supplier != null ? supplier.getId() : null)
+                        .lowStockThreshold(parseIntegerValue(lowStockThresholdValue, 0))
+                        .unit(unit)
+                        .category(category)
+                        .stockQuantity(0)
+                        .build();
+
+                productRepository.save(product);
+                importedCount++;
+            }
+        } catch (RuntimeException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to import products from Excel", exception);
+        }
+
+        return Response.builder()
+                .status(200)
+                .message("Imported " + importedCount + " products successfully")
+                .build();
+    }
+
     private ProductDTO toProductDTO(Product product) {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(product.getId());
@@ -383,6 +463,70 @@ public class ProductServiceImpl implements ProductService {
         }
 
         return status == ProductStatus.active ? "Active" : "Inactive";
+    }
+
+    private boolean isImportRowEmpty(Row row, DataFormatter formatter) {
+        for (int cellIndex = 1; cellIndex <= 9; cellIndex++) {
+            if (normalizeImportText(readCell(row, cellIndex, formatter)) != null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String readCell(Row row, int cellIndex, DataFormatter formatter) {
+        Cell cell = row.getCell(cellIndex);
+        return cell == null ? "" : formatter.formatCellValue(cell);
+    }
+
+    private String normalizeImportText(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private BigDecimal parseDecimalValue(String value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+
+        String normalizedValue = value.replace(",", "").trim();
+        return normalizedValue.isEmpty() ? BigDecimal.ZERO : new BigDecimal(normalizedValue);
+    }
+
+    private Integer parseIntegerValue(String value, Integer fallback) {
+        if (value == null) {
+            return fallback;
+        }
+
+        String normalizedValue = value.replace(",", "").trim();
+        return normalizedValue.isEmpty() ? fallback : Integer.parseInt(normalizedValue);
+    }
+
+    private ProductStatus resolveImportedStatus(String rawStatus) {
+        if (rawStatus == null) {
+            return ProductStatus.active;
+        }
+
+        String normalizedStatus = rawStatus.trim().toLowerCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        for (ProductStatus status : ProductStatus.values()) {
+            if (status.name().equalsIgnoreCase(normalizedStatus)) {
+                return status;
+            }
+        }
+
+        if ("active".equals(normalizedStatus)) {
+            return ProductStatus.active;
+        }
+        if ("inactive".equals(normalizedStatus)) {
+            return ProductStatus.inactive;
+        }
+
+        throw new IllegalArgumentException("Unsupported product status: " + rawStatus);
     }
 
 

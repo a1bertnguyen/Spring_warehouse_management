@@ -579,6 +579,33 @@
   gap: 10px;
 }
 
+.manager-status-action-group {
+  display: grid;
+  gap: 10px;
+}
+
+.manager-status-select {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  color: #12202d;
+  font-size: 0.95rem;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.manager-status-select:focus {
+  border-color: rgba(15, 139, 141, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.12);
+  outline: none;
+}
+
+.manager-table-note {
+  color: #5b6b7a;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .manager-empty-state {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;

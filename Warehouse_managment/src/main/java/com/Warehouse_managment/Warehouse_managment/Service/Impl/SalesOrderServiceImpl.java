@@ -32,6 +32,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -191,6 +194,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         }
 
         validateStatusTransition(currentStatus, status);
+        enforceSalesOrderRoleTransition(currentStatus, status);
 
         if (status == SalesOrderStatus.awaiting_shipment || status == SalesOrderStatus.shipped) {
             validateInventoryAvailability(salesOrder);
@@ -235,6 +239,39 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         }
     }
 
+    private void enforceSalesOrderRoleTransition(SalesOrderStatus currentStatus, SalesOrderStatus nextStatus) {
+        if (hasAuthority("ADMIN")) {
+            return;
+        }
+
+        if (hasAuthority("MANAGER")) {
+            boolean managerTransition =
+                    (currentStatus == SalesOrderStatus.pending_stock_check
+                            && (nextStatus == SalesOrderStatus.awaiting_shipment
+                            || nextStatus == SalesOrderStatus.cancelled))
+                            || (currentStatus == SalesOrderStatus.awaiting_shipment
+                            && nextStatus == SalesOrderStatus.cancelled);
+
+            if (!managerTransition) {
+                throw new IllegalStateException("Manager can only approve or cancel sales orders before shipment");
+            }
+            return;
+        }
+
+        if (hasAuthority("WAREHOUSE_STAFF")) {
+            boolean warehouseTransition =
+                    (currentStatus == SalesOrderStatus.awaiting_shipment && nextStatus == SalesOrderStatus.shipped)
+                            || (currentStatus == SalesOrderStatus.shipped && nextStatus == SalesOrderStatus.completed);
+
+            if (!warehouseTransition) {
+                throw new IllegalStateException("Warehouse staff can only ship or complete approved sales orders");
+            }
+            return;
+        }
+
+        throw new IllegalStateException("You are not allowed to update this sales order status");
+    }
+
     private void validateInventoryAvailability(SalesOrder salesOrder) {
         for (SalesOrderDetail detail : salesOrderDetailRepository.findBySalesOrder_IdOrderByIdAsc(salesOrder.getId())) {
             Inventory inventory = inventoryRepository.findByProduct_IdAndWarehouse_Id(detail.getProductId(), detail.getWarehouseId())
@@ -277,6 +314,18 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             );
             inventoryStockSyncService.syncProductStock(detail.getProductId());
         }
+    }
+
+    private boolean hasAuthority(String authority) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+
+        Set<String> authorities = authentication.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .collect(java.util.stream.Collectors.toSet());
+        return authorities.contains(authority);
     }
 
     private SalesOrderDTO toSummaryDto(SalesOrder salesOrder) {

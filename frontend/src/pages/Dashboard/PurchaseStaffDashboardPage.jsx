@@ -24,7 +24,7 @@ const SECTION_COPY = {
   purchaseOrders: {
     title: "Purchase Orders",
     subtitle:
-      "Follow supplier orders from ordering through partial receipt and final completion.",
+      "Track manager approvals, supplier ordering, and receipt progress in one place.",
   },
   goodsReceipts: {
     title: "Stock Inwards",
@@ -79,6 +79,7 @@ const STATUS_LABELS = {
   INBOUND: "Inbound",
   LOW_STOCK: "Low Stock",
   ORDERED: "Ordered",
+  PENDING_APPROVAL: "Pending Approval",
   OUTBOUND: "Outbound",
   OUT_OF_STOCK: "Out of Stock",
   PARTIALLY_RECEIVED: "Partially Received",
@@ -93,12 +94,6 @@ const STATUS_LABELS = {
 };
 
 const PAGE_SIZE = 10;
-const PURCHASE_ORDER_STATUS_OPTIONS = [
-  { value: "ordered", label: "Ordered" },
-  { value: "partially_received", label: "Partially Received" },
-  { value: "received", label: "Received" },
-  { value: "cancelled", label: "Cancelled" },
-];
 
 const EMPTY_INWARD_ITEM = {
   productId: "",
@@ -178,7 +173,7 @@ function getStatusTone(status) {
   }
 
   if (
-    ["PENDING", "PROCESSING", "ORDERED", "PARTIALLY_RECEIVED", "LOW_STOCK"].includes(
+    ["PENDING", "PENDING_APPROVAL", "PROCESSING", "ORDERED", "PARTIALLY_RECEIVED", "LOW_STOCK"].includes(
       normalizedValue
     )
   ) {
@@ -354,7 +349,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     requesterName: "",
     warehouseName: "",
     orderDate: "",
-    status: "ordered",
+    status: "pending_approval",
     supplierId: "",
     notes: "",
   });
@@ -507,7 +502,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       requesterName: "",
       warehouseName: "",
       orderDate: "",
-      status: "ordered",
+      status: "pending_approval",
       supplierId: "",
       notes: "",
     });
@@ -561,7 +556,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       requesterName: "",
       warehouseName: "",
       orderDate: "",
-      status: "ordered",
+      status: "pending_approval",
       supplierId: "",
       notes: "",
     });
@@ -579,7 +574,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         requesterName: purchaseOrder?.requesterName || "",
         warehouseName: purchaseOrder?.warehouseName || "",
         orderDate: purchaseOrder?.orderDate || "",
-        status: purchaseOrder?.status || "ordered",
+        status: purchaseOrder?.status || "pending_approval",
         supplierId: String(purchaseOrder?.supplierId ?? ""),
         notes: purchaseOrder?.notes || "",
       });
@@ -783,7 +778,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const pendingPurchaseCount = useMemo(
     () =>
       purchaseOrders.filter((order) =>
-        ["PENDING", "ORDERED", "PARTIALLY_RECEIVED", "PROCESSING"].includes(
+        ["PENDING", "PENDING_APPROVAL", "APPROVED", "ORDERED", "PARTIALLY_RECEIVED", "PROCESSING"].includes(
           String(order.status || "").toUpperCase()
         )
       ).length,
@@ -796,6 +791,14 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         (order) => String(order.id) === String(stockInwardForm.purchaseOrderId || "")
       ) || null,
     [purchaseOrderRows, stockInwardForm.purchaseOrderId]
+  );
+
+  const stockInwardEligibleOrders = useMemo(
+    () =>
+      purchaseOrderRows.filter((order) =>
+        ["ordered", "partially_received"].includes(String(order.rawStatus || "").toLowerCase())
+      ),
+    [purchaseOrderRows]
   );
 
   const selectedSupplier = useMemo(() => {
@@ -861,7 +864,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
   async function handlePurchaseOrderSelection(event) {
     const selectedOrderId = event.target.value;
     const selectedOrder =
-      purchaseOrderRows.find((order) => String(order.id) === String(selectedOrderId)) || null;
+      stockInwardEligibleOrders.find((order) => String(order.id) === String(selectedOrderId)) || null;
 
     setStockInwardForm((currentValue) => ({
       ...currentValue,
@@ -984,11 +987,10 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       return;
     }
 
-    const nextStatus =
-      mode === "send" ? "ordered" : String(purchaseOrderEditor.status || "ordered");
+    const nextStatus = mode === "send" ? "ordered" : null;
 
-    if (mode === "send" && String(purchaseOrderEditor.status || "").toLowerCase() !== "ordered") {
-      showMessage("Choose Ordered status before sending the purchase order.");
+    if (mode === "send" && String(purchaseOrderEditor.status || "").toLowerCase() !== "approved") {
+      showMessage("Only approved purchase orders can be sent to the supplier.");
       return;
     }
 
@@ -1001,7 +1003,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       await ApiService.updatePurchaseOrder(purchaseOrderEditor.orderId, {
         supplierId: Number(purchaseOrderEditor.supplierId),
         notes: purchaseOrderEditor.notes.trim(),
-        status: nextStatus,
+        ...(nextStatus ? { status: nextStatus } : {}),
       });
       await loadDashboardData();
       closePurchaseOrderEditor();
@@ -1073,7 +1075,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
               </div>
               <div className="purchase-quick-card">
                 <strong>Create Stock Inward</strong>
-                <span>Receive approved items with a structured form.</span>
+                <span>Receive ordered items with a structured form.</span>
               </div>
             </div>
           </article>
@@ -1351,7 +1353,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         <PurchaseSectionHeader
           eyebrow="Receiving Workspace"
           title="Stock Inward Dashboard"
-          description="Review completed receipts and launch the receiving form directly from the stock inward workspace."
+          description="Review inbound receipts and launch the receiving form directly from the stock inward workspace."
           meta={`${formatCompactNumber(filteredGoodsReceiptRows.length)} receipts`}
           action={
             <button
@@ -1533,7 +1535,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         <PurchaseSectionHeader
           eyebrow="Receiving Form"
           title="Create Stock Inward"
-          description="Use the purchase order details below to record received quantities and push inventory updates into the warehouse ledger."
+          description="Use the purchase order details below to draft a stock inward document for manager approval before warehouse receipt."
           action={
             <button
               type="button"
@@ -1581,7 +1583,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
                   onChange={handlePurchaseOrderSelection}
                 >
                   <option value="">Select purchase order</option>
-                  {purchaseOrderRows.map((order) => (
+                  {stockInwardEligibleOrders.map((order) => (
                     <option key={order.id} value={order.id}>
                       {order.code}
                     </option>
@@ -1973,18 +1975,11 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
                   <label>
                     Status
-                    <select
-                      className="purchase-form-control"
-                      name="status"
-                      value={purchaseOrderEditor.status}
-                      onChange={handlePurchaseOrderEditChange}
-                    >
-                      {PURCHASE_ORDER_STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      className="purchase-form-control is-readonly"
+                      value={formatStatus(purchaseOrderEditor.status)}
+                      readOnly
+                    />
                   </label>
                 </div>
 

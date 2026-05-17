@@ -57,7 +57,7 @@ public class WarehouseController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<Response> addProductToWarehouse(@PathVariable Integer id,
                                                           @RequestParam Long productId,
-                                                          @RequestParam Integer quantity) {
+                                                          @RequestParam(required = false) Integer quantity) {
         return ResponseEntity.ok(warehouseService.addProductToWarehouse(id, productId, quantity));
     }
 

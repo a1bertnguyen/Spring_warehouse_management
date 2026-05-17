@@ -52,3 +52,14 @@ export async function exportProducts(params = {}) {
 
   return response.data;
 }
+
+export async function importProducts(excelFile) {
+  const payload = new FormData();
+  payload.append("excelFile", excelFile);
+
+  const response = await apiClient.post("/products/import", payload, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return response.data;
+}

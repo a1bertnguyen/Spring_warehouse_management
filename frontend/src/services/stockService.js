@@ -24,6 +24,15 @@ export async function getStockInwardDetails(stockInwardId) {
   );
 }
 
+export async function updateStockInwardStatus(stockInwardId, status) {
+  const response = await apiClient.patch(
+    `/stock-inwards/${stockInwardId}/status`,
+    null,
+    { params: { status } }
+  );
+  return response.data;
+}
+
 export async function getAllStockTakes() {
   const response = await apiClient.get("/stock-takes");
   return withTopLevelAlias(response.data, "stockTakes", "stockTakes");

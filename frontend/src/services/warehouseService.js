@@ -40,7 +40,7 @@ export async function getProductsByWarehouse(warehouseId) {
 
 export async function addProductToWarehouse(warehouseId, productId, quantity) {
   const response = await apiClient.post(`/warehouses/${warehouseId}/products`, null, {
-    params: { productId, quantity },
+    params: quantity === undefined || quantity === null ? { productId } : { productId, quantity },
   });
   return response.data;
 }

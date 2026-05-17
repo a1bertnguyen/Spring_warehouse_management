@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByNameContainingOrDescriptionContaining(String name, String description);
     List<Product> findByCategory(Category category);
+    Optional<Product> findBySkuIgnoreCase(String sku);
 
     @Query(value = "SELECT * FROM products ORDER BY RAND() LIMIT 1", nativeQuery = true)
     Optional<Product> findRandomProduct();

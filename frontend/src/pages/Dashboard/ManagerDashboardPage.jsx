@@ -90,6 +90,31 @@ const ORDER_DETAIL_CONFIG = {
   },
 };
 
+const ORDER_STATUS_TRANSITIONS = {
+  salesOrder: {
+    pending_stock_check: ["awaiting_shipment", "cancelled"],
+    awaiting_shipment: ["cancelled"],
+    shipped: [],
+    completed: [],
+    cancelled: [],
+  },
+  purchaseOrder: {
+    pending_approval: ["approved", "rejected"],
+    approved: [],
+    rejected: [],
+    ordered: [],
+    partially_received: [],
+    received: [],
+    cancelled: [],
+  },
+  stockInward: {
+    DRAFT: ["APPROVED", "CANCELLED"],
+    APPROVED: ["CANCELLED"],
+    COMPLETED: [],
+    CANCELLED: [],
+  },
+};
+
 function formatStatus(value) {
   if (!value) {
     return "Unknown";
@@ -231,7 +256,10 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [isSavingWarehouse, setIsSavingWarehouse] = useState(false);
   const [warehouseSearchTerm, setWarehouseSearchTerm] = useState("");
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState("all");
   const [isExportingInventory, setIsExportingInventory] = useState(false);
+  const [statusSelections, setStatusSelections] = useState({});
+  const [statusUpdateKey, setStatusUpdateKey] = useState("");
   const [inventoryMovementSearchTerm, setInventoryMovementSearchTerm] = useState("");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
@@ -571,9 +599,12 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           inventory.productSku,
           inventory.warehouseName,
           inventory.status,
-        ])
+        ]) &&
+        (inventoryStatusFilter === "all" ||
+          String(inventory?.status || "").toUpperCase().replace(/\s+/g, "_") ===
+            inventoryStatusFilter)
       ),
-    [inventories, inventorySearchTerm]
+    [inventories, inventorySearchTerm, inventoryStatusFilter]
   );
 
   const filteredInventoryMovements = useMemo(
@@ -641,6 +672,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           order.orderDetails?.[0]?.warehouseId ||
           "Mixed",
         totalItems: order.totalItems || 0,
+        rawStatus: order.status,
         status: formatStatus(order.status),
         updatedAt: order.updatedAt || order.createdAt || order.orderDate,
       })),
@@ -655,6 +687,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         partner: order.supplierName || "Supplier not assigned",
         warehouse: order.warehouseName || "Unassigned",
         totalItems: order.totalItems || 0,
+        rawStatus: order.status,
         status: formatStatus(order.status),
         updatedAt: order.updatedAt || order.createdAt || order.orderDate,
       })),
@@ -669,6 +702,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         partner: receipt.supplierName || "Supplier not assigned",
         warehouse: receipt.warehouseName || "Unassigned",
         totalItems: receipt.totalReceivedQuantity || receipt.totalItems || 0,
+        rawStatus: receipt.status,
         status: formatStatus(receipt.status),
         updatedAt: receipt.createdAt || receipt.inwardDate,
       })),
@@ -714,6 +748,35 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     [goodsReceiptRows, goodsReceiptSearchTerm]
   );
 
+  function getStatusSelectionKey(kind, rowId) {
+    return `${kind}:${rowId}`;
+  }
+
+  function getNextStatusOptions(kind, rawStatus) {
+    const transitions = ORDER_STATUS_TRANSITIONS[kind] || {};
+    return transitions[String(rawStatus || "")] || [];
+  }
+
+  function getSelectedStatus(kind, row) {
+    const key = getStatusSelectionKey(kind, row.id);
+    const nextOptions = getNextStatusOptions(kind, row.rawStatus);
+    const selectedStatus = statusSelections[key];
+
+    if (selectedStatus && nextOptions.includes(selectedStatus)) {
+      return selectedStatus;
+    }
+
+    return nextOptions[0] || "";
+  }
+
+  function handleStatusSelectionChange(kind, rowId, status) {
+    const key = getStatusSelectionKey(kind, rowId);
+    setStatusSelections((currentValue) => ({
+      ...currentValue,
+      [key]: status,
+    }));
+  }
+
   function openCreateWarehouseForm() {
     setWarehouseForm(EMPTY_WAREHOUSE_FORM);
     setEditingWarehouseId(null);
@@ -756,6 +819,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     try {
       const blob = await ApiService.exportInventories({
         productName: inventorySearchTerm || undefined,
+        stockStatus: inventoryStatusFilter !== "all" ? inventoryStatusFilter : undefined,
       });
 
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -821,6 +885,44 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           error.response?.data?.message ||
           `Unable to load ${config.typeLabel.toLowerCase()}.`,
       }));
+    }
+  }
+
+  async function handleUpdateOrderStatus(kind, row) {
+    const nextStatus = getSelectedStatus(kind, row);
+
+    if (!nextStatus) {
+      showMessage("No valid status transition is available for this document.");
+      return;
+    }
+
+    const actionKey = getStatusSelectionKey(kind, row.id);
+    setStatusUpdateKey(actionKey);
+
+    try {
+      if (kind === "salesOrder") {
+        await ApiService.updateSalesOrderStatus(row.id, nextStatus);
+      } else if (kind === "purchaseOrder") {
+        await ApiService.updatePurchaseOrderStatus(row.id, nextStatus);
+      } else if (kind === "stockInward") {
+        await ApiService.updateStockInwardStatus(row.id, nextStatus);
+      } else {
+        throw new Error("Unsupported document type for status updates.");
+      }
+
+      setStatusSelections((currentValue) => {
+        const nextValue = { ...currentValue };
+        delete nextValue[actionKey];
+        return nextValue;
+      });
+      await loadDashboardData();
+      showMessage(`Status updated to ${formatStatus(nextStatus)}.`);
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message || "Unable to update the document status."
+      );
+    } finally {
+      setStatusUpdateKey("");
     }
   }
 
@@ -1089,6 +1191,17 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             onChange={(event) => setInventorySearchTerm(event.target.value)}
             placeholder="Search product, SKU, warehouse, or status"
           />
+          <select
+            className="manager-search-input"
+            value={inventoryStatusFilter}
+            onChange={(event) => setInventoryStatusFilter(event.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="LOW_STOCK">Low stock</option>
+            <option value="OUT_OF_STOCK">Out of stock</option>
+            <option value="UNKNOWN">Unknown</option>
+          </select>
         </div>
 
         <div className="manager-summary-strip">
@@ -1315,31 +1428,72 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      <strong>{row.code}</strong>
-                    </td>
-                    <td>{row.partner}</td>
-                    <td>{row.warehouse}</td>
-                    <td>{row.totalItems}</td>
-                    <td>
-                      <span className="manager-status-badge">{row.status}</span>
-                    </td>
-                    <td>{formatDate(row.updatedAt)}</td>
-                    <td>
-                      <div className="manager-table-actions">
-                        <button
-                          type="button"
-                          className="info-button"
-                          onClick={() => openOrderDetails(detailKind, row)}
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const nextStatusOptions = getNextStatusOptions(detailKind, row.rawStatus);
+                  const selectedStatus = getSelectedStatus(detailKind, row);
+                  const actionKey = getStatusSelectionKey(detailKind, row.id);
+                  const isUpdatingThisRow = statusUpdateKey === actionKey;
+
+                  return (
+                    <tr key={row.id}>
+                      <td>
+                        <strong>{row.code}</strong>
+                      </td>
+                      <td>{row.partner}</td>
+                      <td>{row.warehouse}</td>
+                      <td>{row.totalItems}</td>
+                      <td>
+                        <span className="manager-status-badge">{row.status}</span>
+                      </td>
+                      <td>{formatDate(row.updatedAt)}</td>
+                      <td>
+                        <div className="manager-table-actions">
+                          <button
+                            type="button"
+                            className="info-button"
+                            onClick={() => openOrderDetails(detailKind, row)}
+                          >
+                            View Details
+                          </button>
+
+                          {nextStatusOptions.length ? (
+                            <div className="manager-status-action-group">
+                              <select
+                                className="manager-status-select"
+                                value={selectedStatus}
+                                onChange={(event) =>
+                                  handleStatusSelectionChange(
+                                    detailKind,
+                                    row.id,
+                                    event.target.value
+                                  )
+                                }
+                                disabled={isUpdatingThisRow}
+                              >
+                                {nextStatusOptions.map((statusOption) => (
+                                  <option key={statusOption} value={statusOption}>
+                                    {formatStatus(statusOption)}
+                                  </option>
+                                ))}
+                              </select>
+
+                              <button
+                                type="button"
+                                className="warn-button"
+                                onClick={() => handleUpdateOrderStatus(detailKind, row)}
+                                disabled={isUpdatingThisRow || !selectedStatus}
+                              >
+                                {isUpdatingThisRow ? "Updating..." : "Update Status"}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="manager-table-note">No more transitions</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

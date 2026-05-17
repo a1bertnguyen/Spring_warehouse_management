@@ -10,9 +10,9 @@ public interface InventoryService {
 
     Response getInventoriesByWarehouseId(Integer warehouseId);
 
-    Response searchInventories(Integer warehouseId, String productName);
+    Response searchInventories(Integer warehouseId, String productName, String stockStatus);
 
     Response getInventorySummary();
 
-    byte[] exportInventoriesToExcel(Integer warehouseId, String productName);
+    byte[] exportInventoriesToExcel(Integer warehouseId, String productName, String stockStatus);
 }

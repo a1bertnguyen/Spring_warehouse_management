@@ -86,7 +86,7 @@ public class PurchaseOrder {
             orderDate = now;
         }
         if (status == null) {
-            status = OrderStatus.ordered;
+            status = OrderStatus.pending_approval;
         }
     }
 
@@ -96,6 +96,9 @@ public class PurchaseOrder {
     }
 
     public enum OrderStatus {
+        pending_approval,
+        approved,
+        rejected,
         ordered,
         partially_received,
         received,

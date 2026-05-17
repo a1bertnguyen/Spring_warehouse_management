@@ -41,10 +41,12 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,6 +64,18 @@ public class StockInwardServiceImpl implements StockInwardService {
     private final WarehouseRepository warehouseRepository;
     private final InventoryMovementService inventoryMovementService;
     private final InventoryStockSyncService inventoryStockSyncService;
+
+    private static final Map<StockInwardStatus, List<StockInwardStatus>> VALID_TRANSITIONS =
+            new EnumMap<>(StockInwardStatus.class);
+
+    static {
+        VALID_TRANSITIONS.put(StockInwardStatus.DRAFT,
+                List.of(StockInwardStatus.APPROVED, StockInwardStatus.CANCELLED));
+        VALID_TRANSITIONS.put(StockInwardStatus.APPROVED,
+                List.of(StockInwardStatus.COMPLETED, StockInwardStatus.CANCELLED));
+        VALID_TRANSITIONS.put(StockInwardStatus.COMPLETED, List.of());
+        VALID_TRANSITIONS.put(StockInwardStatus.CANCELLED, List.of());
+    }
 
     @Override
     public List<StockInward> findAll() {
@@ -90,11 +104,42 @@ public class StockInwardServiceImpl implements StockInwardService {
     }
 
     @Override
-    public void updateStatus(Integer id, StockInwardStatus status) {
+    @Transactional
+    public Response updateStockInwardStatus(Integer id, StockInwardStatus status) {
         StockInward inward = stockInwardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Stock inward not found"));
+
+        StockInwardStatus currentStatus = inward.getStatus();
+        if (status == null || status == currentStatus) {
+            return Response.builder()
+                    .status(200)
+                    .message("Stock inward status updated successfully")
+                    .data(toDto(inward))
+                    .build();
+        }
+
+        validateStatusTransition(currentStatus, status);
+        enforceStockInwardRoleTransition(currentStatus, status);
+
+        if (status == StockInwardStatus.COMPLETED) {
+            inward.setInwardDate(LocalDateTime.now());
+        }
         inward.setStatus(status);
-        stockInwardRepository.save(inward);
+        StockInward updatedInward = stockInwardRepository.save(inward);
+
+        if (status == StockInwardStatus.COMPLETED && currentStatus != StockInwardStatus.COMPLETED) {
+            applyReceivedInventory(updatedInward);
+        }
+
+        if (updatedInward.getPurchaseOrder() != null) {
+            updatePurchaseOrderReceiptStatus(updatedInward.getPurchaseOrder());
+        }
+
+        return Response.builder()
+                .status(200)
+                .message("Stock inward status updated successfully")
+                .data(toDto(updatedInward))
+                .build();
     }
     @Override
     public List<StockInward> findByStatus(StockInwardStatus status) {
@@ -197,6 +242,11 @@ public class StockInwardServiceImpl implements StockInwardService {
         User currentUser = getCurrentUser();
         Supplier supplier = resolveSupplier(purchaseOrder);
 
+        if (purchaseOrder.getStatus() != PurchaseOrder.OrderStatus.ordered
+                && purchaseOrder.getStatus() != PurchaseOrder.OrderStatus.partially_received) {
+            throw new IllegalStateException("Stock inward can only be created from ordered purchase orders");
+        }
+
         if (purchaseOrder.getWarehouseId() != null
                 && !Objects.equals(purchaseOrder.getWarehouseId(), warehouse.getId())) {
             throw new IllegalArgumentException("Selected warehouse must match the purchase order warehouse");
@@ -214,9 +264,8 @@ public class StockInwardServiceImpl implements StockInwardService {
         stockInward.setWarehouse(warehouse);
         stockInward.setPurchaseOrder(purchaseOrder);
         stockInward.setNotes(normalizeText(request.getNotes()));
-        stockInward.setInwardDate(now);
         stockInward.setCreatedAt(now);
-        stockInward.setStatus(StockInwardStatus.RECEIVED);
+        stockInward.setStatus(StockInwardStatus.DRAFT);
 
         StockInward savedStockInward = stockInwardRepository.save(stockInward);
         List<StockInwardDetail> details = new ArrayList<>();
@@ -232,6 +281,65 @@ public class StockInwardServiceImpl implements StockInwardService {
             detail.setUnitPriceNegotiated(normalizeAmount(item.getUnitPriceNegotiated()));
             detail.setUnitPurchasePrice(normalizeAmount(item.getUnitPurchasePrice()));
             details.add(detail);
+        }
+
+        stockInwardDetailRepository.saveAll(details);
+        savedStockInward.setDetails(details);
+
+        return Response.builder()
+                .status(200)
+                .message("Stock inward created and awaiting manager approval")
+                .data(toDto(savedStockInward))
+                .build();
+    }
+
+    private void validateStatusTransition(StockInwardStatus currentStatus, StockInwardStatus nextStatus) {
+        List<StockInwardStatus> allowedTransitions = VALID_TRANSITIONS.getOrDefault(currentStatus, List.of());
+        if (!allowedTransitions.contains(nextStatus)) {
+            throw new IllegalStateException("Invalid stock inward status transition from "
+                    + currentStatus + " to " + nextStatus);
+        }
+    }
+
+    private void enforceStockInwardRoleTransition(StockInwardStatus currentStatus, StockInwardStatus nextStatus) {
+        if (hasAuthority("ADMIN")) {
+            return;
+        }
+
+        if (hasAuthority("MANAGER")) {
+            boolean managerTransition =
+                    (currentStatus == StockInwardStatus.DRAFT
+                            && (nextStatus == StockInwardStatus.APPROVED
+                            || nextStatus == StockInwardStatus.CANCELLED))
+                            || (currentStatus == StockInwardStatus.APPROVED
+                            && nextStatus == StockInwardStatus.CANCELLED);
+
+            if (!managerTransition) {
+                throw new IllegalStateException("Manager can only approve or cancel stock inwards before receipt");
+            }
+            return;
+        }
+
+        if (hasAuthority("WAREHOUSE_STAFF")) {
+            boolean warehouseTransition =
+                    currentStatus == StockInwardStatus.APPROVED
+                            && nextStatus == StockInwardStatus.COMPLETED;
+
+            if (!warehouseTransition) {
+                throw new IllegalStateException("Warehouse staff can only complete approved stock inwards");
+            }
+            return;
+        }
+
+        throw new IllegalStateException("You are not allowed to update this stock inward status");
+    }
+
+    private void applyReceivedInventory(StockInward stockInward) {
+        Warehouse warehouse = resolveWarehouse(stockInward);
+
+        for (StockInwardDetail detail : stockInwardDetailRepository.findByStockInward_StockInwardId(stockInward.getStockInwardId())) {
+            Product product = productRepository.findById(detail.getProductId())
+                    .orElseThrow(() -> new NotFoundException("Product not found"));
 
             Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
                     .orElse(Inventory.builder()
@@ -242,7 +350,7 @@ public class StockInwardServiceImpl implements StockInwardService {
                             .build());
 
             int quantityBefore = inventory.getQuantityOnHand() != null ? inventory.getQuantityOnHand() : 0;
-            int quantityDelta = item.getQuantityReceived();
+            int quantityDelta = detail.getQuantityReceived() != null ? detail.getQuantityReceived() : 0;
             int quantityAfter = quantityBefore + quantityDelta;
 
             inventory.setQuantityOnHand(quantityAfter);
@@ -257,22 +365,21 @@ public class StockInwardServiceImpl implements StockInwardService {
                     quantityAfter,
                     InventoryMovementType.PURCHASE_RECEIPT,
                     InventoryReferenceType.PURCHASE_ORDER,
-                    String.valueOf(purchaseOrder.getId()),
-                    savedStockInward.getInwardCode(),
-                    "Inventory increased after stock inward receipt"
+                    String.valueOf(stockInward.getPurchaseOrder() != null ? stockInward.getPurchaseOrder().getId() : stockInward.getStockInwardId()),
+                    stockInward.getInwardCode(),
+                    "Inventory increased after stock inward approval"
             );
             inventoryStockSyncService.syncProductStock(product.getId());
         }
+    }
 
-        stockInwardDetailRepository.saveAll(details);
-        savedStockInward.setDetails(details);
-        updatePurchaseOrderReceiptStatus(purchaseOrder);
+    private Warehouse resolveWarehouse(StockInward stockInward) {
+        if (stockInward.getWarehouse() == null || stockInward.getWarehouse().getId() == null) {
+            throw new NotFoundException("Warehouse not found for stock inward");
+        }
 
-        return Response.builder()
-                .status(200)
-                .message("Stock inward created successfully")
-                .data(toDto(savedStockInward))
-                .build();
+        return warehouseRepository.findById(stockInward.getWarehouse().getId())
+                .orElseThrow(() -> new NotFoundException("Warehouse not found"));
     }
 
     private StockInwardDTO toDto(StockInward stockInward) {
@@ -330,7 +437,7 @@ public class StockInwardServiceImpl implements StockInwardService {
                 .findByStockInward_PurchaseOrder_Id(purchaseOrder.getId())
                 .stream()
                 .filter(detail -> detail.getStockInward() != null
-                        && detail.getStockInward().getStatus() != StockInwardStatus.CANCELLED)
+                        && detail.getStockInward().getStatus() == StockInwardStatus.COMPLETED)
                 .collect(Collectors.groupingBy(
                         StockInwardDetail::getProductId,
                         Collectors.summingInt(detail -> detail.getQuantityReceived() != null ? detail.getQuantityReceived() : 0)
@@ -360,6 +467,18 @@ public class StockInwardServiceImpl implements StockInwardService {
                         : PurchaseOrder.OrderStatus.partially_received
         );
         purchaseOrderRepository.save(purchaseOrder);
+    }
+
+    private boolean hasAuthority(String authority) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+
+        Set<String> authorities = authentication.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .collect(java.util.stream.Collectors.toSet());
+        return authorities.contains(authority);
     }
 
     private Supplier resolveSupplier(PurchaseOrder purchaseOrder) {

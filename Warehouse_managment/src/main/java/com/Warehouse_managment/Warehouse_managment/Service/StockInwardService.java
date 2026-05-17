@@ -26,13 +26,16 @@ public interface StockInwardService {
 
     List<StockInward> findByStatus(StockInwardStatus status);
 
-    void updateStatus(Integer id, StockInwardStatus status); // thêm
+    Response updateStockInwardStatus(Integer id, StockInwardStatus status);
+
     Page<StockInward> filter(
             StockInwardStatus status,
             String inwardCode,
             LocalDateTime startDate,
             LocalDateTime endDate,
-            Pageable pageable);
+            Pageable pageable
+    );
+
     Page<StockInward> pageByStatus(StockInwardStatus status, Pageable pageable);
 
     Page<StockInward> filterByManager(
@@ -52,5 +55,4 @@ public interface StockInwardService {
     List<StockInwardDetailDTO> getDetailsByStockInwardId(Integer stockInwardId);
 
     Response createStockInward(StockInwardCreateRequest request);
-
 }

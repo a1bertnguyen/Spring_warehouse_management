@@ -36,6 +36,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Objects;
 
@@ -69,6 +72,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             new EnumMap<>(PurchaseOrder.OrderStatus.class);
 
     static {
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.pending_approval,
+                List.of(PurchaseOrder.OrderStatus.approved, PurchaseOrder.OrderStatus.rejected));
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.approved,
+                List.of(PurchaseOrder.OrderStatus.ordered, PurchaseOrder.OrderStatus.cancelled));
+        VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.rejected, List.of());
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.ordered,
                 List.of(PurchaseOrder.OrderStatus.partially_received, PurchaseOrder.OrderStatus.received, PurchaseOrder.OrderStatus.cancelled));
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.partially_received,
@@ -108,7 +116,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         purchaseOrder.setSupplierId(supplierId);
         purchaseOrder.setNotes(purchaseOrderRequest.getNotes() != null ? purchaseOrderRequest.getNotes() : purchaseRequest.getNotes());
         purchaseOrder.setOrderDate(LocalDateTime.now());
-        purchaseOrder.setStatus(PurchaseOrder.OrderStatus.ordered);
+        purchaseOrder.setStatus(PurchaseOrder.OrderStatus.pending_approval);
 
         PurchaseOrder savedOrder = purchaseOrderRepository.save(purchaseOrder);
         List<PurchaseRequestDetail> requestDetails = purchaseRequestDetailRepository.findByPurchaseRequest_Id(purchaseRequest.getId());
@@ -185,7 +193,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         PurchaseOrder purchaseOrder = getOrderEntity(id);
 
         if (purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.partially_received
-                || purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.received) {
+                || purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.received
+                || purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.rejected
+                || purchaseOrder.getStatus() == PurchaseOrder.OrderStatus.cancelled) {
             throw new IllegalStateException("Cannot edit a purchase order that has already been received");
         }
 
@@ -232,6 +242,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
 
         validateStatusTransition(previousStatus, status);
+        enforcePurchaseOrderRoleTransition(previousStatus, status);
         purchaseOrder.setStatus(status);
 
         if (status == PurchaseOrder.OrderStatus.received && previousStatus != PurchaseOrder.OrderStatus.received) {
@@ -272,6 +283,38 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             throw new IllegalStateException("Invalid purchase order status transition from "
                     + currentStatus + " to " + nextStatus);
         }
+    }
+
+    private void enforcePurchaseOrderRoleTransition(PurchaseOrder.OrderStatus currentStatus,
+                                                    PurchaseOrder.OrderStatus nextStatus) {
+        if (hasAuthority("ADMIN")) {
+            return;
+        }
+
+        if (hasAuthority("MANAGER")) {
+            boolean managerTransition = currentStatus == PurchaseOrder.OrderStatus.pending_approval
+                    && (nextStatus == PurchaseOrder.OrderStatus.approved
+                    || nextStatus == PurchaseOrder.OrderStatus.rejected);
+            if (!managerTransition) {
+                throw new IllegalStateException("Manager can only approve or reject purchase orders");
+            }
+            return;
+        }
+
+        if (hasAuthority("PURCHASE_STAFF")) {
+            boolean purchaseStaffTransition =
+                    (currentStatus == PurchaseOrder.OrderStatus.approved
+                            && (nextStatus == PurchaseOrder.OrderStatus.ordered
+                            || nextStatus == PurchaseOrder.OrderStatus.cancelled))
+                            || (currentStatus == PurchaseOrder.OrderStatus.ordered
+                            && nextStatus == PurchaseOrder.OrderStatus.cancelled);
+            if (!purchaseStaffTransition) {
+                throw new IllegalStateException("Purchase staff can only send approved purchase orders");
+            }
+            return;
+        }
+
+        throw new IllegalStateException("You are not allowed to update this purchase order status");
     }
 
     private void applyReceivedInventory(PurchaseOrder purchaseOrder) {
@@ -320,6 +363,18 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             throw new NotFoundException("Purchase Order Not Found");
         }
         return purchaseOrder;
+    }
+
+    private boolean hasAuthority(String authority) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+
+        Set<String> authorities = authentication.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .collect(java.util.stream.Collectors.toSet());
+        return authorities.contains(authority);
     }
 
     private PurchaseOrderDTO toSummaryDto(PurchaseOrder purchaseOrder) {

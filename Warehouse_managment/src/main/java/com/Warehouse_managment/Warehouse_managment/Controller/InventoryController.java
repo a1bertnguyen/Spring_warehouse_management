@@ -37,8 +37,9 @@ public class InventoryController {
     @GetMapping("/search")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> searchInventories(@RequestParam(required = false) Integer warehouseId,
-                                                      @RequestParam(required = false) String productName) {
-        return ResponseEntity.ok(inventoryService.searchInventories(warehouseId, productName));
+                                                      @RequestParam(required = false) String productName,
+                                                      @RequestParam(required = false) String stockStatus) {
+        return ResponseEntity.ok(inventoryService.searchInventories(warehouseId, productName, stockStatus));
     }
 
     @GetMapping("/summary")
@@ -50,8 +51,9 @@ public class InventoryController {
     @GetMapping("/export")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<byte[]> exportInventoriesToExcel(@RequestParam(required = false) Integer warehouseId,
-                                                           @RequestParam(required = false) String productName) {
-        byte[] excelFile = inventoryService.exportInventoriesToExcel(warehouseId, productName);
+                                                           @RequestParam(required = false) String productName,
+                                                           @RequestParam(required = false) String stockStatus) {
+        byte[] excelFile = inventoryService.exportInventoriesToExcel(warehouseId, productName, stockStatus);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=inventories.xlsx")

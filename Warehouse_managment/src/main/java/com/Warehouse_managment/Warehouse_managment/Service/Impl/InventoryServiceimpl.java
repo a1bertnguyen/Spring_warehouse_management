@@ -2,6 +2,7 @@ package com.Warehouse_managment.Warehouse_managment.Service.Impl;
 
 import com.Warehouse_managment.Warehouse_managment.Dtos.InventoryDTO;
 import com.Warehouse_managment.Warehouse_managment.Dtos.Response;
+import com.Warehouse_managment.Warehouse_managment.Enum.InventoryStatus;
 import com.Warehouse_managment.Warehouse_managment.Exceptions.NotFoundException;
 import com.Warehouse_managment.Warehouse_managment.Model.Inventory;
 import com.Warehouse_managment.Warehouse_managment.Repository.InventoryRepository;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,12 +71,13 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public Response searchInventories(Integer warehouseId, String productName) {
+    public Response searchInventories(Integer warehouseId, String productName, String stockStatus) {
         String normalizedProductName = productName == null || productName.isBlank() ? null : productName.trim();
 
         List<InventoryDTO> inventories = inventoryRepository.findByWarehouseAndProductName(warehouseId, normalizedProductName)
                 .stream()
                 .map(this::toInventoryDTO)
+                .filter(inventory -> matchesStockStatus(inventory, stockStatus))
                 .collect(Collectors.toList());
 
         return Response.builder()
@@ -103,12 +106,13 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public byte[] exportInventoriesToExcel(Integer warehouseId, String productName) {
+    public byte[] exportInventoriesToExcel(Integer warehouseId, String productName, String stockStatus) {
         String normalizedProductName = productName == null || productName.isBlank() ? null : productName.trim();
 
         List<InventoryDTO> inventories = inventoryRepository.findByWarehouseAndProductName(warehouseId, normalizedProductName)
                 .stream()
                 .map(this::toInventoryDTO)
+                .filter(inventory -> matchesStockStatus(inventory, stockStatus))
                 .collect(Collectors.toList());
 
         try (Workbook workbook = new XSSFWorkbook();
@@ -189,5 +193,25 @@ public class InventoryServiceImpl implements InventoryService {
 
     private String defaultString(String value) {
         return value != null ? value : "";
+    }
+
+    private boolean matchesStockStatus(InventoryDTO inventory, String stockStatus) {
+        if (stockStatus == null || stockStatus.isBlank()) {
+            return true;
+        }
+
+        InventoryStatus requestedStatus = resolveInventoryStatus(stockStatus);
+        return inventory.getStatus() == requestedStatus;
+    }
+
+    private InventoryStatus resolveInventoryStatus(String rawStatus) {
+        String normalizedStatus = rawStatus.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_');
+        for (InventoryStatus inventoryStatus : InventoryStatus.values()) {
+            if (inventoryStatus.name().equals(normalizedStatus)) {
+                return inventoryStatus;
+            }
+        }
+
+        throw new IllegalArgumentException("Unsupported inventory status: " + rawStatus);
     }
 }

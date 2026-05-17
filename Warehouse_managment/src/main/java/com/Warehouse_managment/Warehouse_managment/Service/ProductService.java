@@ -20,6 +20,6 @@ public interface ProductService {
 
     byte[] exportProductsToExcel(String search, String status, Integer warehouseId);
 
-
+    Response importProductsFromExcel(MultipartFile excelFile);
 
 }

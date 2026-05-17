@@ -147,41 +147,23 @@ public class WarehouseServiceImpl implements WarehouseService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than 0");
+        if (inventoryRepository.findByProductAndWarehouse(product, warehouse).isPresent()) {
+            throw new IllegalStateException("Product is already assigned to this warehouse");
         }
 
-        Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
-                .orElse(Inventory.builder()
-                        .warehouse(warehouse)
-                        .product(product)
-                        .quantityOnHand(0)
-                        .lastUpdated(new Timestamp(System.currentTimeMillis()))
-                        .build());
+        Inventory inventory = Inventory.builder()
+                .warehouse(warehouse)
+                .product(product)
+                .quantityOnHand(0)
+                .lastUpdated(new Timestamp(System.currentTimeMillis()))
+                .build();
 
-        int quantityToAdd = quantity;
-        int quantityBefore = safeQuantity(inventory.getQuantityOnHand());
-        int quantityAfter = quantityBefore + quantityToAdd;
-        inventory.setQuantityOnHand(quantityAfter);
-        inventory.setLastUpdated(new Timestamp(System.currentTimeMillis()));
         inventoryRepository.save(inventory);
-        inventoryMovementService.recordMovement(
-                product,
-                warehouse,
-                quantityBefore,
-                quantityToAdd,
-                quantityAfter,
-                InventoryMovementType.MANUAL_STOCK_IN,
-                InventoryReferenceType.MANUAL,
-                null,
-                null,
-                "Product quantity was added manually to warehouse"
-        );
         inventoryStockSyncService.syncProductStock(product.getId());
 
         return Response.builder()
                 .status(200)
-                .message("Product Was Added To Warehouse Successfully")
+                .message("Product was assigned to warehouse with zero opening stock")
                 .build();
     }
 

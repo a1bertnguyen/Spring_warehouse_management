@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";
 import { PATHS, buildEditProductPath } from "../../constants/paths";
@@ -40,12 +40,13 @@ const ProductPage = () => {
   const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [showWarehouseAssignForm, setShowWarehouseAssignForm] = useState(false);
   const [warehouseAssignForm, setWarehouseAssignForm] = useState({
     productId: "",
-    quantity: "1",
   });
   const [isAssigningProduct, setIsAssigningProduct] = useState(false);
+  const importInputRef = useRef(null);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -213,25 +214,13 @@ const ProductPage = () => {
       return;
     }
 
-    const quantity = Number(warehouseAssignForm.quantity);
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      showMessage("Quantity must be greater than 0.");
-      return;
-    }
-
     setIsAssigningProduct(true);
 
     try {
-      await ApiService.addProductToWarehouse(
-        warehouseId,
-        Number(warehouseAssignForm.productId),
-        quantity
-      );
-      showMessage("Product added to warehouse successfully.");
+      await ApiService.addProductToWarehouse(warehouseId, Number(warehouseAssignForm.productId));
+      showMessage("Product assigned to warehouse successfully.");
       setWarehouseAssignForm({
         productId: "",
-        quantity: "1",
       });
       await loadProducts();
     } catch (error) {
@@ -240,6 +229,29 @@ const ProductPage = () => {
       );
     } finally {
       setIsAssigningProduct(false);
+    }
+  }
+
+  async function handleImportProducts(event) {
+    const excelFile = event.target.files?.[0];
+
+    if (!excelFile) {
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const response = await ApiService.importProducts(excelFile);
+      showMessage(response?.message || "Products imported successfully.");
+      await loadProducts();
+    } catch (error) {
+      showMessage(error.response?.data?.message || "Unable to import the product file.");
+    } finally {
+      if (event.target) {
+        event.target.value = "";
+      }
+      setIsImporting(false);
     }
   }
 
@@ -340,6 +352,25 @@ const ProductPage = () => {
             </div>
 
             <div className="product-table-actions-right">
+              {!warehouseId ? (
+                <>
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    hidden
+                    onChange={handleImportProducts}
+                  />
+                  <button
+                    type="button"
+                    className="secondary-page-button"
+                    onClick={() => importInputRef.current?.click()}
+                    disabled={isImporting}
+                  >
+                    {isImporting ? "Importing..." : "Import Excel"}
+                  </button>
+                </>
+              ) : null}
               <button
                 type="button"
                 className="product-export-btn"
@@ -357,8 +388,8 @@ const ProductPage = () => {
                 <span className="product-warehouse-form-label">Warehouse assignment</span>
                 <h2>Add product to {warehouseName || "selected warehouse"}</h2>
                 <p>
-                  Choose an existing product and enter the quantity to increase stock in
-                  this warehouse.
+                  Choose an existing product to create an inventory slot with zero opening
+                  stock for this warehouse.
                 </p>
               </div>
 
@@ -381,23 +412,8 @@ const ProductPage = () => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="warehouse-product-quantity">Quantity</label>
-                  <input
-                    id="warehouse-product-quantity"
-                    name="quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={warehouseAssignForm.quantity}
-                    onChange={handleWarehouseAssignFormChange}
-                    className="page-search-input product-search-input"
-                    placeholder="Enter quantity"
-                  />
-                </div>
-
                 <button type="submit" className="product-filter-button" disabled={isAssigningProduct}>
-                  {isAssigningProduct ? "Adding..." : "Add To Warehouse"}
+                  {isAssigningProduct ? "Assigning..." : "Assign To Warehouse"}
                 </button>
               </div>
             </form>
