@@ -6,6 +6,7 @@ import AdminDashboardPage from "./AdminDashboardPage";
 import ManagerDashboardPage from "./ManagerDashboardPage";
 import PurchaseStaffDashboardPage from "./PurchaseStaffDashboardPage";
 import StaffDashboardPage from "./StaffDashboardPage";
+import WarehouseStaffDashboardPage from "./WarehouseStaffDashboardPage";
 
 const MANAGER_SECTION_BY_PATH = {
   [PATHS.dashboard]: "overview",
@@ -25,6 +26,14 @@ const PURCHASE_STAFF_SECTION_BY_PATH = {
   [PATHS.dashboardGoodsReceipts]: "goodsReceipts",
   [PATHS.dashboardInventoryMovements]: "inventoryMovements",
   [PATHS.dashboardCreateStockInward]: "createStockInward",
+};
+
+const WAREHOUSE_STAFF_SECTION_BY_PATH = {
+  [PATHS.dashboard]: "overview",
+  [PATHS.dashboardInventory]: "inventory",
+  [PATHS.dashboardSalesOrders]: "salesOrders",
+  [PATHS.dashboardGoodsReceipts]: "goodsReceipts",
+  [PATHS.dashboardPurchaseRequests]: "purchaseRequests",
 };
 
 const DashboardPage = () => {
@@ -48,6 +57,16 @@ const DashboardPage = () => {
       <PurchaseStaffDashboardPage
         activeSection={
           PURCHASE_STAFF_SECTION_BY_PATH[location.pathname] || "overview"
+        }
+      />
+    );
+  }
+
+  if (role === "WAREHOUSE_STAFF") {
+    return (
+      <WarehouseStaffDashboardPage
+        activeSection={
+          WAREHOUSE_STAFF_SECTION_BY_PATH[location.pathname] || "overview"
         }
       />
     );

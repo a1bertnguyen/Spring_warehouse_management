@@ -44,6 +44,10 @@ const protectedAppRoutes = (
       element={<ProtectedRoute element={<DashboardPage />} />}
     />
     <Route
+      path={PATHS.dashboardPurchaseRequests}
+      element={<ProtectedRoute element={<DashboardPage />} />}
+    />
+    <Route
       path={PATHS.dashboardPurchaseOrders}
       element={<ProtectedRoute element={<DashboardPage />} />}
     />

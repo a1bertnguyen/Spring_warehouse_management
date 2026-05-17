@@ -36,6 +36,22 @@ const MANAGER_NAV_ITEMS = [
 
 const STAFF_NAV_ITEMS = [{ path: PATHS.dashboard, label: "Dashboard", icon: "dashboard" }];
 
+const WAREHOUSE_STAFF_NAV_ITEMS = [
+  { path: PATHS.dashboard, label: "Overview", icon: "dashboard" },
+  { path: PATHS.dashboardInventory, label: "Inventory", icon: "inventory" },
+  { path: PATHS.dashboardSalesOrders, label: "Sales Orders", icon: "sales" },
+  {
+    path: PATHS.dashboardGoodsReceipts,
+    label: "Stock Inwards",
+    icon: "receipts",
+  },
+  {
+    path: PATHS.dashboardPurchaseRequests,
+    label: "Purchase Requests",
+    icon: "purchase",
+  },
+];
+
 const PURCHASE_STAFF_NAV_ITEMS = [
   { path: PATHS.dashboard, label: "Overview", icon: "dashboard" },
   { path: PATHS.dashboardSuppliers, label: "Suppliers", icon: "suppliers" },
@@ -123,6 +139,7 @@ const Sidebar = () => {
   const role = ApiService.getRole();
   const isManager = isAuth && role === "MANAGER";
   const isPurchaseStaff = isAuth && role === "PURCHASE_STAFF";
+  const isWarehouseStaff = isAuth && role === "WAREHOUSE_STAFF";
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -168,8 +185,12 @@ const Sidebar = () => {
       return PURCHASE_STAFF_NAV_ITEMS;
     }
 
+    if (isWarehouseStaff) {
+      return WAREHOUSE_STAFF_NAV_ITEMS;
+    }
+
     return STAFF_NAV_ITEMS;
-  }, [isAdmin, isAuth, isManager, isPurchaseStaff]);
+  }, [isAdmin, isAuth, isManager, isPurchaseStaff, isWarehouseStaff]);
 
   const displayName = currentUser?.name || (isAdmin ? "admin" : "user");
   const displayRole = isAdmin
