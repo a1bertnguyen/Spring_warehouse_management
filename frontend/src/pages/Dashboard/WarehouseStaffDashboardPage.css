@@ -136,6 +136,12 @@
   justify-content: flex-end;
 }
 
+.warehouse-section-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .warehouse-section-meta {
   background: #eef4ff;
   border: 1px solid rgba(193, 207, 233, 0.92);
@@ -534,6 +540,14 @@
   margin-bottom: 22px;
 }
 
+.warehouse-request-history {
+  border-top: 1px solid rgba(224, 230, 239, 0.9);
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+  padding-top: 24px;
+}
+
 .warehouse-request-form-grid {
   display: grid;
   gap: 18px;
@@ -665,7 +679,8 @@
   .warehouse-toolbar,
   .warehouse-row-actions,
   .warehouse-dialog-actions,
-  .warehouse-form-actions {
+  .warehouse-form-actions,
+  .warehouse-section-action-group {
     flex-direction: column;
   }
 

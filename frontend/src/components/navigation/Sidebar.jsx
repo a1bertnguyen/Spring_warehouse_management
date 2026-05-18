@@ -45,11 +45,6 @@ const WAREHOUSE_STAFF_NAV_ITEMS = [
     label: "Stock Inwards",
     icon: "receipts",
   },
-  {
-    path: PATHS.dashboardPurchaseRequests,
-    label: "Purchase Requests",
-    icon: "purchase",
-  },
 ];
 
 const PURCHASE_STAFF_NAV_ITEMS = [

@@ -14,7 +14,7 @@ const SECTION_COPY = {
   inventory: {
     title: "Inventory",
     subtitle:
-      "Review stock levels by warehouse, focus on low-stock products, and export the latest inventory snapshot.",
+      "Review stock levels by warehouse, focus on low-stock products, export the latest inventory snapshot, and create purchase requests.",
   },
   salesOrders: {
     title: "Sales Orders",
@@ -27,9 +27,9 @@ const SECTION_COPY = {
       "Track approved inbound receipts, review line items, and complete warehouse receipt handling.",
   },
   purchaseRequests: {
-    title: "Purchase Requests",
+    title: "Create Purchase Request",
     subtitle:
-      "Request replenishment by warehouse, submit restock quantities, and monitor your request history in English.",
+      "Submit replenishment quantities by warehouse and review your request history on a dedicated warehouse staff page.",
   },
 };
 
@@ -446,6 +446,12 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   }, [showMessage]);
 
   useEffect(() => {
+    if (activeSection === "purchaseRequests") {
+      setShowRequestComposer(true);
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
     loadDashboardData();
 
     return () => {
@@ -454,12 +460,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       }
     };
   }, [loadDashboardData]);
-
-  useEffect(() => {
-    if (activeSection === "purchaseRequests") {
-      setShowRequestComposer(true);
-    }
-  }, [activeSection]);
 
   const loggedInUserId = useMemo(() => {
     const rawUserId =
@@ -1058,8 +1058,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
                 className="warehouse-quick-card"
                 onClick={() => navigate(PATHS.dashboardPurchaseRequests)}
               >
-                <strong>Purchase Requests</strong>
-                <span>Request replenishment by warehouse and track every submitted request.</span>
+                <strong>Create Purchase Request</strong>
+                <span>Open the request page to submit a warehouse restock request and review prior requests.</span>
               </button>
             </div>
           </article>
@@ -1145,17 +1145,26 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
         <WarehouseSectionHeader
           eyebrow="Inventory View"
           title="Live Inventory Snapshot"
-          description="Filter by warehouse and status, then export the latest inventory table when you need an offline copy."
+          description="Filter by warehouse and status, export the latest inventory table, and jump to the purchase request page when replenishment is needed."
           meta={`${formatCompactNumber(filteredInventories.length)} rows`}
           action={
-            <button
-              type="button"
-              className="warehouse-primary-action"
-              onClick={handleExportInventories}
-              disabled={isExportingInventory}
-            >
-              {isExportingInventory ? "Exporting..." : "Export Excel"}
-            </button>
+            <div className="warehouse-section-action-group">
+              <button
+                type="button"
+                className="warehouse-secondary-action"
+                onClick={() => navigate(PATHS.dashboardPurchaseRequests)}
+              >
+                Create Purchase Request
+              </button>
+              <button
+                type="button"
+                className="warehouse-primary-action"
+                onClick={handleExportInventories}
+                disabled={isExportingInventory}
+              >
+                {isExportingInventory ? "Exporting..." : "Export Excel"}
+              </button>
+            </div>
           }
         />
 
@@ -1268,6 +1277,249 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
           <WarehouseEmptyState
             title="No inventory rows match"
             description="Try another search term, warehouse, or inventory status."
+          />
+        )}
+      </section>
+    );
+  }
+
+  function renderPurchaseRequests() {
+    const { currentPage, rows, startIndex } = buildPageSlice(
+      filteredPurchaseRequestRows,
+      pages.purchaseRequests
+    );
+
+    return (
+      <section className="warehouse-section-card">
+        <WarehouseSectionHeader
+          eyebrow="Restock Requests"
+          title="Create And Track Purchase Requests"
+          description="Use the selected warehouse inventory to request replenishment, then review your submitted requests on this dedicated warehouse staff page."
+          meta={`${formatCompactNumber(filteredPurchaseRequestRows.length)} requests`}
+          action={
+            <button
+              type="button"
+              className="warehouse-secondary-action"
+              onClick={() => navigate(PATHS.dashboardInventory)}
+            >
+              Back To Inventory
+            </button>
+          }
+        />
+
+        {showRequestComposer ? (
+          <form className="warehouse-request-form" onSubmit={handleCreatePurchaseRequest}>
+            <div className="warehouse-request-form-grid">
+              <div className="warehouse-request-form-main">
+                <label>
+                  Warehouse
+                  <select
+                    name="warehouseId"
+                    value={requestForm.warehouseId}
+                    onChange={handleRequestFormChange}
+                  >
+                    <option value="">Select warehouse</option>
+                    {warehouseOptions.map((warehouse) => (
+                      <option key={warehouse.id} value={String(warehouse.id)}>
+                        {warehouse.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Notes
+                  <textarea
+                    name="notes"
+                    rows={4}
+                    value={requestForm.notes}
+                    onChange={handleRequestFormChange}
+                    placeholder="Add purchase request notes for the warehouse manager"
+                  />
+                </label>
+              </div>
+
+              <aside className="warehouse-request-summary">
+                <strong>Composer Summary</strong>
+                <p>
+                  Select a warehouse, enter the requested quantity per product, then submit the request
+                  for approval.
+                </p>
+                <div className="warehouse-kpi-strip">
+                  <div>
+                    <span>Warehouse Rows</span>
+                    <strong>{formatCompactNumber(selectedWarehouseInventories.length)}</strong>
+                  </div>
+                  <div>
+                    <span>Open Requests</span>
+                    <strong>
+                      {formatCompactNumber(
+                        myPurchaseRequestRows.filter((row) =>
+                          ["pending_approval", "approved", "processing"].includes(
+                            String(row.rawStatus || "").toLowerCase()
+                          )
+                        ).length
+                      )}
+                    </strong>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+            {selectedWarehouseInventories.length ? (
+              <div className="warehouse-table-shell">
+                <table className="warehouse-table">
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Product</th>
+                      <th>Warehouse</th>
+                      <th>On Hand</th>
+                      <th>Status</th>
+                      <th>Requested Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedWarehouseInventories.map((inventory, index) => (
+                      <tr key={`${inventory.warehouseId}-${inventory.productId}`}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <strong>{inventory.productName}</strong>
+                          <span>{inventory.productSku}</span>
+                        </td>
+                        <td>{inventory.warehouseName}</td>
+                        <td>{formatCompactNumber(inventory.quantityOnHand)}</td>
+                        <td>
+                          <span className={`warehouse-badge tone-${getStatusTone(inventory.rawStatus)}`}>
+                            {inventory.status}
+                          </span>
+                        </td>
+                        <td>
+                          <input
+                            className="warehouse-quantity-input"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={requestQuantities[inventory.productId] || ""}
+                            onChange={(event) =>
+                              handleRequestQuantityChange(
+                                inventory.productId,
+                                event.target.value
+                              )
+                            }
+                            placeholder="0"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <WarehouseEmptyState
+                title="No inventory rows for this warehouse"
+                description="Choose another warehouse to create a purchase request."
+              />
+            )}
+
+            <div className="warehouse-form-actions">
+              <button
+                type="button"
+                className="warehouse-secondary-action"
+                onClick={() => resetRequestForm(requestForm.warehouseId)}
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                className="warehouse-primary-action"
+                disabled={isSubmittingRequest}
+              >
+                {isSubmittingRequest ? "Submitting..." : "Submit Purchase Request"}
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        <div className="warehouse-toolbar">
+          <input
+            className="warehouse-search-input"
+            value={purchaseRequestSearchTerm}
+            onChange={(event) => setPurchaseRequestSearchTerm(event.target.value)}
+            placeholder="Search by code, warehouse, requester, or status"
+          />
+
+          <select
+            className="warehouse-filter-input"
+            value={purchaseRequestStatusFilter}
+            onChange={(event) => setPurchaseRequestStatusFilter(event.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="pending_approval">Pending Approval</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="converted">Converted</option>
+          </select>
+        </div>
+
+        {rows.length ? (
+          <>
+            <div className="warehouse-table-shell">
+              <table className="warehouse-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Request Code</th>
+                    <th>Warehouse</th>
+                    <th>Requester</th>
+                    <th>Total Items</th>
+                    <th>Estimated Amount</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={row.id}>
+                      <td>{startIndex + index + 1}</td>
+                      <td>
+                        <strong>{row.code}</strong>
+                      </td>
+                      <td>{row.warehouseName}</td>
+                      <td>{row.requesterName}</td>
+                      <td>{formatCompactNumber(row.totalItems)}</td>
+                      <td>{formatCurrency(row.estimatedAmount)}</td>
+                      <td>
+                        <span className={`warehouse-badge tone-${getStatusTone(row.rawStatus)}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td>{formatDate(row.updatedAt)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="warehouse-row-action secondary"
+                          onClick={() => openDetails("purchaseRequest", row)}
+                        >
+                          Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredPurchaseRequestRows.length}
+              onChange={(page) => updatePage("purchaseRequests", page)}
+            />
+          </>
+        ) : (
+          <WarehouseEmptyState
+            title="No purchase requests match"
+            description="Try another request search term or create a new restock request."
           />
         )}
       </section>
@@ -1497,249 +1749,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
           <WarehouseEmptyState
             title="No stock inwards match"
             description="Try another inbound search term or status."
-          />
-        )}
-      </section>
-    );
-  }
-
-  function renderPurchaseRequests() {
-    const { currentPage, rows, startIndex } = buildPageSlice(
-      filteredPurchaseRequestRows,
-      pages.purchaseRequests
-    );
-
-    return (
-      <section className="warehouse-section-card">
-        <WarehouseSectionHeader
-          eyebrow="Restock Requests"
-          title="Purchase Request Workspace"
-          description="Submit replenishment quantities by warehouse and keep your request history aligned with warehouse demand."
-          meta={`${formatCompactNumber(filteredPurchaseRequestRows.length)} requests`}
-          action={
-            <button
-              type="button"
-              className="warehouse-primary-action"
-              onClick={() => setShowRequestComposer((currentValue) => !currentValue)}
-            >
-              {showRequestComposer ? "Hide Composer" : "Create Request"}
-            </button>
-          }
-        />
-
-        {showRequestComposer ? (
-          <form className="warehouse-request-form" onSubmit={handleCreatePurchaseRequest}>
-            <div className="warehouse-request-form-grid">
-              <div className="warehouse-request-form-main">
-                <label>
-                  Warehouse
-                  <select
-                    name="warehouseId"
-                    value={requestForm.warehouseId}
-                    onChange={handleRequestFormChange}
-                  >
-                    <option value="">Select warehouse</option>
-                    {warehouseOptions.map((warehouse) => (
-                      <option key={warehouse.id} value={String(warehouse.id)}>
-                        {warehouse.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  Notes
-                  <textarea
-                    name="notes"
-                    rows={4}
-                    value={requestForm.notes}
-                    onChange={handleRequestFormChange}
-                    placeholder="Add purchase request notes for the warehouse manager"
-                  />
-                </label>
-              </div>
-
-              <aside className="warehouse-request-summary">
-                <strong>Composer Summary</strong>
-                <p>
-                  Select a warehouse, enter the requested quantity per product, then submit the request
-                  for approval.
-                </p>
-                <div className="warehouse-kpi-strip">
-                  <div>
-                    <span>Warehouse Rows</span>
-                    <strong>{formatCompactNumber(selectedWarehouseInventories.length)}</strong>
-                  </div>
-                  <div>
-                    <span>Open Requests</span>
-                    <strong>
-                      {formatCompactNumber(
-                        myPurchaseRequestRows.filter((row) =>
-                          ["pending_approval", "approved", "processing"].includes(
-                            String(row.rawStatus || "").toLowerCase()
-                          )
-                        ).length
-                      )}
-                    </strong>
-                  </div>
-                </div>
-              </aside>
-            </div>
-
-            {selectedWarehouseInventories.length ? (
-              <div className="warehouse-table-shell">
-                <table className="warehouse-table">
-                  <thead>
-                    <tr>
-                      <th>No.</th>
-                      <th>Product</th>
-                      <th>Warehouse</th>
-                      <th>On Hand</th>
-                      <th>Status</th>
-                      <th>Requested Quantity</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedWarehouseInventories.map((inventory, index) => (
-                      <tr key={`${inventory.warehouseId}-${inventory.productId}`}>
-                        <td>{index + 1}</td>
-                        <td>
-                          <strong>{inventory.productName}</strong>
-                          <span>{inventory.productSku}</span>
-                        </td>
-                        <td>{inventory.warehouseName}</td>
-                        <td>{formatCompactNumber(inventory.quantityOnHand)}</td>
-                        <td>
-                          <span className={`warehouse-badge tone-${getStatusTone(inventory.rawStatus)}`}>
-                            {inventory.status}
-                          </span>
-                        </td>
-                        <td>
-                          <input
-                            className="warehouse-quantity-input"
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={requestQuantities[inventory.productId] || ""}
-                            onChange={(event) =>
-                              handleRequestQuantityChange(
-                                inventory.productId,
-                                event.target.value
-                              )
-                            }
-                            placeholder="0"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <WarehouseEmptyState
-                title="No inventory rows for this warehouse"
-                description="Choose another warehouse to create a purchase request."
-              />
-            )}
-
-            <div className="warehouse-form-actions">
-              <button
-                type="button"
-                className="warehouse-secondary-action"
-                onClick={() => resetRequestForm(requestForm.warehouseId)}
-              >
-                Reset
-              </button>
-              <button
-                type="submit"
-                className="warehouse-primary-action"
-                disabled={isSubmittingRequest}
-              >
-                {isSubmittingRequest ? "Submitting..." : "Submit Purchase Request"}
-              </button>
-            </div>
-          </form>
-        ) : null}
-
-        <div className="warehouse-toolbar">
-          <input
-            className="warehouse-search-input"
-            value={purchaseRequestSearchTerm}
-            onChange={(event) => setPurchaseRequestSearchTerm(event.target.value)}
-            placeholder="Search by code, warehouse, requester, or status"
-          />
-
-          <select
-            className="warehouse-filter-input"
-            value={purchaseRequestStatusFilter}
-            onChange={(event) => setPurchaseRequestStatusFilter(event.target.value)}
-          >
-            <option value="all">All statuses</option>
-            <option value="pending_approval">Pending Approval</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="converted">Converted</option>
-          </select>
-        </div>
-
-        {rows.length ? (
-          <>
-            <div className="warehouse-table-shell">
-              <table className="warehouse-table">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Request Code</th>
-                    <th>Warehouse</th>
-                    <th>Requester</th>
-                    <th>Total Items</th>
-                    <th>Estimated Amount</th>
-                    <th>Status</th>
-                    <th>Updated</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, index) => (
-                    <tr key={row.id}>
-                      <td>{startIndex + index + 1}</td>
-                      <td>
-                        <strong>{row.code}</strong>
-                      </td>
-                      <td>{row.warehouseName}</td>
-                      <td>{row.requesterName}</td>
-                      <td>{formatCompactNumber(row.totalItems)}</td>
-                      <td>{formatCurrency(row.estimatedAmount)}</td>
-                      <td>
-                        <span className={`warehouse-badge tone-${getStatusTone(row.rawStatus)}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td>{formatDate(row.updatedAt)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="warehouse-row-action secondary"
-                          onClick={() => openDetails("purchaseRequest", row)}
-                        >
-                          Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalItems={filteredPurchaseRequestRows.length}
-              onChange={(page) => updatePage("purchaseRequests", page)}
-            />
-          </>
-        ) : (
-          <WarehouseEmptyState
-            title="No purchase requests match"
-            description="Try another request search term or create a new restock request."
           />
         )}
       </section>
