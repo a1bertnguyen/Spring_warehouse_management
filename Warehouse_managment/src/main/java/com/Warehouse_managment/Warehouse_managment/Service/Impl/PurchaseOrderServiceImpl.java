@@ -73,7 +73,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     static {
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.pending_approval,
-                List.of(PurchaseOrder.OrderStatus.approved, PurchaseOrder.OrderStatus.rejected));
+                List.of(PurchaseOrder.OrderStatus.approved, PurchaseOrder.OrderStatus.ordered, PurchaseOrder.OrderStatus.cancelled, PurchaseOrder.OrderStatus.rejected));
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.approved,
                 List.of(PurchaseOrder.OrderStatus.ordered, PurchaseOrder.OrderStatus.cancelled));
         VALID_TRANSITIONS.put(PurchaseOrder.OrderStatus.rejected, List.of());
@@ -116,7 +116,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         purchaseOrder.setSupplierId(supplierId);
         purchaseOrder.setNotes(purchaseOrderRequest.getNotes() != null ? purchaseOrderRequest.getNotes() : purchaseRequest.getNotes());
         purchaseOrder.setOrderDate(LocalDateTime.now());
-        purchaseOrder.setStatus(PurchaseOrder.OrderStatus.pending_approval);
+        purchaseOrder.setStatus(PurchaseOrder.OrderStatus.approved);
 
         PurchaseOrder savedOrder = purchaseOrderRepository.save(purchaseOrder);
         List<PurchaseRequestDetail> requestDetails = purchaseRequestDetailRepository.findByPurchaseRequest_Id(purchaseRequest.getId());
@@ -292,24 +292,19 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
 
         if (hasAuthority("MANAGER")) {
-            boolean managerTransition = currentStatus == PurchaseOrder.OrderStatus.pending_approval
-                    && (nextStatus == PurchaseOrder.OrderStatus.approved
-                    || nextStatus == PurchaseOrder.OrderStatus.rejected);
-            if (!managerTransition) {
-                throw new IllegalStateException("Manager can only approve or reject purchase orders");
-            }
-            return;
+            throw new IllegalStateException("Manager does not approve purchase orders in the current workflow");
         }
 
         if (hasAuthority("PURCHASE_STAFF")) {
             boolean purchaseStaffTransition =
-                    (currentStatus == PurchaseOrder.OrderStatus.approved
+                    ((currentStatus == PurchaseOrder.OrderStatus.pending_approval
+                            || currentStatus == PurchaseOrder.OrderStatus.approved)
                             && (nextStatus == PurchaseOrder.OrderStatus.ordered
                             || nextStatus == PurchaseOrder.OrderStatus.cancelled))
                             || (currentStatus == PurchaseOrder.OrderStatus.ordered
                             && nextStatus == PurchaseOrder.OrderStatus.cancelled);
             if (!purchaseStaffTransition) {
-                throw new IllegalStateException("Purchase staff can only send approved purchase orders");
+                throw new IllegalStateException("Purchase staff can only send or cancel supplier purchase orders");
             }
             return;
         }

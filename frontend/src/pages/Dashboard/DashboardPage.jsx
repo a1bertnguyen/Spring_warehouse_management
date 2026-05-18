@@ -14,6 +14,7 @@ const MANAGER_SECTION_BY_PATH = {
   [PATHS.dashboardInventory]: "inventory",
   [PATHS.dashboardInventoryMovements]: "inventoryMovements",
   [PATHS.dashboardSalesOrders]: "salesOrders",
+  [PATHS.dashboardPurchaseRequests]: "purchaseRequests",
   [PATHS.dashboardPurchaseOrders]: "purchaseOrders",
   [PATHS.dashboardGoodsReceipts]: "goodsReceipts",
 };
@@ -22,6 +23,7 @@ const PURCHASE_STAFF_SECTION_BY_PATH = {
   [PATHS.dashboard]: "overview",
   [PATHS.dashboardSuppliers]: "suppliers",
   [PATHS.dashboardInventory]: "inventory",
+  [PATHS.dashboardPurchaseRequests]: "purchaseRequests",
   [PATHS.dashboardPurchaseOrders]: "purchaseOrders",
   [PATHS.dashboardGoodsReceipts]: "goodsReceipts",
   [PATHS.dashboardInventoryMovements]: "inventoryMovements",

@@ -21,10 +21,15 @@ const SECTION_COPY = {
     subtitle:
       "Check on-hand stock by product and warehouse before receiving new inbound quantities.",
   },
+  purchaseRequests: {
+    title: "Purchase Requests",
+    subtitle:
+      "Review manager-approved warehouse requests before converting them into supplier purchase orders.",
+  },
   purchaseOrders: {
     title: "Purchase Orders",
     subtitle:
-      "Track manager approvals, supplier ordering, and receipt progress in one place.",
+      "Track supplier ordering, shipment progress, and receipt follow-up in one place.",
   },
   goodsReceipts: {
     title: "Stock Inwards",
@@ -44,6 +49,17 @@ const SECTION_COPY = {
 };
 
 const ORDER_DETAIL_CONFIG = {
+  purchaseRequest: {
+    key: "purchaseRequestDetails",
+    typeLabel: "Purchase Request Details",
+    quantityLabel: "Requested Quantity",
+    quantityKey: "requestedQuantity",
+    priceLabel: "Estimated Unit Cost",
+    priceKey: "unitPriceEstimated",
+    totalLabel: "Estimated Total",
+    totalKey: "lineTotalEstimated",
+    loader: (identifier) => ApiService.getPurchaseRequestDetails(identifier),
+  },
   purchaseOrder: {
     key: "purchaseOrderDetails",
     typeLabel: "Purchase Order Details",
@@ -91,6 +107,7 @@ const STATUS_LABELS = {
   STOCK_OUT: "Stock Out",
   TRANSFER: "Transfer",
   UPDATED: "Updated",
+  CONVERTED: "Converted",
 };
 
 const PAGE_SIZE = 10;
@@ -319,13 +336,16 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [supplierSearchTerm, setSupplierSearchTerm] = useState("");
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
   const [movementSearchTerm, setMovementSearchTerm] = useState("");
   const [isSubmittingStockInward, setIsSubmittingStockInward] = useState(false);
+  const [isCreatingPurchaseOrder, setIsCreatingPurchaseOrder] = useState(false);
   const [pages, setPages] = useState({
     suppliers: 1,
     inventory: 1,
+    purchaseRequests: 1,
     purchaseOrders: 1,
     goodsReceipts: 1,
     inventoryMovements: 1,
@@ -349,13 +369,14 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     requesterName: "",
     warehouseName: "",
     orderDate: "",
-    status: "pending_approval",
+    status: "approved",
     supplierId: "",
     notes: "",
   });
   const [dashboardData, setDashboardData] = useState({
     suppliers: [],
     inventories: [],
+    purchaseRequests: [],
     purchaseOrders: [],
     goodsReceipts: [],
     inventoryMovements: [],
@@ -389,6 +410,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       const [
         supplierResult,
         inventoryResult,
+        purchaseRequestResult,
         purchaseOrderResult,
         goodsReceiptResult,
         movementResult,
@@ -397,6 +419,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       ] = await Promise.allSettled([
         ApiService.getAllSuppliers(),
         ApiService.getAllInventories(),
+        ApiService.getAllPurchaseRequests(),
         ApiService.getAllPurchaseOrders(),
         ApiService.getAllStockInwards(),
         ApiService.getInventoryMovements(),
@@ -412,6 +435,10 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         inventories:
           inventoryResult.status === "fulfilled"
             ? inventoryResult.value?.inventories || []
+            : [],
+        purchaseRequests:
+          purchaseRequestResult.status === "fulfilled"
+            ? purchaseRequestResult.value?.purchaseRequests || []
             : [],
         purchaseOrders:
           purchaseOrderResult.status === "fulfilled"
@@ -445,6 +472,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       const errors = [
         supplierResult,
         inventoryResult,
+        purchaseRequestResult,
         purchaseOrderResult,
         goodsReceiptResult,
         movementResult,
@@ -502,7 +530,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       requesterName: "",
       warehouseName: "",
       orderDate: "",
-      status: "pending_approval",
+      status: "approved",
       supplierId: "",
       notes: "",
     });
@@ -553,13 +581,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       isSubmitting: false,
       orderId,
       orderCode: "",
-      requesterName: "",
-      warehouseName: "",
-      orderDate: "",
-      status: "pending_approval",
-      supplierId: "",
-      notes: "",
-    });
+        requesterName: "",
+        warehouseName: "",
+        orderDate: "",
+        status: "approved",
+        supplierId: "",
+        notes: "",
+      });
 
     try {
       const response = await ApiService.getPurchaseOrderById(orderId);
@@ -574,7 +602,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         requesterName: purchaseOrder?.requesterName || "",
         warehouseName: purchaseOrder?.warehouseName || "",
         orderDate: purchaseOrder?.orderDate || "",
-        status: purchaseOrder?.status || "pending_approval",
+        status: purchaseOrder?.status || "approved",
         supplierId: String(purchaseOrder?.supplierId ?? ""),
         notes: purchaseOrder?.notes || "",
       });
@@ -589,6 +617,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const {
     suppliers,
     inventories,
+    purchaseRequests,
     purchaseOrders,
     goodsReceipts,
     inventoryMovements,
@@ -641,6 +670,26 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         }))
         .sort((left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0)),
     [purchaseOrders]
+  );
+
+  const purchaseRequestRows = useMemo(
+    () =>
+      purchaseRequests
+        .map((request) => ({
+          id: request.id,
+          code: request.requestCode || `PR-${request.id}`,
+          requester: request.requesterName || "Requester Not Assigned",
+          warehouse: request.warehouseName || "Unassigned",
+          totalItems: request.totalItems || 0,
+          estimatedAmount: request.totalEstimatedAmount || 0,
+          status: formatStatus(request.status),
+          rawStatus: request.status,
+          updatedAt: request.updatedAt || request.createdAt || request.requestDate,
+          notes: request.notes || "",
+          supplierId: request.supplierId ?? null,
+        }))
+        .sort((left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0)),
+    [purchaseRequests]
   );
 
   const goodsReceiptRows = useMemo(
@@ -707,6 +756,19 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     [inventoryRows, inventorySearchTerm]
   );
 
+  const filteredPurchaseRequestRows = useMemo(
+    () =>
+      purchaseRequestRows.filter((row) =>
+        matchesSearch(purchaseRequestSearchTerm, [
+          row.code,
+          row.requester,
+          row.warehouse,
+          row.status,
+        ])
+      ),
+    [purchaseRequestRows, purchaseRequestSearchTerm]
+  );
+
   const filteredPurchaseOrderRows = useMemo(
     () =>
       purchaseOrderRows.filter((row) =>
@@ -762,6 +824,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         helper: "Tracked stock lines",
       },
       {
+        label: "Approved Requests",
+        value: purchaseRequests.filter((request) =>
+          ["approved", "converted"].includes(String(request.status || "").toLowerCase())
+        ).length,
+        helper: "Ready for procurement",
+      },
+      {
         label: "Purchase Orders",
         value: purchaseOrders.length,
         helper: "Inbound procurement documents",
@@ -772,7 +841,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         helper: "Receiving documents on file",
       },
     ],
-    [goodsReceipts.length, inventories.length, purchaseOrders.length, suppliers.length]
+    [
+      goodsReceipts.length,
+      inventories.length,
+      purchaseOrders.length,
+      purchaseRequests,
+      suppliers.length,
+    ]
   );
 
   const pendingPurchaseCount = useMemo(
@@ -989,8 +1064,13 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     const nextStatus = mode === "send" ? "ordered" : null;
 
-    if (mode === "send" && String(purchaseOrderEditor.status || "").toLowerCase() !== "approved") {
-      showMessage("Only approved purchase orders can be sent to the supplier.");
+    if (
+      mode === "send" &&
+      !["approved", "pending_approval"].includes(
+        String(purchaseOrderEditor.status || "").toLowerCase()
+      )
+    ) {
+      showMessage("Only ready purchase orders can be sent to the supplier.");
       return;
     }
 
@@ -1020,6 +1100,37 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         ...currentValue,
         isSubmitting: false,
       }));
+    }
+  }
+
+  async function handleCreatePurchaseOrderFromRequest(row) {
+    setIsCreatingPurchaseOrder(true);
+
+    try {
+      const response = await ApiService.createPurchaseOrder({
+        purchaseRequestId: Number(row.id),
+        supplierId: row.supplierId || null,
+        notes: row.notes || "",
+      });
+
+      const createdPurchaseOrder = response?.data || response?.purchaseOrder || null;
+      await loadDashboardData();
+      navigate(PATHS.dashboardPurchaseOrders);
+
+      if (createdPurchaseOrder?.id) {
+        await openPurchaseOrderEditor(createdPurchaseOrder.id);
+      }
+
+      showMessage(
+        "Purchase order created. Choose the supplier if needed, then send it to the supplier."
+      );
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message ||
+          "Unable to convert the purchase request into a purchase order."
+      );
+    } finally {
+      setIsCreatingPurchaseOrder(false);
     }
   }
 
@@ -1070,8 +1181,12 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
                 <span>Review current stock before receiving new goods.</span>
               </div>
               <div className="purchase-quick-card">
+                <strong>Purchase Requests</strong>
+                <span>Convert approved warehouse requests into supplier orders.</span>
+              </div>
+              <div className="purchase-quick-card">
                 <strong>Purchase Orders</strong>
-                <span>Check the latest procurement status updates.</span>
+                <span>Assign suppliers and send approved orders out.</span>
               </div>
               <div className="purchase-quick-card">
                 <strong>Create Stock Inward</strong>
@@ -1336,6 +1451,109 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
           <PurchaseEmptyState
             title="No purchase orders match"
             description="Try a different purchase order search term."
+          />
+        )}
+      </section>
+    );
+  }
+
+  function renderPurchaseRequests() {
+    const { currentPage, rows, startIndex } = paginate(
+      filteredPurchaseRequestRows,
+      "purchaseRequests"
+    );
+    const approvedRequestCount = filteredPurchaseRequestRows.filter(
+      (row) => String(row.rawStatus || "").toLowerCase() === "approved"
+    ).length;
+
+    return (
+      <section className="purchase-section-card">
+        <PurchaseSectionHeader
+          eyebrow="Upstream Requests"
+          title="Warehouse Purchase Requests"
+          description="Review manager-approved warehouse requests, inspect line items, and convert approved requests into supplier purchase orders."
+          meta={`${formatCompactNumber(approvedRequestCount)} approved requests ready`}
+        />
+
+        <div className="purchase-toolbar">
+          <input
+            className="purchase-search-input"
+            value={purchaseRequestSearchTerm}
+            onChange={(event) => setPurchaseRequestSearchTerm(event.target.value)}
+            placeholder="Search by code, requester, warehouse, or status"
+          />
+        </div>
+
+        {rows.length ? (
+          <>
+            <div className="purchase-table-shell">
+              <table className="purchase-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Request Code</th>
+                    <th>Requester</th>
+                    <th>Warehouse</th>
+                    <th>Total Items</th>
+                    <th>Estimated Amount</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={row.id}>
+                      <td>{startIndex + index + 1}</td>
+                      <td>
+                        <strong>{row.code}</strong>
+                      </td>
+                      <td>{row.requester}</td>
+                      <td>{row.warehouse}</td>
+                      <td>{row.totalItems}</td>
+                      <td>{formatCurrency(row.estimatedAmount)}</td>
+                      <td>
+                        <span className={`purchase-badge tone-${getStatusTone(row.rawStatus)}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td>{formatDate(row.updatedAt)}</td>
+                      <td>
+                        <div className="purchase-row-actions">
+                          <button
+                            type="button"
+                            className="purchase-row-action"
+                            onClick={() => openOrderDetails("purchaseRequest", row)}
+                          >
+                            Details
+                          </button>
+                          {String(row.rawStatus || "").toLowerCase() === "approved" ? (
+                            <button
+                              type="button"
+                              className="purchase-row-action secondary"
+                              onClick={() => handleCreatePurchaseOrderFromRequest(row)}
+                              disabled={isCreatingPurchaseOrder}
+                            >
+                              {isCreatingPurchaseOrder ? "Creating..." : "Create PO"}
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredPurchaseRequestRows.length}
+              onChange={(page) => updatePage("purchaseRequests", page)}
+            />
+          </>
+        ) : (
+          <PurchaseEmptyState
+            title="No purchase requests match"
+            description="Approved warehouse requests will appear here for the purchasing team."
           />
         )}
       </section>
@@ -1770,6 +1988,10 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       return renderInventory();
     }
 
+    if (activeSection === "purchaseRequests") {
+      return renderPurchaseRequests();
+    }
+
     if (activeSection === "purchaseOrders") {
       return renderPurchaseOrders();
     }
@@ -2056,7 +2278,11 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
                 type="button"
                 className="purchase-primary-action purchase-primary-action-alt"
                 onClick={() => submitPurchaseOrderEditor("send")}
-                disabled={purchaseOrderEditor.isLoading || purchaseOrderEditor.isSubmitting}
+                disabled={
+                  purchaseOrderEditor.isLoading ||
+                  purchaseOrderEditor.isSubmitting ||
+                  !purchaseOrderEditor.supplierId
+                }
               >
                 Send Order
               </button>

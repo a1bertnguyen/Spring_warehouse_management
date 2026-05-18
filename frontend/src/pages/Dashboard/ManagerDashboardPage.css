@@ -308,6 +308,15 @@
   background: linear-gradient(135deg, #0c6f72 0%, #148f91 100%);
 }
 
+.success-button {
+  background: #dff7ea;
+  color: #14795b;
+}
+
+.success-button:hover {
+  background: #c8f0da;
+}
+
 .danger-button {
   background: #ff6b7a;
   color: #ffffff;
@@ -438,6 +447,70 @@
 
 .manager-timeline-grid {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.manager-approval-summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.manager-approval-summary-card {
+  background: linear-gradient(180deg, #f8fcfd 0%, #eef8f9 100%);
+  border: 1px solid rgba(15, 139, 141, 0.14);
+  border-radius: 20px;
+  color: #12202d;
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.manager-approval-summary-card:hover {
+  border-color: rgba(15, 139, 141, 0.26);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.manager-approval-summary-card span,
+.manager-approval-summary-card small {
+  color: #5b6b7a;
+}
+
+.manager-approval-summary-card strong {
+  color: #0c6f72;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.manager-approval-row {
+  align-items: center;
+  background: #f7fbfd;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 18px;
+}
+
+.manager-approval-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.manager-approval-copy small {
+  color: #94a3b8;
+}
+
+.manager-approval-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .manager-quick-actions {
@@ -670,6 +743,10 @@
   .manager-hero {
     grid-template-columns: 1fr;
   }
+
+  .manager-approval-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -689,6 +766,10 @@
   .manager-insight-card {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .manager-approval-row {
+    grid-template-columns: 1fr;
   }
 
   .manager-warehouse-card-top {
@@ -711,6 +792,10 @@
   .manager-row-metrics,
   .manager-insight-metrics {
     justify-items: start;
+  }
+
+  .manager-approval-actions {
+    justify-content: stretch;
   }
 
   .manager-loading-grid {

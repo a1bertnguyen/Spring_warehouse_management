@@ -23,6 +23,11 @@ const MANAGER_NAV_ITEMS = [
   },
   { path: PATHS.dashboardSalesOrders, label: "Sales Orders", icon: "sales" },
   {
+    path: PATHS.dashboardPurchaseRequests,
+    label: "Purchase Requests",
+    icon: "purchase",
+  },
+  {
     path: PATHS.dashboardPurchaseOrders,
     label: "Purchase Orders",
     icon: "purchase",
@@ -51,6 +56,11 @@ const PURCHASE_STAFF_NAV_ITEMS = [
   { path: PATHS.dashboard, label: "Overview", icon: "dashboard" },
   { path: PATHS.dashboardSuppliers, label: "Suppliers", icon: "suppliers" },
   { path: PATHS.dashboardInventory, label: "Inventory", icon: "inventory" },
+  {
+    path: PATHS.dashboardPurchaseRequests,
+    label: "Purchase Requests",
+    icon: "purchase",
+  },
   {
     path: PATHS.dashboardPurchaseOrders,
     label: "Purchase Orders",

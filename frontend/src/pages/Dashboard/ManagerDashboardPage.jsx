@@ -32,19 +32,25 @@ const SECTION_COPY = {
     eyebrow: "Sales orders",
     title: "Recent outbound demand",
     description:
-      "Monitor the latest customer orders, volumes, and order status from the sales pipeline.",
+      "Approve customer orders before they move into warehouse shipment handling.",
+  },
+  purchaseRequests: {
+    eyebrow: "Purchase requests",
+    title: "Restock request approvals",
+    description:
+      "Review replenishment requests from warehouse staff before they become supplier-facing purchase orders.",
   },
   purchaseOrders: {
     eyebrow: "Purchase orders",
     title: "Inbound procurement status",
     description:
-      "Watch supplier orders move from ordering into partial receipt and final receiving.",
+      "Track supplier-facing purchase orders after requests have already been approved.",
   },
   goodsReceipts: {
     eyebrow: "Stock inwards",
     title: "Inbound receiving activity",
     description:
-      "Follow the most recent stock inward documents, received quantities, and warehouse destinations.",
+      "Approve inbound documents created by purchasing before warehouse staff completes receiving.",
   },
 };
 
@@ -76,6 +82,17 @@ const ORDER_DETAIL_CONFIG = {
     totalKey: "lineTotalEstimated",
     loader: (identifier) => ApiService.getPurchaseOrderDetails(identifier),
   },
+  purchaseRequest: {
+    key: "purchaseRequestDetails",
+    typeLabel: "Purchase request details",
+    quantityLabel: "Requested",
+    quantityKey: "requestedQuantity",
+    priceLabel: "Est. unit cost",
+    priceKey: "unitPriceEstimated",
+    totalLabel: "Est. total",
+    totalKey: "lineTotalEstimated",
+    loader: (identifier) => ApiService.getPurchaseRequestDetails(identifier),
+  },
   stockInward: {
     key: "stockInwardDetails",
     typeLabel: "Stock inward details",
@@ -98,8 +115,14 @@ const ORDER_STATUS_TRANSITIONS = {
     completed: [],
     cancelled: [],
   },
-  purchaseOrder: {
+  purchaseRequest: {
     pending_approval: ["approved", "rejected"],
+    approved: [],
+    rejected: [],
+    converted: [],
+  },
+  purchaseOrder: {
+    pending_approval: [],
     approved: [],
     rejected: [],
     ordered: [],
@@ -113,6 +136,42 @@ const ORDER_STATUS_TRANSITIONS = {
     COMPLETED: [],
     CANCELLED: [],
   },
+};
+
+const ORDER_ACTIONS = {
+  salesOrder: {
+    pending_stock_check: [
+      { value: "awaiting_shipment", label: "Approve", className: "success-button" },
+      { value: "cancelled", label: "Reject", className: "danger-button" },
+    ],
+    awaiting_shipment: [
+      { value: "cancelled", label: "Cancel", className: "danger-button" },
+    ],
+  },
+  purchaseRequest: {
+    pending_approval: [
+      { value: "approved", label: "Approve", className: "success-button" },
+      { value: "rejected", label: "Reject", className: "danger-button" },
+    ],
+  },
+  purchaseOrder: {
+  },
+  stockInward: {
+    DRAFT: [
+      { value: "APPROVED", label: "Approve", className: "success-button" },
+      { value: "CANCELLED", label: "Reject", className: "danger-button" },
+    ],
+    APPROVED: [
+      { value: "CANCELLED", label: "Cancel", className: "danger-button" },
+    ],
+  },
+};
+
+const APPROVAL_SECTION_BY_KIND = {
+  salesOrder: PATHS.dashboardSalesOrders,
+  purchaseRequest: PATHS.dashboardPurchaseRequests,
+  purchaseOrder: PATHS.dashboardPurchaseOrders,
+  stockInward: PATHS.dashboardGoodsReceipts,
 };
 
 function formatStatus(value) {
@@ -258,10 +317,10 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
   const [inventoryStatusFilter, setInventoryStatusFilter] = useState("all");
   const [isExportingInventory, setIsExportingInventory] = useState(false);
-  const [statusSelections, setStatusSelections] = useState({});
   const [statusUpdateKey, setStatusUpdateKey] = useState("");
   const [inventoryMovementSearchTerm, setInventoryMovementSearchTerm] = useState("");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
+  const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
   const [detailDialog, setDetailDialog] = useState({
@@ -283,6 +342,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     inventories: [],
     inventoryMovements: [],
     salesOrders: [],
+    purchaseRequests: [],
     purchaseOrders: [],
     goodsReceipts: [],
     inventorySummary: {
@@ -327,6 +387,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       summaryResult,
       movementResult,
       salesResult,
+      purchaseRequestResult,
       purchaseResult,
       receiptResult,
     ] = await Promise.allSettled([
@@ -338,6 +399,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       ApiService.getInventorySummary(),
       ApiService.getInventoryMovements(),
       ApiService.getAllSalesOrders({ page: 0, size: 24 }),
+      ApiService.getAllPurchaseRequests({ page: 0, size: 24 }),
       ApiService.getAllPurchaseOrders({ page: 0, size: 24 }),
       ApiService.getAllStockInwards(),
     ]);
@@ -351,6 +413,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       summaryResult,
       movementResult,
       salesResult,
+      purchaseRequestResult,
       purchaseResult,
       receiptResult,
     ].filter((result) => result.status === "rejected");
@@ -434,6 +497,10 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           : [],
       salesOrders:
         salesResult.status === "fulfilled" ? salesResult.value?.salesOrders || [] : [],
+      purchaseRequests:
+        purchaseRequestResult.status === "fulfilled"
+          ? purchaseRequestResult.value?.purchaseRequests || []
+          : [],
       purchaseOrders:
         purchaseResult.status === "fulfilled"
           ? purchaseResult.value?.purchaseOrders || []
@@ -479,6 +546,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     inventories,
     inventoryMovements,
     salesOrders,
+    purchaseRequests,
     purchaseOrders,
     goodsReceipts,
     inventorySummary,
@@ -560,6 +628,14 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         date: order.createdAt || order.orderDate,
         status: formatStatus(order.status),
       })),
+      ...purchaseRequests.map((request) => ({
+        id: `request-${request.id}`,
+        type: "Purchase request",
+        title: request.requestCode || `Purchase request #${request.id}`,
+        subtitle: request.warehouseName || "Warehouse not assigned",
+        date: request.updatedAt || request.createdAt || request.requestDate,
+        status: formatStatus(request.status),
+      })),
       ...purchaseOrders.map((order) => ({
         id: `purchase-${order.id}`,
         type: "Purchase order",
@@ -581,7 +657,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     return allActivity
       .sort((left, right) => new Date(right.date || 0) - new Date(left.date || 0))
       .slice(0, 7);
-  }, [goodsReceipts, purchaseOrders, salesOrders]);
+  }, [goodsReceipts, purchaseOrders, purchaseRequests, salesOrders]);
 
   const filteredWarehouseInsights = useMemo(
     () =>
@@ -651,10 +727,21 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         value: inventorySummary.lowStockCount,
         helper: "Need attention",
       },
+      {
+        label: "Pending approvals",
+        value:
+          salesOrders.filter((order) => order?.status === "pending_stock_check").length +
+          purchaseRequests.filter((request) => request?.status === "pending_approval").length +
+          goodsReceipts.filter((receipt) => receipt?.status === "DRAFT").length,
+        helper: "Manager action required",
+      },
     ],
     [
+      goodsReceipts,
       inventorySummary.lowStockCount,
       inventorySummary.totalQuantityOnHand,
+      purchaseRequests,
+      salesOrders,
       warehouses.length,
     ]
   );
@@ -694,6 +781,21 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     [purchaseOrders]
   );
 
+  const purchaseRequestRows = useMemo(
+    () =>
+      purchaseRequests.map((request) => ({
+        id: request.id,
+        code: request.requestCode || `Purchase request #${request.id}`,
+        partner: request.requesterName || "Requester not assigned",
+        warehouse: request.warehouseName || "Unassigned",
+        totalItems: request.totalItems || 0,
+        rawStatus: request.status,
+        status: formatStatus(request.status),
+        updatedAt: request.updatedAt || request.createdAt || request.requestDate,
+      })),
+    [purchaseRequests]
+  );
+
   const goodsReceiptRows = useMemo(
     () =>
       goodsReceipts.map((receipt) => ({
@@ -707,6 +809,52 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         updatedAt: receipt.createdAt || receipt.inwardDate,
       })),
     [goodsReceipts]
+  );
+
+  const approvalQueueRows = useMemo(() => {
+    const pendingSales = salesOrderRows
+      .filter((row) => String(row.rawStatus || "") === "pending_stock_check")
+      .map((row) => ({
+        ...row,
+        queueKey: `sales-${row.id}`,
+        kind: "salesOrder",
+        typeLabel: "Sales order",
+      }));
+
+    const pendingRequests = purchaseRequestRows
+      .filter((row) => String(row.rawStatus || "") === "pending_approval")
+      .map((row) => ({
+        ...row,
+        queueKey: `request-${row.id}`,
+        kind: "purchaseRequest",
+        typeLabel: "Purchase request",
+      }));
+
+    const pendingReceipts = goodsReceiptRows
+      .filter((row) => String(row.rawStatus || "") === "DRAFT")
+      .map((row) => ({
+        ...row,
+        queueKey: `receipt-${row.id}`,
+        kind: "stockInward",
+        typeLabel: "Stock inward",
+      }));
+
+    return [...pendingSales, ...pendingRequests, ...pendingReceipts]
+      .sort((left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0))
+      .slice(0, 6);
+  }, [goodsReceiptRows, purchaseRequestRows, salesOrderRows]);
+
+  const filteredPurchaseRequestRows = useMemo(
+    () =>
+      purchaseRequestRows.filter((row) =>
+        matchesSearch(purchaseRequestSearchTerm, [
+          row.code,
+          row.partner,
+          row.warehouse,
+          row.status,
+        ])
+      ),
+    [purchaseRequestRows, purchaseRequestSearchTerm]
   );
 
   const filteredSalesOrderRows = useMemo(
@@ -748,8 +896,8 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     [goodsReceiptRows, goodsReceiptSearchTerm]
   );
 
-  function getStatusSelectionKey(kind, rowId) {
-    return `${kind}:${rowId}`;
+  function getStatusActionKey(kind, rowId, nextStatus) {
+    return `${kind}:${rowId}:${nextStatus}`;
   }
 
   function getNextStatusOptions(kind, rawStatus) {
@@ -757,24 +905,9 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     return transitions[String(rawStatus || "")] || [];
   }
 
-  function getSelectedStatus(kind, row) {
-    const key = getStatusSelectionKey(kind, row.id);
-    const nextOptions = getNextStatusOptions(kind, row.rawStatus);
-    const selectedStatus = statusSelections[key];
-
-    if (selectedStatus && nextOptions.includes(selectedStatus)) {
-      return selectedStatus;
-    }
-
-    return nextOptions[0] || "";
-  }
-
-  function handleStatusSelectionChange(kind, rowId, status) {
-    const key = getStatusSelectionKey(kind, rowId);
-    setStatusSelections((currentValue) => ({
-      ...currentValue,
-      [key]: status,
-    }));
+  function getActionButtons(kind, rawStatus) {
+    const actions = ORDER_ACTIONS[kind] || {};
+    return actions[String(rawStatus || "")] || [];
   }
 
   function openCreateWarehouseForm() {
@@ -888,20 +1021,20 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     }
   }
 
-  async function handleUpdateOrderStatus(kind, row) {
-    const nextStatus = getSelectedStatus(kind, row);
-
+  async function handleUpdateOrderStatus(kind, row, nextStatus) {
     if (!nextStatus) {
       showMessage("No valid status transition is available for this document.");
       return;
     }
 
-    const actionKey = getStatusSelectionKey(kind, row.id);
+    const actionKey = getStatusActionKey(kind, row.id, nextStatus);
     setStatusUpdateKey(actionKey);
 
     try {
       if (kind === "salesOrder") {
         await ApiService.updateSalesOrderStatus(row.id, nextStatus);
+      } else if (kind === "purchaseRequest") {
+        await ApiService.updatePurchaseRequestStatus(row.id, nextStatus);
       } else if (kind === "purchaseOrder") {
         await ApiService.updatePurchaseOrderStatus(row.id, nextStatus);
       } else if (kind === "stockInward") {
@@ -909,12 +1042,6 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
       } else {
         throw new Error("Unsupported document type for status updates.");
       }
-
-      setStatusSelections((currentValue) => {
-        const nextValue = { ...currentValue };
-        delete nextValue[actionKey];
-        return nextValue;
-      });
       await loadDashboardData();
       showMessage(`Status updated to ${formatStatus(nextStatus)}.`);
     } catch (error) {
@@ -940,6 +1067,127 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         </section>
 
         <section className="manager-two-column-grid manager-overview-grid">
+          <article className="manager-panel">
+            <div className="manager-panel-heading">
+              <div>
+                <span className="manager-panel-label">Approval queue</span>
+                <h2>Documents waiting for manager approval</h2>
+              </div>
+            </div>
+
+            <div className="manager-approval-summary-grid">
+              <button
+                type="button"
+                className="manager-approval-summary-card"
+                onClick={() => navigate(PATHS.dashboardSalesOrders)}
+              >
+                <span>Sales orders</span>
+                <strong>
+                  {
+                    salesOrderRows.filter(
+                      (row) => String(row.rawStatus || "") === "pending_stock_check"
+                    ).length
+                  }
+                </strong>
+                <small>Pending stock check approvals</small>
+              </button>
+
+              <button
+                type="button"
+                className="manager-approval-summary-card"
+                onClick={() => navigate(PATHS.dashboardPurchaseRequests)}
+              >
+                <span>Purchase requests</span>
+                <strong>
+                  {
+                    purchaseRequestRows.filter(
+                      (row) => String(row.rawStatus || "") === "pending_approval"
+                    ).length
+                  }
+                </strong>
+                <small>Requests waiting for manager approval</small>
+              </button>
+
+              <button
+                type="button"
+                className="manager-approval-summary-card"
+                onClick={() => navigate(PATHS.dashboardGoodsReceipts)}
+              >
+                <span>Stock inwards</span>
+                <strong>
+                  {goodsReceiptRows.filter((row) => String(row.rawStatus || "") === "DRAFT").length}
+                </strong>
+                <small>Draft inward documents to review</small>
+              </button>
+            </div>
+
+            {approvalQueueRows.length ? (
+              <div className="manager-list">
+                {approvalQueueRows.map((row) => {
+                  const actionButtons = getActionButtons(row.kind, row.rawStatus);
+
+                  return (
+                    <div key={row.queueKey} className="manager-approval-row">
+                      <div className="manager-approval-copy">
+                        <span className="manager-panel-label">{row.typeLabel}</span>
+                        <strong>{row.code}</strong>
+                        <p>
+                          {row.partner} - {row.warehouse}
+                        </p>
+                        <small>
+                          {row.status} - {formatDate(row.updatedAt)}
+                        </small>
+                      </div>
+
+                      <div className="manager-approval-actions">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => navigate(APPROVAL_SECTION_BY_KIND[row.kind])}
+                        >
+                          Open Section
+                        </button>
+
+                        <button
+                          type="button"
+                          className="info-button"
+                          onClick={() => openOrderDetails(row.kind, row)}
+                        >
+                          View Details
+                        </button>
+
+                        {actionButtons.map((actionButton) => {
+                          const isUpdatingThisRow =
+                            statusUpdateKey ===
+                            getStatusActionKey(row.kind, row.id, actionButton.value);
+
+                          return (
+                            <button
+                              key={actionButton.value}
+                              type="button"
+                              className={actionButton.className}
+                              onClick={() =>
+                                handleUpdateOrderStatus(row.kind, row, actionButton.value)
+                              }
+                              disabled={isUpdatingThisRow}
+                            >
+                              {isUpdatingThisRow ? "Updating..." : actionButton.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <TableEmptyState
+                title="No approvals pending"
+                description="Sales orders, purchase orders, and stock inwards that need manager review will appear here."
+              />
+            )}
+          </article>
+
           <article className="manager-panel">
             <div className="manager-panel-heading">
               <div>
@@ -982,46 +1230,46 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
               />
             )}
           </article>
+        </section>
 
-          <article className="manager-panel">
-            <div className="manager-panel-heading">
-              <div>
-                <span className="manager-panel-label">Recent activity</span>
-                <h2>Latest warehouse operations</h2>
-              </div>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={() => navigate(PATHS.dashboardInventoryMovements)}
-              >
-                Movements
-              </button>
+        <section className="manager-panel">
+          <div className="manager-panel-heading">
+            <div>
+              <span className="manager-panel-label">Recent activity</span>
+              <h2>Latest warehouse operations</h2>
             </div>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => navigate(PATHS.dashboardInventoryMovements)}
+            >
+              Movements
+            </button>
+          </div>
 
-            {recentActivity.length ? (
-              <div className="manager-timeline">
-                {recentActivity.slice(0, 5).map((item) => (
-                  <div key={item.id} className="manager-timeline-item">
-                    <span className="manager-timeline-dot" />
-                    <div>
-                      <strong>{item.title}</strong>
-                      <p>
-                        {item.type} - {item.subtitle}
-                      </p>
-                      <small>
-                        {item.status} - {formatDate(item.date)}
-                      </small>
-                    </div>
+          {recentActivity.length ? (
+            <div className="manager-timeline">
+              {recentActivity.slice(0, 5).map((item) => (
+                <div key={item.id} className="manager-timeline-item">
+                  <span className="manager-timeline-dot" />
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>
+                      {item.type} - {item.subtitle}
+                    </p>
+                    <small>
+                      {item.status} - {formatDate(item.date)}
+                    </small>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <TableEmptyState
-                title="No recent activity"
-                description="Sales orders, purchase orders, and stock inwards will appear here."
-              />
-            )}
-          </article>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <TableEmptyState
+              title="No recent activity"
+              description="Sales orders, purchase orders, and stock inwards will appear here."
+            />
+          )}
         </section>
       </>
     );
@@ -1430,9 +1678,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
               <tbody>
                 {rows.map((row) => {
                   const nextStatusOptions = getNextStatusOptions(detailKind, row.rawStatus);
-                  const selectedStatus = getSelectedStatus(detailKind, row);
-                  const actionKey = getStatusSelectionKey(detailKind, row.id);
-                  const isUpdatingThisRow = statusUpdateKey === actionKey;
+                  const actionButtons = getActionButtons(detailKind, row.rawStatus);
 
                   return (
                     <tr key={row.id}>
@@ -1456,36 +1702,36 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
                             View Details
                           </button>
 
-                          {nextStatusOptions.length ? (
+                          {actionButtons.length ? (
                             <div className="manager-status-action-group">
-                              <select
-                                className="manager-status-select"
-                                value={selectedStatus}
-                                onChange={(event) =>
-                                  handleStatusSelectionChange(
-                                    detailKind,
-                                    row.id,
-                                    event.target.value
-                                  )
-                                }
-                                disabled={isUpdatingThisRow}
-                              >
-                                {nextStatusOptions.map((statusOption) => (
-                                  <option key={statusOption} value={statusOption}>
-                                    {formatStatus(statusOption)}
-                                  </option>
-                                ))}
-                              </select>
+                              {actionButtons.map((actionButton) => {
+                                const isUpdatingThisRow =
+                                  statusUpdateKey ===
+                                  getStatusActionKey(detailKind, row.id, actionButton.value);
 
-                              <button
-                                type="button"
-                                className="warn-button"
-                                onClick={() => handleUpdateOrderStatus(detailKind, row)}
-                                disabled={isUpdatingThisRow || !selectedStatus}
-                              >
-                                {isUpdatingThisRow ? "Updating..." : "Update Status"}
-                              </button>
+                                return (
+                                  <button
+                                    key={actionButton.value}
+                                    type="button"
+                                    className={actionButton.className}
+                                    onClick={() =>
+                                      handleUpdateOrderStatus(
+                                        detailKind,
+                                        row,
+                                        actionButton.value
+                                      )
+                                    }
+                                    disabled={isUpdatingThisRow}
+                                  >
+                                    {isUpdatingThisRow ? "Updating..." : actionButton.label}
+                                  </button>
+                                );
+                              })}
                             </div>
+                          ) : nextStatusOptions.length ? (
+                            <span className="manager-table-note">
+                              Manager review is not available for {row.status.toLowerCase()}.
+                            </span>
                           ) : (
                             <span className="manager-table-note">No more transitions</span>
                           )}
@@ -1588,6 +1834,19 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         salesOrderSearchTerm,
         setSalesOrderSearchTerm,
         "salesOrder"
+      );
+    }
+
+    if (activeSection === "purchaseRequests") {
+      return renderOrders(
+        "Recent purchase requests",
+        filteredPurchaseRequestRows,
+        "No purchase requests found",
+        "No warehouse staff purchase requests match the current search.",
+        "Restock requests",
+        purchaseRequestSearchTerm,
+        setPurchaseRequestSearchTerm,
+        "purchaseRequest"
       );
     }
 

@@ -86,7 +86,7 @@ public class PurchaseOrder {
             orderDate = now;
         }
         if (status == null) {
-            status = OrderStatus.pending_approval;
+            status = OrderStatus.approved;
         }
     }
 
