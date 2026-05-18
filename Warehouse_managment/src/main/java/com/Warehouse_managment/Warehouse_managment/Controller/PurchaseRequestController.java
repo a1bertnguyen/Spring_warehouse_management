@@ -30,13 +30,13 @@ public class PurchaseRequestController {
     private final PurchaseRequestDetailService purchaseRequestDetailService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> createPurchaseRequest(@RequestBody @Valid PurchaseRequestRequest purchaseRequestRequest) {
         return ResponseEntity.ok(purchaseRequestService.createPurchaseRequest(purchaseRequestRequest));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getAllPurchaseRequests(@RequestParam(defaultValue = "0") int page,
                                                            @RequestParam(defaultValue = "10") int size,
                                                            @RequestParam(required = false) Integer warehouseId,
@@ -49,13 +49,13 @@ public class PurchaseRequestController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getPurchaseRequestById(@PathVariable Integer id) {
         return ResponseEntity.ok(purchaseRequestService.getPurchaseRequestById(id));
     }
 
     @GetMapping("/{id}/details")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getPurchaseRequestDetails(@PathVariable Integer id) {
         return ResponseEntity.ok(purchaseRequestDetailService.getDetailsByRequestId(id));
     }

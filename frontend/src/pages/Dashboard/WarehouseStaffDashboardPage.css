@@ -540,6 +540,27 @@
   margin-bottom: 22px;
 }
 
+.warehouse-request-selected {
+  align-items: flex-start;
+  background: linear-gradient(180deg, rgba(239, 245, 255, 0.94) 0%, #ffffff 100%);
+  border: 1px solid rgba(202, 214, 235, 0.94);
+  border-radius: 20px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  padding: 18px;
+}
+
+.warehouse-request-selected h3 {
+  color: #16243a;
+  margin-top: 6px;
+}
+
+.warehouse-request-selected p {
+  color: #62718a;
+  line-height: 1.65;
+}
+
 .warehouse-request-history {
   border-top: 1px solid rgba(224, 230, 239, 0.9);
   display: grid;
@@ -657,6 +678,7 @@
 @media (max-width: 1120px) {
   .warehouse-page-header,
   .warehouse-overview-grid,
+  .warehouse-request-selected,
   .warehouse-request-form-grid {
     grid-template-columns: minmax(0, 1fr);
   }

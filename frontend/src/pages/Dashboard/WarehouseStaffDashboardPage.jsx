@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import { PATHS } from "../../constants/paths";
 import ApiService from "../../services/ApiService";
@@ -29,7 +29,7 @@ const SECTION_COPY = {
   purchaseRequests: {
     title: "Create Purchase Request",
     subtitle:
-      "Submit replenishment quantities by warehouse and review your request history on a dedicated warehouse staff page.",
+      "Choose a warehouse first, then submit a simpler restock request and review your request history on a dedicated warehouse staff page.",
   },
 };
 
@@ -311,6 +311,7 @@ function Pagination({ currentPage, totalItems, onChange }) {
 
 const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const timeoutRef = useRef(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -323,9 +324,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const [goodsReceiptStatusFilter, setGoodsReceiptStatusFilter] = useState("approved");
   const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
   const [purchaseRequestStatusFilter, setPurchaseRequestStatusFilter] = useState("all");
-  const [showRequestComposer, setShowRequestComposer] = useState(
-    activeSection === "purchaseRequests"
-  );
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [isExportingInventory, setIsExportingInventory] = useState(false);
   const [actionKey, setActionKey] = useState("");
@@ -334,6 +332,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     salesOrders: 1,
     goodsReceipts: 1,
     purchaseRequests: 1,
+    purchaseRequestProducts: 1,
+    purchaseRequestWarehouses: 1,
   });
   const [currentUser, setCurrentUser] = useState(null);
   const [detailDialog, setDetailDialog] = useState({
@@ -354,7 +354,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     warehouses: [],
   });
   const [requestForm, setRequestForm] = useState({
-    warehouseId: "",
     notes: "",
   });
   const [requestQuantities, setRequestQuantities] = useState({});
@@ -375,6 +374,14 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     setIsLoading(true);
 
     try {
+      const purchaseRequestParams = {};
+      const currentRole = String(ApiService.getRole?.() || "").toUpperCase();
+      const currentUserId = ApiService.getUserId?.();
+
+      if (currentRole === "WAREHOUSE_STAFF" && currentUserId) {
+        purchaseRequestParams.requesterId = currentUserId;
+      }
+
       const [
         currentUserResult,
         inventoryResult,
@@ -387,7 +394,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
         ApiService.getAllInventories(),
         ApiService.getAllSalesOrders(),
         ApiService.getAllStockInwards(),
-        ApiService.getAllPurchaseRequests(),
+        ApiService.getAllPurchaseRequests(purchaseRequestParams),
         ApiService.getAllWarehouses(),
       ]);
 
@@ -420,11 +427,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
           ? currentUserResult.value?.user || null
           : null
       );
-      setRequestForm((currentValue) => ({
-        ...currentValue,
-        warehouseId:
-          currentValue.warehouseId || String(nextData.warehouses[0]?.id ?? ""),
-      }));
 
       const errors = [
         currentUserResult,
@@ -444,12 +446,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       setIsLoading(false);
     }
   }, [showMessage]);
-
-  useEffect(() => {
-    if (activeSection === "purchaseRequests") {
-      setShowRequestComposer(true);
-    }
-  }, [activeSection]);
 
   useEffect(() => {
     loadDashboardData();
@@ -479,6 +475,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       })),
     [dashboardData.warehouses]
   );
+
+  const selectedRequestWarehouseId = searchParams.get("warehouseId") || "";
 
   const inventoryRows = useMemo(
     () =>
@@ -720,7 +718,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     () =>
       inventoryRows
         .filter(
-          (inventory) => String(inventory.warehouseId ?? "") === requestForm.warehouseId
+          (inventory) => String(inventory.warehouseId ?? "") === selectedRequestWarehouseId
         )
         .sort((left, right) => {
           const leftPriority = ["OUT_OF_STOCK", "LOW_STOCK"].includes(
@@ -742,7 +740,52 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
             sensitivity: "base",
           });
         }),
-    [inventoryRows, requestForm.warehouseId]
+    [inventoryRows, selectedRequestWarehouseId]
+  );
+
+  const selectedRequestWarehouse = useMemo(
+    () =>
+      warehouseOptions.find(
+        (warehouse) => String(warehouse.id ?? "") === selectedRequestWarehouseId
+      ) || null,
+    [warehouseOptions, selectedRequestWarehouseId]
+  );
+
+  const warehouseRequestCards = useMemo(
+    () =>
+      warehouseOptions
+        .map((warehouse) => {
+          const warehouseInventories = inventoryRows.filter(
+            (inventory) => String(inventory.warehouseId ?? "") === String(warehouse.id ?? "")
+          );
+          const lowStockCount = warehouseInventories.filter((inventory) =>
+            ["LOW_STOCK", "OUT_OF_STOCK"].includes(
+              String(inventory.rawStatus || "").toUpperCase()
+            )
+          ).length;
+
+          return {
+            ...warehouse,
+            productRows: warehouseInventories.length,
+            totalUnits: warehouseInventories.reduce(
+              (sum, inventory) => sum + Number(inventory.quantityOnHand || 0),
+              0
+            ),
+            lowStockCount,
+          };
+        })
+        .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" })),
+    [inventoryRows, warehouseOptions]
+  );
+
+  const purchaseRequestHistoryRows = useMemo(
+    () =>
+      selectedRequestWarehouseId
+        ? filteredPurchaseRequestRows.filter(
+            (row) => String(row.warehouseId ?? "") === selectedRequestWarehouseId
+          )
+        : filteredPurchaseRequestRows,
+    [filteredPurchaseRequestRows, selectedRequestWarehouseId]
   );
 
   const overviewCards = useMemo(
@@ -924,9 +967,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     }
   }
 
-  function resetRequestForm(defaultWarehouseId = requestForm.warehouseId) {
+  function resetRequestForm() {
     setRequestForm({
-      warehouseId: defaultWarehouseId || String(warehouseOptions[0]?.id ?? ""),
       notes: "",
     });
     setRequestQuantities({});
@@ -939,14 +981,6 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       ...currentValue,
       [name]: value,
     }));
-
-    if (name === "warehouseId") {
-      setRequestQuantities({});
-      setPages((currentValue) => ({
-        ...currentValue,
-        purchaseRequests: 1,
-      }));
-    }
   }
 
   function handleRequestQuantityChange(productId, value) {
@@ -956,10 +990,34 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     }));
   }
 
+  function openPurchaseRequestWarehouse(warehouseId) {
+    if (!warehouseId) {
+      return;
+    }
+
+    setSearchParams({ warehouseId: String(warehouseId) });
+    resetRequestForm();
+    setPages((currentValue) => ({
+      ...currentValue,
+      purchaseRequests: 1,
+      purchaseRequestProducts: 1,
+    }));
+  }
+
+  function returnToWarehouseSelection() {
+    setSearchParams({});
+    resetRequestForm();
+    setPages((currentValue) => ({
+      ...currentValue,
+      purchaseRequests: 1,
+      purchaseRequestProducts: 1,
+    }));
+  }
+
   async function handleCreatePurchaseRequest(event) {
     event.preventDefault();
 
-    if (!requestForm.warehouseId) {
+    if (!selectedRequestWarehouseId) {
       showMessage("Select a warehouse before creating a purchase request.");
       return;
     }
@@ -985,15 +1043,13 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     try {
       await ApiService.createPurchaseRequest({
-        warehouseId: Number(requestForm.warehouseId),
+        warehouseId: Number(selectedRequestWarehouseId),
         notes: requestForm.notes.trim(),
         items: requestItems,
       });
       await loadDashboardData();
-      resetRequestForm(requestForm.warehouseId);
-      setShowRequestComposer(false);
+      resetRequestForm();
       showMessage("Purchase request created successfully.");
-      navigate(PATHS.dashboardPurchaseRequests);
     } catch (error) {
       showMessage(
         error.response?.data?.message || "Unable to create the purchase request."
@@ -1284,49 +1340,119 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   }
 
   function renderPurchaseRequests() {
-    const { currentPage, rows, startIndex } = buildPageSlice(
-      filteredPurchaseRequestRows,
+    const {
+      currentPage: historyCurrentPage,
+      rows: historyRows,
+      startIndex: historyStartIndex,
+    } = buildPageSlice(
+      purchaseRequestHistoryRows,
       pages.purchaseRequests
     );
+    const {
+      currentPage: productCurrentPage,
+      rows: productRows,
+      startIndex: productStartIndex,
+    } = buildPageSlice(
+      selectedWarehouseInventories,
+      pages.purchaseRequestProducts
+    );
+    const {
+      currentPage: warehouseCurrentPage,
+      rows: warehouseRows,
+      startIndex: warehouseStartIndex,
+    } = buildPageSlice(
+      warehouseRequestCards,
+      pages.purchaseRequestWarehouses
+    );
+    const selectedWarehouseOpenRequests = selectedRequestWarehouseId
+      ? myPurchaseRequestRows.filter(
+          (row) =>
+            String(row.warehouseId ?? "") === selectedRequestWarehouseId &&
+            ["pending_approval", "approved", "processing"].includes(
+              String(row.rawStatus || "").toLowerCase()
+            )
+        ).length
+      : 0;
+    const selectedWarehouseRequestedItems = Object.values(requestQuantities).filter(
+      (value) => Number(value) > 0
+    ).length;
 
     return (
       <section className="warehouse-section-card">
         <WarehouseSectionHeader
           eyebrow="Restock Requests"
-          title="Create And Track Purchase Requests"
-          description="Use the selected warehouse inventory to request replenishment, then review your submitted requests on this dedicated warehouse staff page."
-          meta={`${formatCompactNumber(filteredPurchaseRequestRows.length)} requests`}
+          title={
+            selectedRequestWarehouse
+              ? `Create Request For ${selectedRequestWarehouse.name}`
+              : "Choose A Warehouse First"
+          }
+          description={
+            selectedRequestWarehouse
+              ? "Review only the selected warehouse products, enter the needed quantities, and submit a simpler request for replenishment."
+              : "Start with a warehouse selection, then move to a dedicated product screen to create the purchase request."
+          }
+          meta={
+            selectedRequestWarehouse
+              ? `${formatCompactNumber(selectedWarehouseInventories.length)} product rows`
+              : `${formatCompactNumber(warehouseRequestCards.length)} warehouses`
+          }
           action={
-            <button
-              type="button"
-              className="warehouse-secondary-action"
-              onClick={() => navigate(PATHS.dashboardInventory)}
-            >
-              Back To Inventory
-            </button>
+            <div className="warehouse-section-action-group">
+              {selectedRequestWarehouse ? (
+                <button
+                  type="button"
+                  className="warehouse-secondary-action"
+                  onClick={returnToWarehouseSelection}
+                >
+                  Change Warehouse
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="warehouse-secondary-action"
+                onClick={() => navigate(PATHS.dashboardInventory)}
+              >
+                Back To Inventory
+              </button>
+            </div>
           }
         />
 
-        {showRequestComposer ? (
+        {selectedRequestWarehouse ? (
           <form className="warehouse-request-form" onSubmit={handleCreatePurchaseRequest}>
+            <div className="warehouse-request-selected">
+              <div>
+                <span className="warehouse-section-eyebrow">Selected Warehouse</span>
+                <h3>{selectedRequestWarehouse.name}</h3>
+                <p>Only products stored in this warehouse are shown below for faster request entry.</p>
+              </div>
+
+              <div className="warehouse-kpi-strip">
+                <div>
+                  <span>Product Rows</span>
+                  <strong>{formatCompactNumber(selectedWarehouseInventories.length)}</strong>
+                </div>
+                <div>
+                  <span>Low Stock</span>
+                  <strong>
+                    {formatCompactNumber(
+                      selectedWarehouseInventories.filter((inventory) =>
+                        ["LOW_STOCK", "OUT_OF_STOCK"].includes(
+                          String(inventory.rawStatus || "").toUpperCase()
+                        )
+                      ).length
+                    )}
+                  </strong>
+                </div>
+                <div>
+                  <span>Open Requests</span>
+                  <strong>{formatCompactNumber(selectedWarehouseOpenRequests)}</strong>
+                </div>
+              </div>
+            </div>
+
             <div className="warehouse-request-form-grid">
               <div className="warehouse-request-form-main">
-                <label>
-                  Warehouse
-                  <select
-                    name="warehouseId"
-                    value={requestForm.warehouseId}
-                    onChange={handleRequestFormChange}
-                  >
-                    <option value="">Select warehouse</option>
-                    {warehouseOptions.map((warehouse) => (
-                      <option key={warehouse.id} value={String(warehouse.id)}>
-                        {warehouse.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
                 <label>
                   Notes
                   <textarea
@@ -1340,25 +1466,23 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
               </div>
 
               <aside className="warehouse-request-summary">
-                <strong>Composer Summary</strong>
+                <strong>Request Summary</strong>
                 <p>
-                  Select a warehouse, enter the requested quantity per product, then submit the request
-                  for approval.
+                  Enter only the quantities you need. Rows left empty or set to zero will not be included in the request.
                 </p>
                 <div className="warehouse-kpi-strip">
                   <div>
-                    <span>Warehouse Rows</span>
-                    <strong>{formatCompactNumber(selectedWarehouseInventories.length)}</strong>
+                    <span>Products Selected</span>
+                    <strong>{formatCompactNumber(selectedWarehouseRequestedItems)}</strong>
                   </div>
                   <div>
-                    <span>Open Requests</span>
+                    <span>Total Units Requested</span>
                     <strong>
                       {formatCompactNumber(
-                        myPurchaseRequestRows.filter((row) =>
-                          ["pending_approval", "approved", "processing"].includes(
-                            String(row.rawStatus || "").toLowerCase()
-                          )
-                        ).length
+                        Object.values(requestQuantities).reduce(
+                          (sum, value) => sum + Math.max(Number(value) || 0, 0),
+                          0
+                        )
                       )}
                     </strong>
                   </div>
@@ -1373,21 +1497,19 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
                     <tr>
                       <th>No.</th>
                       <th>Product</th>
-                      <th>Warehouse</th>
                       <th>On Hand</th>
                       <th>Status</th>
                       <th>Requested Quantity</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedWarehouseInventories.map((inventory, index) => (
+                    {productRows.map((inventory, index) => (
                       <tr key={`${inventory.warehouseId}-${inventory.productId}`}>
-                        <td>{index + 1}</td>
+                        <td>{productStartIndex + index + 1}</td>
                         <td>
                           <strong>{inventory.productName}</strong>
                           <span>{inventory.productSku}</span>
                         </td>
-                        <td>{inventory.warehouseName}</td>
                         <td>{formatCompactNumber(inventory.quantityOnHand)}</td>
                         <td>
                           <span className={`warehouse-badge tone-${getStatusTone(inventory.rawStatus)}`}>
@@ -1421,12 +1543,17 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
                 description="Choose another warehouse to create a purchase request."
               />
             )}
+            <Pagination
+              currentPage={productCurrentPage}
+              totalItems={selectedWarehouseInventories.length}
+              onChange={(page) => updatePage("purchaseRequestProducts", page)}
+            />
 
             <div className="warehouse-form-actions">
               <button
                 type="button"
                 className="warehouse-secondary-action"
-                onClick={() => resetRequestForm(requestForm.warehouseId)}
+                onClick={resetRequestForm}
               >
                 Reset
               </button>
@@ -1439,89 +1566,158 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
               </button>
             </div>
           </form>
-        ) : null}
-
-        <div className="warehouse-toolbar">
-          <input
-            className="warehouse-search-input"
-            value={purchaseRequestSearchTerm}
-            onChange={(event) => setPurchaseRequestSearchTerm(event.target.value)}
-            placeholder="Search by code, warehouse, requester, or status"
-          />
-
-          <select
-            className="warehouse-filter-input"
-            value={purchaseRequestStatusFilter}
-            onChange={(event) => setPurchaseRequestStatusFilter(event.target.value)}
-          >
-            <option value="all">All statuses</option>
-            <option value="pending_approval">Pending Approval</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="converted">Converted</option>
-          </select>
-        </div>
-
-        {rows.length ? (
-          <>
-            <div className="warehouse-table-shell">
-              <table className="warehouse-table">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Request Code</th>
-                    <th>Warehouse</th>
-                    <th>Requester</th>
-                    <th>Total Items</th>
-                    <th>Estimated Amount</th>
-                    <th>Status</th>
-                    <th>Updated</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, index) => (
-                    <tr key={row.id}>
-                      <td>{startIndex + index + 1}</td>
-                      <td>
-                        <strong>{row.code}</strong>
-                      </td>
-                      <td>{row.warehouseName}</td>
-                      <td>{row.requesterName}</td>
-                      <td>{formatCompactNumber(row.totalItems)}</td>
-                      <td>{formatCurrency(row.estimatedAmount)}</td>
-                      <td>
-                        <span className={`warehouse-badge tone-${getStatusTone(row.rawStatus)}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td>{formatDate(row.updatedAt)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="warehouse-row-action secondary"
-                          onClick={() => openDetails("purchaseRequest", row)}
-                        >
-                          Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalItems={filteredPurchaseRequestRows.length}
-              onChange={(page) => updatePage("purchaseRequests", page)}
-            />
-          </>
         ) : (
-          <WarehouseEmptyState
-            title="No purchase requests match"
-            description="Try another request search term or create a new restock request."
-          />
+          <>
+            {warehouseRows.length ? (
+              <>
+                <div className="warehouse-table-shell">
+                  <table className="warehouse-table">
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>Warehouse</th>
+                        <th>Product Rows</th>
+                        <th>Total Units</th>
+                        <th>Low Stock</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {warehouseRows.map((warehouse, index) => (
+                        <tr key={warehouse.id}>
+                          <td>{warehouseStartIndex + index + 1}</td>
+                          <td>
+                            <strong>{warehouse.name}</strong>
+                            <span>Open this warehouse to create a purchase request</span>
+                          </td>
+                          <td>{formatCompactNumber(warehouse.productRows)}</td>
+                          <td>{formatCompactNumber(warehouse.totalUnits)}</td>
+                          <td>{formatCompactNumber(warehouse.lowStockCount)}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="warehouse-row-action"
+                              onClick={() => openPurchaseRequestWarehouse(warehouse.id)}
+                            >
+                              Choose
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  currentPage={warehouseCurrentPage}
+                  totalItems={warehouseRequestCards.length}
+                  onChange={(page) => updatePage("purchaseRequestWarehouses", page)}
+                />
+              </>
+            ) : (
+              <WarehouseEmptyState
+                title="No warehouses available"
+                description="Warehouse options will appear here when data is available."
+              />
+            )}
+          </>
         )}
+
+        <div className="warehouse-request-history">
+          <WarehouseSectionHeader
+            eyebrow="Request History"
+            title={
+              selectedRequestWarehouse
+                ? `${selectedRequestWarehouse.name} Request History`
+                : "Your Recent Purchase Requests"
+            }
+            description={
+              selectedRequestWarehouse
+                ? "Review previous requests for the selected warehouse while preparing the next one."
+                : "Check your submitted requests and their approval progress."
+            }
+            meta={`${formatCompactNumber(purchaseRequestHistoryRows.length)} requests`}
+          />
+
+          <div className="warehouse-toolbar">
+            <input
+              className="warehouse-search-input"
+              value={purchaseRequestSearchTerm}
+              onChange={(event) => setPurchaseRequestSearchTerm(event.target.value)}
+              placeholder="Search by code, warehouse, requester, or status"
+            />
+
+            <select
+              className="warehouse-filter-input"
+              value={purchaseRequestStatusFilter}
+              onChange={(event) => setPurchaseRequestStatusFilter(event.target.value)}
+            >
+              <option value="all">All statuses</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="converted">Converted</option>
+            </select>
+          </div>
+
+          {historyRows.length ? (
+            <>
+              <div className="warehouse-table-shell">
+                <table className="warehouse-table">
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>Request Code</th>
+                      <th>Warehouse</th>
+                      <th>Total Items</th>
+                      <th>Estimated Amount</th>
+                      <th>Status</th>
+                      <th>Updated</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyRows.map((row, index) => (
+                      <tr key={row.id}>
+                        <td>{historyStartIndex + index + 1}</td>
+                        <td>
+                          <strong>{row.code}</strong>
+                        </td>
+                        <td>{row.warehouseName}</td>
+                        <td>{formatCompactNumber(row.totalItems)}</td>
+                        <td>{formatCurrency(row.estimatedAmount)}</td>
+                        <td>
+                          <span className={`warehouse-badge tone-${getStatusTone(row.rawStatus)}`}>
+                            {row.status}
+                          </span>
+                        </td>
+                        <td>{formatDate(row.updatedAt)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="warehouse-row-action secondary"
+                            onClick={() => openDetails("purchaseRequest", row)}
+                          >
+                            Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination
+                currentPage={historyCurrentPage}
+                totalItems={purchaseRequestHistoryRows.length}
+                onChange={(page) => updatePage("purchaseRequests", page)}
+              />
+            </>
+          ) : (
+            <WarehouseEmptyState
+              title="No purchase requests match"
+              description="Try another request search term or create a new restock request."
+            />
+          )}
+        </div>
       </section>
     );
   }
