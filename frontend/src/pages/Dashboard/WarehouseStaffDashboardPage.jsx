@@ -51,6 +51,28 @@ const SALE_STAFF_SECTION_COPY = {
   },
 };
 
+const SALES_ORDER_ROLE_COPY = {
+  sale: {
+    eyebrow: "Sales Desk",
+    title: "My Sales Orders",
+    description:
+      "Create customer orders, track your own order statuses, and follow each order until warehouse shipment.",
+    searchPlaceholder: "Search your orders by code, customer, warehouse, or status",
+    emptyTitle: "No sales orders match",
+    emptyDescription: "Create a new order or adjust your search and status filter.",
+  },
+  warehouse: {
+    eyebrow: "Shipment Queue",
+    title: "Warehouse Sales Order Queue",
+    description:
+      "Review approved customer orders, mark shipments as shipped, and complete delivered orders after confirmation.",
+    searchPlaceholder: "Search shipment queue by code, customer, warehouse, or status",
+    emptyTitle: "No warehouse sales orders match",
+    emptyDescription:
+      "Orders appear here after sale staff creates them and manager approval moves them into shipment handling.",
+  },
+};
+
 const DETAIL_CONFIG = {
   salesOrder: {
     key: "salesOrderDetails",
@@ -583,6 +605,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
           code: order.orderCode || order.salesOrderCode || `SO-${order.id ?? "N/A"}`,
           customerName:
             order.customerName || order.customer?.name || "Walk-in Customer",
+          createdById: order.createdById,
           warehouseName:
             order.warehouseName || order.warehouse?.name || "Unassigned",
           totalItems:
@@ -609,11 +632,16 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const filteredSalesOrderRows = useMemo(
     () =>
       salesOrderRows.filter((row) => {
+        const matchesOwner =
+          !isSalesStaff ||
+          !loggedInUserId ||
+          Number(row.createdById) === loggedInUserId;
         const matchesStatus =
           salesOrderStatusFilter === "all" ||
           String(row.rawStatus || "").toLowerCase() === salesOrderStatusFilter;
 
         return (
+          matchesOwner &&
           matchesStatus &&
           matchesSearch(salesOrderSearchTerm, [
             row.code,
@@ -623,7 +651,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
           ])
         );
       }),
-    [salesOrderRows, salesOrderSearchTerm, salesOrderStatusFilter]
+    [isSalesStaff, loggedInUserId, salesOrderRows, salesOrderSearchTerm, salesOrderStatusFilter]
   );
 
   const goodsReceiptRows = useMemo(
@@ -962,6 +990,23 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     } catch (error) {
       showMessage(
         error.response?.data?.message || "Unable to update the sales order status."
+      );
+    } finally {
+      setActionKey("");
+    }
+  }
+
+  async function handleMarkCompleted(row) {
+    const nextActionKey = `complete-sales-${row.id}`;
+    setActionKey(nextActionKey);
+
+    try {
+      await ApiService.updateSalesOrderStatus(row.id, "completed");
+      await loadDashboardData();
+      showMessage(`Sales order ${row.code} marked as completed.`);
+    } catch (error) {
+      showMessage(
+        error.response?.data?.message || "Unable to complete the sales order."
       );
     } finally {
       setActionKey("");
@@ -1772,21 +1817,16 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       filteredSalesOrderRows,
       pages.salesOrders
     );
+    const salesOrderCopy = isSalesStaff
+      ? SALES_ORDER_ROLE_COPY.sale
+      : SALES_ORDER_ROLE_COPY.warehouse;
 
     return (
       <section className="warehouse-section-card">
         <WarehouseSectionHeader
-          eyebrow={isSalesStaff ? "Order Desk" : "Outbound Queue"}
-          title={
-            isSalesStaff
-              ? "Sales Order Management"
-              : "Sales Orders Waiting For Warehouse Action"
-          }
-          description={
-            isSalesStaff
-              ? "Search by customer name and order status, review order details, and create new customer orders."
-              : "Open detail lines, confirm shipped orders, and keep outbound status aligned with warehouse operations."
-          }
+          eyebrow={salesOrderCopy.eyebrow}
+          title={salesOrderCopy.title}
+          description={salesOrderCopy.description}
           meta={`${formatCompactNumber(filteredSalesOrderRows.length)} orders`}
           action={
             isSalesStaff ? (
@@ -1806,11 +1846,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
             className="warehouse-search-input"
             value={salesOrderSearchTerm}
             onChange={(event) => setSalesOrderSearchTerm(event.target.value)}
-            placeholder={
-              isSalesStaff
-                ? "Search by customer name..."
-                : "Search by code, customer, warehouse, or status"
-            }
+            placeholder={salesOrderCopy.searchPlaceholder}
           />
 
           <select
@@ -1848,6 +1884,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
                   {rows.map((row, index) => {
                     const isAwaitingShipment =
                       String(row.rawStatus || "").toLowerCase() === "awaiting_shipment";
+                    const isShipped =
+                      String(row.rawStatus || "").toLowerCase() === "shipped";
 
                     return (
                       <tr key={row.id}>
@@ -1883,6 +1921,18 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
                                 {actionKey === `ship-${row.id}` ? "Saving..." : "Mark Shipped"}
                               </button>
                             ) : null}
+                            {!isSalesStaff && isShipped ? (
+                              <button
+                                type="button"
+                                className="warehouse-row-action"
+                                disabled={actionKey === `complete-sales-${row.id}`}
+                                onClick={() => handleMarkCompleted(row)}
+                              >
+                                {actionKey === `complete-sales-${row.id}`
+                                  ? "Saving..."
+                                  : "Complete Order"}
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -1899,8 +1949,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
           </>
         ) : (
           <WarehouseEmptyState
-            title="No sales orders match"
-            description="Try another outbound search term or status."
+            title={salesOrderCopy.emptyTitle}
+            description={salesOrderCopy.emptyDescription}
           />
         )}
       </section>
