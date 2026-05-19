@@ -54,7 +54,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public Response getAllWarehouses() {
-        List<Warehouse> warehouses = warehouseRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+        List<Warehouse> warehouses = warehouseRepository.findByDeletedFalse(Sort.by(Sort.Direction.DESC, "id"));
         warehouses.forEach(warehouse -> warehouse.setInventories(null));
 
         List<WarehouseDTO> warehouseDTOList = modelMapper.map(warehouses, new TypeToken<List<WarehouseDTO>>() {
@@ -104,17 +104,23 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public Response deleteWarehouse(Integer id) {
         Warehouse warehouse = getWarehouseEntity(id);
-
-        if (inventoryMovementRepository.existsByWarehouseId(id)) {
-            throw new IllegalStateException("Cannot delete warehouse because it has inventory movement history");
-        }
-
         List<Inventory> inventories = inventoryRepository.findByWarehouse(warehouse);
         Set<Long> affectedProductIds = inventories.stream()
                 .map(Inventory::getProduct)
                 .filter(product -> product != null && product.getId() != null)
                 .map(Product::getId)
                 .collect(Collectors.toSet());
+
+        if (inventoryMovementRepository.existsByWarehouseId(id)) {
+            warehouse.setDeleted(true);
+            warehouseRepository.save(warehouse);
+            affectedProductIds.forEach(inventoryStockSyncService::syncProductStock);
+
+            return Response.builder()
+                    .status(200)
+                    .message("Warehouse archived successfully because inventory movement history exists")
+                    .build();
+        }
 
         if (!inventories.isEmpty()) {
             inventoryRepository.deleteAll(inventories);
@@ -144,8 +150,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public Response addProductToWarehouse(Integer warehouseId, Long productId, Integer quantity) {
         Warehouse warehouse = getWarehouseEntity(warehouseId);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new NotFoundException("Product Not Found"));
+        Product product = getActiveProduct(productId);
 
         if (inventoryRepository.findByProductAndWarehouse(product, warehouse).isPresent()) {
             throw new IllegalStateException("Product is already assigned to this warehouse");
@@ -171,8 +176,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public Response removeProductFromWarehouse(Integer warehouseId, Long productId) {
         Warehouse warehouse = getWarehouseEntity(warehouseId);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new NotFoundException("Product Not Found"));
+        Product product = getActiveProduct(productId);
 
         Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
                 .orElseThrow(() -> new NotFoundException("Product Not Found In Warehouse"));
@@ -200,8 +204,13 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     private Warehouse getWarehouseEntity(Integer id) {
-        return warehouseRepository.findById(id)
+        return warehouseRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
+    }
+
+    private Product getActiveProduct(Long id) {
+        return productRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("Product Not Found"));
     }
 
     private List<ProductDTO> mapProductsByWarehouse(Warehouse warehouse) {

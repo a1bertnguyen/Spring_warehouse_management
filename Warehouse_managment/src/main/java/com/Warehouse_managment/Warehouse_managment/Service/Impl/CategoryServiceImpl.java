@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +50,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Response getAllCategories() {
-        List<Category> categories = categoryRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+        List<Category> categories = categoryRepository.findByDeletedFalse(Sort.by(Sort.Direction.DESC, "id"));
 
         categories.forEach(category -> category.setProducts(null));
 
@@ -66,8 +67,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Response getCategoryById(Long id) {
 
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+        Category category = getActiveCategory(id);
 
         CategoryDTO categoryDTO = modelMapper.map(category, CategoryDTO.class);
 
@@ -81,8 +81,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Response updateCategory(Long id, CategoryDTO categoryDTO) {
 
-        Category existingCategory = categoryRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+        Category existingCategory = getActiveCategory(id);
 
         existingCategory.setName(categoryDTO.getName());
 
@@ -98,20 +97,36 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public Response deleteCategory(Long id) {
 
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+        Category category = getActiveCategory(id);
+        List<Product> linkedProducts = productRepository.findByCategory(category);
+        List<Product> activeProducts = linkedProducts.stream()
+                .filter(product -> !Boolean.TRUE.equals(product.getDeleted()))
+                .collect(Collectors.toList());
 
-        List<Product> products = productRepository.findByCategory(category);
-        boolean hasInventoryMovementHistory = products.stream()
-                .anyMatch(product -> inventoryMovementRepository.existsByProductId(product.getId()));
-        if (hasInventoryMovementHistory) {
-            throw new IllegalStateException("Cannot delete category because one or more products have inventory movement history");
-        }
-
-        boolean hasWarehouseInventory = products.stream()
+        boolean hasWarehouseInventory = activeProducts.stream()
                 .anyMatch(inventoryRepository::existsByProduct);
         if (hasWarehouseInventory) {
-            throw new IllegalStateException("Cannot delete category because one or more products are assigned to warehouse inventory");
+            category.setDeleted(true);
+            categoryRepository.save(category);
+
+            return Response.builder()
+                    .status(200)
+                    .message("Category archived successfully because linked products are still assigned to warehouse inventory")
+                    .build();
+        }
+
+        boolean hasInventoryMovementHistory = linkedProducts.stream()
+                .anyMatch(product -> inventoryMovementRepository.existsByProductId(product.getId()));
+        boolean hasArchivedLinkedProducts = linkedProducts.stream()
+                .anyMatch(product -> Boolean.TRUE.equals(product.getDeleted()));
+        if (hasInventoryMovementHistory || hasArchivedLinkedProducts) {
+            category.setDeleted(true);
+            categoryRepository.save(category);
+
+            return Response.builder()
+                    .status(200)
+                    .message("Category archived successfully because linked products still have historical references")
+                    .build();
         }
 
         categoryRepository.delete(category);
@@ -120,5 +135,10 @@ public class CategoryServiceImpl implements CategoryService {
                 .status(200)
                 .message("Category Was Successfully Deleted")
                 .build();
+    }
+
+    private Category getActiveCategory(Long id) {
+        return categoryRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("Category Not Found"));
     }
 }

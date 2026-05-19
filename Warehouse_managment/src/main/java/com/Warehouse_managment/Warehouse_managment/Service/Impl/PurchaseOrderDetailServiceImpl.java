@@ -30,7 +30,7 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
         List<PurchaseOrderDetail> details = new ArrayList<>();
 
         for (PurchaseOrderDetailRequest request : detailRequests) {
-            Product product = productRepository.findById(request.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(request.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
             PurchaseOrderDetail detail = new PurchaseOrderDetail();

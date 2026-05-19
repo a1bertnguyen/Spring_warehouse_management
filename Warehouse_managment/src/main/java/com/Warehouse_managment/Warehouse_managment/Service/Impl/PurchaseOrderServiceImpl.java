@@ -313,11 +313,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     private void applyReceivedInventory(PurchaseOrder purchaseOrder) {
-        Warehouse warehouse = warehouseRepository.findById(purchaseOrder.getWarehouseId())
+        Warehouse warehouse = warehouseRepository.findByIdAndDeletedFalse(purchaseOrder.getWarehouseId())
                 .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
 
         for (PurchaseOrderDetail detail : purchaseOrderDetailRepository.findByPurchaseOrder_Id(purchaseOrder.getId())) {
-            Product product = productRepository.findById(detail.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(detail.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
             Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)

@@ -32,7 +32,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public Response getAllInventories() {
-        List<InventoryDTO> inventories = inventoryRepository.findAll(Sort.by(Sort.Direction.DESC, "inventoryId"))
+        List<InventoryDTO> inventories = inventoryRepository.findByWarehouseAndProductName(null, null)
                 .stream()
                 .map(this::toInventoryDTO)
                 .collect(Collectors.toList());
@@ -48,6 +48,9 @@ public class InventoryServiceImpl implements InventoryService {
     public Response getInventoryById(Integer id) {
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Inventory Not Found"));
+        if (!isOperationalInventory(inventory)) {
+            throw new NotFoundException("Inventory Not Found");
+        }
 
         return Response.builder()
                 .status(200)
@@ -58,7 +61,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public Response getInventoriesByWarehouseId(Integer warehouseId) {
-        List<InventoryDTO> inventories = inventoryRepository.findByWarehouse_Id(warehouseId, Sort.by(Sort.Direction.DESC, "inventoryId"))
+        List<InventoryDTO> inventories = inventoryRepository.findByWarehouseAndProductName(warehouseId, null)
                 .stream()
                 .map(this::toInventoryDTO)
                 .collect(Collectors.toList());
@@ -213,5 +216,12 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         throw new IllegalArgumentException("Unsupported inventory status: " + rawStatus);
+    }
+
+    private boolean isOperationalInventory(Inventory inventory) {
+        return inventory.getProduct() != null
+                && !Boolean.TRUE.equals(inventory.getProduct().getDeleted())
+                && inventory.getWarehouse() != null
+                && !Boolean.TRUE.equals(inventory.getWarehouse().getDeleted());
     }
 }

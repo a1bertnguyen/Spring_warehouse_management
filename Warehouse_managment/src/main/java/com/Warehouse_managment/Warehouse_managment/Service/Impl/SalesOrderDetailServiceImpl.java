@@ -36,10 +36,10 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         List<SalesOrderDetail> details = new ArrayList<>();
 
         for (SalesOrderDetailRequest request : detailRequests) {
-            Product product = productRepository.findById(request.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(request.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
-            Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
+            Warehouse warehouse = warehouseRepository.findByIdAndDeletedFalse(request.getWarehouseId())
                     .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
 
             inventoryRepository.findByProduct_IdAndWarehouse_Id(product.getId(), warehouse.getId())

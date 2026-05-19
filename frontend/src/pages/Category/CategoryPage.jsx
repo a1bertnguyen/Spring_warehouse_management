@@ -94,8 +94,11 @@ const CategoryPage = () => {
   const handleDeleteCategory = async (categoryId) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
       try {
-        await ApiService.deleteCategory(categoryId);
-        showMessage("Category successfully deleted");
+        const response = await ApiService.deleteCategory(categoryId);
+        setCategories((currentCategories) =>
+          currentCategories.filter((category) => category.id !== categoryId)
+        );
+        showMessage(response?.message || "Category successfully deleted");
         await loadCategories();
       } catch (error) {
         showMessage(error.response?.data?.message || "Error deleting category: " + error);

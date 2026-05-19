@@ -237,7 +237,7 @@ public class StockInwardServiceImpl implements StockInwardService {
     public Response createStockInward(StockInwardCreateRequest request) {
         PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(request.getPurchaseOrderId())
                 .orElseThrow(() -> new NotFoundException("Purchase order not found"));
-        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
+        Warehouse warehouse = warehouseRepository.findByIdAndDeletedFalse(request.getWarehouseId())
                 .orElseThrow(() -> new NotFoundException("Warehouse not found"));
         User currentUser = getCurrentUser();
         Supplier supplier = resolveSupplier(purchaseOrder);
@@ -271,7 +271,7 @@ public class StockInwardServiceImpl implements StockInwardService {
         List<StockInwardDetail> details = new ArrayList<>();
 
         for (StockInwardCreateItemRequest item : request.getItems()) {
-            Product product = productRepository.findById(item.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(item.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product not found"));
 
             StockInwardDetail detail = new StockInwardDetail();
@@ -338,7 +338,7 @@ public class StockInwardServiceImpl implements StockInwardService {
         Warehouse warehouse = resolveWarehouse(stockInward);
 
         for (StockInwardDetail detail : stockInwardDetailRepository.findByStockInward_StockInwardId(stockInward.getStockInwardId())) {
-            Product product = productRepository.findById(detail.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(detail.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product not found"));
 
             Inventory inventory = inventoryRepository.findByProductAndWarehouse(product, warehouse)
@@ -378,7 +378,7 @@ public class StockInwardServiceImpl implements StockInwardService {
             throw new NotFoundException("Warehouse not found for stock inward");
         }
 
-        return warehouseRepository.findById(stockInward.getWarehouse().getId())
+        return warehouseRepository.findByIdAndDeletedFalse(stockInward.getWarehouse().getId())
                 .orElseThrow(() -> new NotFoundException("Warehouse not found"));
     }
 

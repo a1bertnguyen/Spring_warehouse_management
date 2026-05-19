@@ -77,7 +77,7 @@ public class TaskServiceImpl implements TaskService {
     public Response saveTask(TaskRequest taskRequest) {
 
         //check if product and user exist and get the object to build the task
-        Product product = productRepository.findById(taskRequest.getProductId())
+        Product product = productRepository.findByIdAndDeletedFalse(taskRequest.getProductId())
                 .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
         User user = userRepository.findById(taskRequest.getUserId())
@@ -156,7 +156,7 @@ public class TaskServiceImpl implements TaskService {
             existingTask.setUser(user);
         }
         if (taskRequest.getProductId() != null && taskRequest.getProductId()>0){
-            Product product = productRepository.findById(taskRequest.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(taskRequest.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
             existingTask.setProduct(product);
         }

@@ -288,9 +288,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         for (SalesOrderDetail detail : salesOrderDetailRepository.findBySalesOrder_IdOrderByIdAsc(salesOrder.getId())) {
             Inventory inventory = inventoryRepository.findByProduct_IdAndWarehouse_Id(detail.getProductId(), detail.getWarehouseId())
                     .orElseThrow(() -> new NotFoundException("Inventory Not Found For Product/Warehouse"));
-            Product product = productRepository.findById(detail.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(detail.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
-            Warehouse warehouse = warehouseRepository.findById(detail.getWarehouseId())
+            Warehouse warehouse = warehouseRepository.findByIdAndDeletedFalse(detail.getWarehouseId())
                     .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
 
             int quantityBefore = inventory.getQuantityOnHand() != null ? inventory.getQuantityOnHand() : 0;

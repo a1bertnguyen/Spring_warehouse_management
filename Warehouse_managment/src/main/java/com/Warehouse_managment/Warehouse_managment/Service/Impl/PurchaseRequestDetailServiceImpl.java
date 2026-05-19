@@ -29,7 +29,7 @@ public class PurchaseRequestDetailServiceImpl implements PurchaseRequestDetailSe
         List<PurchaseRequestDetail> details = new ArrayList<>();
 
         for (PurchaseRequestDetailRequest request : detailRequests) {
-            Product product = productRepository.findById(request.getProductId())
+            Product product = productRepository.findByIdAndDeletedFalse(request.getProductId())
                     .orElseThrow(() -> new NotFoundException("Product Not Found"));
 
             PurchaseRequestDetail detail = new PurchaseRequestDetail();

@@ -66,6 +66,10 @@ public class Product {
     private LocalDateTime expiryDate;
     private String imageUrl;
 
+    @Builder.Default
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
     private final LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne
@@ -96,6 +100,7 @@ public class Product {
                 ", description='" + description + '\'' +
                 ", expiryDate=" + expiryDate +
                 ", imageUrl='" + imageUrl + '\'' +
+                ", deleted=" + deleted +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", categoryId=" + (category != null ? category.getId() : null) +

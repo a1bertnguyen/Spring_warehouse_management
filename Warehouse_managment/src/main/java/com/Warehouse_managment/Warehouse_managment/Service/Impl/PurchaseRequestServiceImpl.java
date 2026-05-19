@@ -53,7 +53,7 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
                     .orElseThrow(() -> new NotFoundException("Supplier Not Found"));
         }
 
-        warehouseRepository.findById(purchaseRequestRequest.getWarehouseId())
+        warehouseRepository.findByIdAndDeletedFalse(purchaseRequestRequest.getWarehouseId())
                 .orElseThrow(() -> new NotFoundException("Warehouse Not Found"));
 
         User requester = userService.getCurrentLoggedInUser();

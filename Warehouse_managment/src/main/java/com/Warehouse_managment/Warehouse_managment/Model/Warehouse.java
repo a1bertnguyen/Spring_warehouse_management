@@ -28,6 +28,10 @@ public class Warehouse {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
     @OneToMany(mappedBy = "warehouse", fetch = FetchType.LAZY)
     private List<Inventory> inventories;
 
@@ -45,6 +49,7 @@ public class Warehouse {
                 ", name='" + name + '\'' +
                 ", address='" + address + '\'' +
                 ", createdAt=" + createdAt +
+                ", deleted=" + deleted +
                 ", inventoryCount=" + (inventories != null ? inventories.size() : 0) +
                 '}';
     }

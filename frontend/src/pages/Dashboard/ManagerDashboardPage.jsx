@@ -1820,8 +1820,23 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
     }
 
     try {
-      await ApiService.deleteWarehouse(warehouseId);
-      showMessage("Warehouse deleted successfully.");
+      const response = await ApiService.deleteWarehouse(warehouseId);
+      setDashboardData((currentValue) => {
+        const nextWarehouseProducts = { ...currentValue.warehouseProducts };
+        delete nextWarehouseProducts[warehouseId];
+
+        return {
+          ...currentValue,
+          warehouses: currentValue.warehouses.filter(
+            (warehouse) => warehouse.id !== warehouseId
+          ),
+          inventories: currentValue.inventories.filter(
+            (inventory) => inventory.warehouseId !== warehouseId
+          ),
+          warehouseProducts: nextWarehouseProducts,
+        };
+      });
+      showMessage(response?.message || "Warehouse deleted successfully.");
       resetWarehouseForm();
       await loadDashboardData();
     } catch (error) {

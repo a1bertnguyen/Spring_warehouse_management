@@ -138,8 +138,11 @@ const ProductPage = () => {
       }
 
       try {
-        await ApiService.removeProductFromWarehouse(warehouseId, productId);
-        showMessage("Product removed from warehouse successfully.");
+        const response = await ApiService.removeProductFromWarehouse(warehouseId, productId);
+        setProducts((currentProducts) =>
+          currentProducts.filter((product) => product.id !== productId)
+        );
+        showMessage(response?.message || "Product removed from warehouse successfully.");
         await loadProducts();
       } catch (error) {
         showMessage(
@@ -155,9 +158,18 @@ const ProductPage = () => {
     }
 
     try {
-      await ApiService.deleteProduct(productId);
-      showMessage("Product deleted successfully.");
+      const response = await ApiService.deleteProduct(productId);
+      setProducts((currentProducts) =>
+        currentProducts.filter((product) => product.id !== productId)
+      );
+      setCatalogProducts((currentProducts) =>
+        currentProducts.filter((product) => product.id !== productId)
+      );
+      showMessage(response?.message || "Product deleted successfully.");
       await loadProducts();
+      if (warehouseId) {
+        await loadCatalogProducts();
+      }
     } catch (error) {
       showMessage(error.response?.data?.message || `Error deleting product: ${error}`);
     }

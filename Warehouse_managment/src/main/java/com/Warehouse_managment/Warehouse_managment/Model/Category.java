@@ -24,6 +24,10 @@ public class Category {
     @NotBlank(message = "Name is required")
     private String name;
 
+    @Builder.Default
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private List<Product> products;
 
@@ -32,6 +36,7 @@ public class Category {
         return "Category{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", deleted=" + deleted +
                 ", productCount=" + (products != null ? products.size() : 0) +
                 '}';
     }

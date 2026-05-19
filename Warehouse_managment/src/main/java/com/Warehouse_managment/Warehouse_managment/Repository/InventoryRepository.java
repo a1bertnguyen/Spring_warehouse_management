@@ -15,16 +15,40 @@ import java.util.Optional;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
 
-    @Query("SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i")
+    @Query("""
+            SELECT COALESCE(SUM(i.quantityOnHand), 0)
+            FROM Inventory i
+            WHERE i.product.deleted = false
+              AND i.warehouse.deleted = false
+            """)
     long getTotalQuantityOnHand();
 
-    @Query("SELECT COALESCE(SUM(i.quantityOnHand), 0) FROM Inventory i WHERE i.product.id = :productId")
+    @Query("""
+            SELECT COALESCE(SUM(i.quantityOnHand), 0)
+            FROM Inventory i
+            WHERE i.product.id = :productId
+              AND i.product.deleted = false
+              AND i.warehouse.deleted = false
+            """)
     long getTotalQuantityOnHandByProductId(@Param("productId") Long productId);
 
-    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantityOnHand = 0")
+    @Query("""
+            SELECT COUNT(i)
+            FROM Inventory i
+            WHERE i.quantityOnHand = 0
+              AND i.product.deleted = false
+              AND i.warehouse.deleted = false
+            """)
     long countOutOfStock();
 
-    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.quantityOnHand <= i.product.lowStockThreshold AND i.quantityOnHand > 0")
+    @Query("""
+            SELECT COUNT(i)
+            FROM Inventory i
+            WHERE i.quantityOnHand <= i.product.lowStockThreshold
+              AND i.quantityOnHand > 0
+              AND i.product.deleted = false
+              AND i.warehouse.deleted = false
+            """)
     long countLowStock();
 
     Optional<Inventory> findByProductAndWarehouse(Product product, Warehouse warehouse);
@@ -44,7 +68,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
     @Query("""
             SELECT i
             FROM Inventory i
-            WHERE (:warehouseId IS NULL OR i.warehouse.id = :warehouseId)
+            WHERE i.product.deleted = false
+              AND i.warehouse.deleted = false
+              AND (:warehouseId IS NULL OR i.warehouse.id = :warehouseId)
               AND (:productName IS NULL OR LOWER(i.product.name) LIKE CONCAT('%', LOWER(:productName), '%'))
             ORDER BY i.inventoryId DESC
             """)

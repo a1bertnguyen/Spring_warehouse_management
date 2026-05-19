@@ -56,8 +56,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Response saveProduct(ProductDTO productDTO, MultipartFile imageFile) {
 
-        Category category = categoryRepository.findById(productDTO.getCategoryId())
-                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+        Category category = getActiveCategory(productDTO.getCategoryId());
 
         if (productDTO.getSupplierId() != null) {
             supplierRepository.findById(productDTO.getSupplierId())
@@ -98,8 +97,7 @@ public class ProductServiceImpl implements ProductService {
     public Response updateProduct(ProductDTO productDTO, MultipartFile imageFile) {
 
         //check if product exisit
-        Product existingProduct = productRepository.findById(productDTO.getProductId())
-                .orElseThrow(() -> new NotFoundException("Product Not Found"));
+        Product existingProduct = getActiveProduct(productDTO.getProductId());
 
         // update image
         if (imageFile != null && !imageFile.isEmpty()) {
@@ -109,8 +107,7 @@ public class ProductServiceImpl implements ProductService {
 
         //check if category is to be chanegd for the products
         if (productDTO.getCategoryId() != null && productDTO.getCategoryId() > 0) {
-            Category category = categoryRepository.findById(productDTO.getCategoryId())
-                    .orElseThrow(() -> new NotFoundException("Category Not Found"));
+            Category category = getActiveCategory(productDTO.getCategoryId());
             existingProduct.setCategory(category);
         }
 
@@ -174,7 +171,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Response getAllProducts() {
 
-        List<Product> productList = productRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+        List<Product> productList = productRepository.findByDeletedFalse(Sort.by(Sort.Direction.DESC, "id"));
 
         List<ProductDTO> productDTOList = productList.stream()
                 .map(this::toProductDTO)
@@ -190,8 +187,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Response getProductById(Long id) {
 
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Product Not Found"));
+        Product product = getActiveProduct(id);
 
         return Response.builder()
                 .status(200)
@@ -203,15 +199,22 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Response deleteProduct(Long id) {
 
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Product Not Found"));
+        Product product = getActiveProduct(id);
+        List<Inventory> assignedInventories = inventoryRepository.findByProduct(product);
 
         if (inventoryMovementRepository.existsByProductId(id)) {
-            throw new IllegalStateException("Cannot delete product because it has inventory movement history");
+            product.setDeleted(true);
+            product.setStatus(ProductStatus.inactive);
+            productRepository.save(product);
+
+            return Response.builder()
+                    .status(200)
+                    .message("Product archived successfully because inventory movement history exists")
+                    .build();
         }
 
-        if (inventoryRepository.existsByProduct(product)) {
-            throw new IllegalStateException("Cannot delete product because it is assigned to warehouse inventory");
+        if (!assignedInventories.isEmpty()) {
+            inventoryRepository.deleteAll(assignedInventories);
         }
 
         productRepository.delete(product);
@@ -255,11 +258,12 @@ public class ProductServiceImpl implements ProductService {
         List<Product> productsToExport =
                 warehouseId != null
                         ? inventoryRepository.findByWarehouse_Id(warehouseId).stream()
+                        .filter(this::isOperationalInventory)
                         .map(Inventory::getProduct)
                         .filter(product -> product != null && product.getId() != null)
                         .distinct()
                         .toList()
-                        : productRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+                        : productRepository.findByDeletedFalse(Sort.by(Sort.Direction.ASC, "id"));
 
         List<ProductDTO> productDTOList = productsToExport.stream()
                 .filter(product -> matchesSearch(product, normalizedSearch))
@@ -354,11 +358,11 @@ public class ProductServiceImpl implements ProductService {
                     continue;
                 }
 
-                if (productRepository.findBySkuIgnoreCase(sku).isPresent()) {
+                if (productRepository.findBySkuIgnoreCaseAndDeletedFalse(sku).isPresent()) {
                     continue;
                 }
 
-                Category category = categoryRepository.findByNameIgnoreCase(categoryName)
+                Category category = categoryRepository.findByNameIgnoreCaseAndDeletedFalse(categoryName)
                         .orElseThrow(() -> new NotFoundException("Category Not Found: " + categoryName));
 
                 Supplier supplier = supplierName != null
@@ -527,6 +531,23 @@ public class ProductServiceImpl implements ProductService {
         }
 
         throw new IllegalArgumentException("Unsupported product status: " + rawStatus);
+    }
+
+    private Product getActiveProduct(Long id) {
+        return productRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("Product Not Found"));
+    }
+
+    private Category getActiveCategory(Long id) {
+        return categoryRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+    }
+
+    private boolean isOperationalInventory(Inventory inventory) {
+        return inventory.getProduct() != null
+                && !Boolean.TRUE.equals(inventory.getProduct().getDeleted())
+                && inventory.getWarehouse() != null
+                && !Boolean.TRUE.equals(inventory.getWarehouse().getDeleted());
     }
 
 
