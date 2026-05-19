@@ -17,25 +17,25 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getAllInventories() {
         return ResponseEntity.ok(inventoryService.getAllInventories());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getInventoryById(@PathVariable Integer id) {
         return ResponseEntity.ok(inventoryService.getInventoryById(id));
     }
 
     @GetMapping("/warehouse/{warehouseId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getInventoriesByWarehouseId(@PathVariable Integer warehouseId) {
         return ResponseEntity.ok(inventoryService.getInventoriesByWarehouseId(warehouseId));
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> searchInventories(@RequestParam(required = false) Integer warehouseId,
                                                       @RequestParam(required = false) String productName,
                                                       @RequestParam(required = false) String stockStatus) {
@@ -43,13 +43,13 @@ public class InventoryController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'WAREHOUSE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'PURCHASE_STAFF', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getInventorySummary() {
         return ResponseEntity.ok(inventoryService.getInventorySummary());
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'SALE_STAFF')")
     public ResponseEntity<byte[]> exportInventoriesToExcel(@RequestParam(required = false) Integer warehouseId,
                                                            @RequestParam(required = false) String productName,
                                                            @RequestParam(required = false) String stockStatus) {

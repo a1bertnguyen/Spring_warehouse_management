@@ -9,14 +9,14 @@
   border-radius: 30px;
   box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
   display: grid;
-  gap: 22px;
-  padding: 22px;
+  gap: 28px;
+  padding: 28px;
 }
 
 .purchase-page-header {
   align-items: stretch;
   display: grid;
-  gap: 18px;
+  gap: 22px;
   grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
 }
 
@@ -148,14 +148,14 @@
 
 .purchase-stats-grid {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .purchase-stat-card {
   display: grid;
-  gap: 10px;
-  padding: 20px;
+  gap: 12px;
+  padding: 24px;
 }
 
 .purchase-stat-card span {
@@ -175,7 +175,7 @@
 
 .purchase-overview-grid {
   display: grid;
-  gap: 18px;
+  gap: 24px;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
 }
 
@@ -202,8 +202,8 @@
 .purchase-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .purchase-search-input {
@@ -218,7 +218,24 @@
   padding: 0 14px;
 }
 
+.purchase-filter-select {
+  background: #ffffff;
+  border: 1px solid rgba(189, 200, 219, 0.9);
+  border-radius: 12px;
+  color: #1d2b3f;
+  font-size: 0.96rem;
+  min-height: 46px;
+  min-width: 190px;
+  padding: 0 14px;
+}
+
 .purchase-search-input:focus {
+  border-color: rgba(50, 112, 230, 0.7);
+  box-shadow: 0 0 0 4px rgba(50, 112, 230, 0.14);
+  outline: none;
+}
+
+.purchase-filter-select:focus {
   border-color: rgba(50, 112, 230, 0.7);
   box-shadow: 0 0 0 4px rgba(50, 112, 230, 0.14);
   outline: none;
@@ -226,7 +243,7 @@
 
 .purchase-kpi-strip {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
@@ -235,8 +252,8 @@
   border: 1px solid rgba(199, 211, 231, 0.88);
   border-radius: 18px;
   display: grid;
-  gap: 8px;
-  padding: 16px;
+  gap: 10px;
+  padding: 18px;
 }
 
 .purchase-kpi-strip span {
@@ -250,8 +267,8 @@
 
 .purchase-quick-grid {
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .purchase-quick-card,
@@ -274,9 +291,9 @@
   border-radius: 18px;
   color: #1c2c43;
   display: grid;
-  gap: 8px;
-  min-height: 132px;
-  padding: 18px;
+  gap: 10px;
+  min-height: 148px;
+  padding: 22px;
   text-align: left;
 }
 

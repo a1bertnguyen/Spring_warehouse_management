@@ -329,16 +329,20 @@ function Pagination({ currentPage, totalItems, onChange }) {
   );
 }
 
-const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
+const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
   const navigate = useNavigate();
   const timeoutRef = useRef(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [supplierSearchTerm, setSupplierSearchTerm] = useState("");
   const [inventorySearchTerm, setInventorySearchTerm] = useState("");
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState("all");
   const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
+  const [purchaseRequestStatusFilter, setPurchaseRequestStatusFilter] = useState("all");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
+  const [purchaseOrderStatusFilter, setPurchaseOrderStatusFilter] = useState("all");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
+  const [goodsReceiptStatusFilter, setGoodsReceiptStatusFilter] = useState("all");
   const [movementSearchTerm, setMovementSearchTerm] = useState("");
   const [isSubmittingStockInward, setIsSubmittingStockInward] = useState(false);
   const [isCreatingPurchaseOrder, setIsCreatingPurchaseOrder] = useState(false);
@@ -745,54 +749,70 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
   const filteredInventories = useMemo(
     () =>
-      inventoryRows.filter((inventory) =>
-        matchesSearch(inventorySearchTerm, [
+      inventoryRows.filter((inventory) => {
+        const matchesInventorySearch = matchesSearch(inventorySearchTerm, [
           inventory.productName,
           inventory.productSku,
           inventory.warehouseName,
-          inventory.status,
-        ])
-      ),
-    [inventoryRows, inventorySearchTerm]
+        ]);
+        const matchesInventoryStatus =
+          inventoryStatusFilter === "all" ||
+          String(inventory.rawStatus || "").toLowerCase() === inventoryStatusFilter;
+
+        return matchesInventorySearch && matchesInventoryStatus;
+      }),
+    [inventoryRows, inventorySearchTerm, inventoryStatusFilter]
   );
 
   const filteredPurchaseRequestRows = useMemo(
     () =>
-      purchaseRequestRows.filter((row) =>
-        matchesSearch(purchaseRequestSearchTerm, [
+      purchaseRequestRows.filter((row) => {
+        const matchesRequestSearch = matchesSearch(purchaseRequestSearchTerm, [
           row.code,
           row.requester,
           row.warehouse,
-          row.status,
-        ])
-      ),
-    [purchaseRequestRows, purchaseRequestSearchTerm]
+        ]);
+        const matchesRequestStatus =
+          purchaseRequestStatusFilter === "all" ||
+          String(row.rawStatus || "").toLowerCase() === purchaseRequestStatusFilter;
+
+        return matchesRequestSearch && matchesRequestStatus;
+      }),
+    [purchaseRequestRows, purchaseRequestSearchTerm, purchaseRequestStatusFilter]
   );
 
   const filteredPurchaseOrderRows = useMemo(
     () =>
-      purchaseOrderRows.filter((row) =>
-        matchesSearch(purchaseOrderSearchTerm, [
+      purchaseOrderRows.filter((row) => {
+        const matchesOrderSearch = matchesSearch(purchaseOrderSearchTerm, [
           row.code,
           row.partner,
           row.warehouse,
-          row.status,
-        ])
-      ),
-    [purchaseOrderRows, purchaseOrderSearchTerm]
+        ]);
+        const matchesOrderStatus =
+          purchaseOrderStatusFilter === "all" ||
+          String(row.rawStatus || "").toLowerCase() === purchaseOrderStatusFilter;
+
+        return matchesOrderSearch && matchesOrderStatus;
+      }),
+    [purchaseOrderRows, purchaseOrderSearchTerm, purchaseOrderStatusFilter]
   );
 
   const filteredGoodsReceiptRows = useMemo(
     () =>
-      goodsReceiptRows.filter((row) =>
-        matchesSearch(goodsReceiptSearchTerm, [
+      goodsReceiptRows.filter((row) => {
+        const matchesReceiptSearch = matchesSearch(goodsReceiptSearchTerm, [
           row.code,
           row.partner,
           row.warehouse,
-          row.status,
-        ])
-      ),
-    [goodsReceiptRows, goodsReceiptSearchTerm]
+        ]);
+        const matchesReceiptStatus =
+          goodsReceiptStatusFilter === "all" ||
+          String(row.rawStatus || "").toLowerCase() === goodsReceiptStatusFilter;
+
+        return matchesReceiptSearch && matchesReceiptStatus;
+      }),
+    [goodsReceiptRows, goodsReceiptSearchTerm, goodsReceiptStatusFilter]
   );
 
   const filteredInventoryMovements = useMemo(
@@ -809,45 +829,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
         ])
       ),
     [movementRows, movementSearchTerm]
-  );
-
-  const overviewCards = useMemo(
-    () => [
-      {
-        label: "Suppliers",
-        value: suppliers.length,
-        helper: "Active supplier records",
-      },
-      {
-        label: "Inventory Rows",
-        value: inventories.length,
-        helper: "Tracked stock lines",
-      },
-      {
-        label: "Approved Requests",
-        value: purchaseRequests.filter((request) =>
-          ["approved", "converted"].includes(String(request.status || "").toLowerCase())
-        ).length,
-        helper: "Ready for procurement",
-      },
-      {
-        label: "Purchase Orders",
-        value: purchaseOrders.length,
-        helper: "Inbound procurement documents",
-      },
-      {
-        label: "Stock Inwards",
-        value: goodsReceipts.length,
-        helper: "Receiving documents on file",
-      },
-    ],
-    [
-      goodsReceipts.length,
-      inventories.length,
-      purchaseOrders.length,
-      purchaseRequests,
-      suppliers.length,
-    ]
   );
 
   const pendingPurchaseCount = useMemo(
@@ -1134,99 +1115,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
     }
   }
 
-  function renderOverview() {
-    return (
-      <>
-        <section className="purchase-stats-grid">
-          {overviewCards.map((card) => (
-            <article key={card.label} className="purchase-stat-card">
-              <span>{card.label}</span>
-              <strong>{formatCompactNumber(card.value)}</strong>
-              <p>{card.helper}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="purchase-overview-grid">
-          <article className="purchase-panel">
-            <div className="purchase-panel-heading">
-              <div>
-                <p className="purchase-panel-label">Priority View</p>
-                <h2>Inbound workload</h2>
-              </div>
-            </div>
-
-            <div className="purchase-kpi-strip">
-              <div>
-                <span>Pending Orders</span>
-                <strong>{formatCompactNumber(pendingPurchaseCount)}</strong>
-              </div>
-              <div>
-                <span>Inventory Rows</span>
-                <strong>{formatCompactNumber(inventories.length)}</strong>
-              </div>
-              <div>
-                <span>Movements</span>
-                <strong>{formatCompactNumber(inventoryMovements.length)}</strong>
-              </div>
-            </div>
-
-            <div className="purchase-quick-grid">
-              <div className="purchase-quick-card">
-                <strong>Suppliers</strong>
-                <span>Keep supplier records clean for inbound flows.</span>
-              </div>
-              <div className="purchase-quick-card">
-                <strong>Inventory</strong>
-                <span>Review current stock before receiving new goods.</span>
-              </div>
-              <div className="purchase-quick-card">
-                <strong>Purchase Requests</strong>
-                <span>Convert approved warehouse requests into supplier orders.</span>
-              </div>
-              <div className="purchase-quick-card">
-                <strong>Purchase Orders</strong>
-                <span>Assign suppliers and send approved orders out.</span>
-              </div>
-              <div className="purchase-quick-card">
-                <strong>Create Stock Inward</strong>
-                <span>Receive ordered items with a structured form.</span>
-              </div>
-            </div>
-          </article>
-
-          <article className="purchase-panel">
-            <div className="purchase-panel-heading">
-              <div>
-                <p className="purchase-panel-label">Recent Suppliers</p>
-                <h2>Latest supplier records</h2>
-              </div>
-            </div>
-
-            {filteredSuppliers.slice(0, 5).length ? (
-              <div className="purchase-list">
-                {filteredSuppliers.slice(0, 5).map((supplier) => (
-                  <div key={supplier.id} className="purchase-list-row">
-                    <div>
-                      <strong>{supplier.name}</strong>
-                      <p>{supplier.contactInfo}</p>
-                    </div>
-                    <span>{supplier.address}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <PurchaseEmptyState
-                title="No suppliers yet"
-                description="Supplier records will appear here when data is available."
-              />
-            )}
-          </article>
-        </section>
-      </>
-    );
-  }
-
   function renderSuppliers() {
     const { currentPage, rows, startIndex } = paginate(filteredSuppliers, "suppliers");
 
@@ -1307,8 +1195,18 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
             className="purchase-search-input"
             value={inventorySearchTerm}
             onChange={(event) => setInventorySearchTerm(event.target.value)}
-            placeholder="Search by product, SKU, warehouse, or status"
+            placeholder="Search by product, SKU, or warehouse"
           />
+          <select
+            className="purchase-filter-select"
+            value={inventoryStatusFilter}
+            onChange={(event) => setInventoryStatusFilter(event.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="available">Available</option>
+            <option value="low_stock">Low Stock</option>
+            <option value="out_of_stock">Out Of Stock</option>
+          </select>
         </div>
 
         {rows.length ? (
@@ -1382,8 +1280,21 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
             className="purchase-search-input"
             value={purchaseOrderSearchTerm}
             onChange={(event) => setPurchaseOrderSearchTerm(event.target.value)}
-            placeholder="Search by code, supplier, warehouse, or status"
+            placeholder="Search by code, supplier, or warehouse"
           />
+          <select
+            className="purchase-filter-select"
+            value={purchaseOrderStatusFilter}
+            onChange={(event) => setPurchaseOrderStatusFilter(event.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="approved">Approved</option>
+            <option value="ordered">Ordered</option>
+            <option value="partially_received">Partially Received</option>
+            <option value="received">Received</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="rejected">Rejected</option>
+          </select>
         </div>
 
         {rows.length ? (
@@ -1480,8 +1391,19 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
             className="purchase-search-input"
             value={purchaseRequestSearchTerm}
             onChange={(event) => setPurchaseRequestSearchTerm(event.target.value)}
-            placeholder="Search by code, requester, warehouse, or status"
+            placeholder="Search by code, requester, or warehouse"
           />
+          <select
+            className="purchase-filter-select"
+            value={purchaseRequestStatusFilter}
+            onChange={(event) => setPurchaseRequestStatusFilter(event.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="pending_approval">Pending Approval</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="converted">Converted</option>
+          </select>
         </div>
 
         {rows.length ? (
@@ -1589,8 +1511,19 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
             className="purchase-search-input"
             value={goodsReceiptSearchTerm}
             onChange={(event) => setGoodsReceiptSearchTerm(event.target.value)}
-            placeholder="Search by code, supplier, warehouse, or status"
+            placeholder="Search by code, supplier, or warehouse"
           />
+          <select
+            className="purchase-filter-select"
+            value={goodsReceiptStatusFilter}
+            onChange={(event) => setGoodsReceiptStatusFilter(event.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="approved">Approved</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
 
         {rows.length ? (
@@ -2008,7 +1941,7 @@ const PurchaseStaffDashboardPage = ({ activeSection = "overview" }) => {
       return renderCreateStockInward();
     }
 
-    return renderOverview();
+    return renderPurchaseRequests();
   }
 
   return (

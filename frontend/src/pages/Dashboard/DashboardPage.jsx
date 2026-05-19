@@ -20,7 +20,7 @@ const MANAGER_SECTION_BY_PATH = {
 };
 
 const PURCHASE_STAFF_SECTION_BY_PATH = {
-  [PATHS.dashboard]: "overview",
+  [PATHS.dashboard]: "purchaseRequests",
   [PATHS.dashboardSuppliers]: "suppliers",
   [PATHS.dashboardInventory]: "inventory",
   [PATHS.dashboardPurchaseRequests]: "purchaseRequests",
@@ -36,6 +36,12 @@ const WAREHOUSE_STAFF_SECTION_BY_PATH = {
   [PATHS.dashboardSalesOrders]: "salesOrders",
   [PATHS.dashboardGoodsReceipts]: "goodsReceipts",
   [PATHS.dashboardPurchaseRequests]: "purchaseRequests",
+};
+
+const SALE_STAFF_SECTION_BY_PATH = {
+  [PATHS.dashboard]: "salesOrders",
+  [PATHS.dashboardInventory]: "inventory",
+  [PATHS.dashboardSalesOrders]: "salesOrders",
 };
 
 const DashboardPage = () => {
@@ -58,7 +64,7 @@ const DashboardPage = () => {
     return (
       <PurchaseStaffDashboardPage
         activeSection={
-          PURCHASE_STAFF_SECTION_BY_PATH[location.pathname] || "overview"
+          PURCHASE_STAFF_SECTION_BY_PATH[location.pathname] || "purchaseRequests"
         }
       />
     );
@@ -69,6 +75,16 @@ const DashboardPage = () => {
       <WarehouseStaffDashboardPage
         activeSection={
           WAREHOUSE_STAFF_SECTION_BY_PATH[location.pathname] || "overview"
+        }
+      />
+    );
+  }
+
+  if (role === "SALE_STAFF") {
+    return (
+      <WarehouseStaffDashboardPage
+        activeSection={
+          SALE_STAFF_SECTION_BY_PATH[location.pathname] || "salesOrders"
         }
       />
     );

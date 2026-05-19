@@ -33,6 +33,24 @@ const SECTION_COPY = {
   },
 };
 
+const SALE_STAFF_SECTION_COPY = {
+  overview: {
+    title: "Sales Staff Dashboard",
+    subtitle:
+      "Create sales orders, review customer order status, and check product availability before confirming the next sale.",
+  },
+  inventory: {
+    title: "Inventory",
+    subtitle:
+      "Search product availability by product, warehouse, and stock status before creating customer sales orders.",
+  },
+  salesOrders: {
+    title: "Sales Orders",
+    subtitle:
+      "Search customer orders by customer name and status, review order details, and start a new sales order when needed.",
+  },
+};
+
 const DETAIL_CONFIG = {
   salesOrder: {
     key: "salesOrderDetails",
@@ -312,6 +330,8 @@ function Pagination({ currentPage, totalItems, onChange }) {
 const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const role = String(ApiService.getRole?.() || "").toUpperCase();
+  const isSalesStaff = role === "SALE_STAFF";
   const timeoutRef = useRef(null);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -319,7 +339,9 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const [inventoryStatusFilter, setInventoryStatusFilter] = useState("all");
   const [inventoryWarehouseFilter, setInventoryWarehouseFilter] = useState("all");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
-  const [salesOrderStatusFilter, setSalesOrderStatusFilter] = useState("awaiting_shipment");
+  const [salesOrderStatusFilter, setSalesOrderStatusFilter] = useState(() =>
+    isSalesStaff ? "all" : "awaiting_shipment"
+  );
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
   const [goodsReceiptStatusFilter, setGoodsReceiptStatusFilter] = useState("approved");
   const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
@@ -375,10 +397,10 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
 
     try {
       const purchaseRequestParams = {};
-      const currentRole = String(ApiService.getRole?.() || "").toUpperCase();
       const currentUserId = ApiService.getUserId?.();
+      const shouldLoadWarehouseWorkflow = role !== "SALE_STAFF";
 
-      if (currentRole === "WAREHOUSE_STAFF" && currentUserId) {
+      if (role === "WAREHOUSE_STAFF" && currentUserId) {
         purchaseRequestParams.requesterId = currentUserId;
       }
 
@@ -393,8 +415,12 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
         ApiService.getLoggedInUserInfo(),
         ApiService.getAllInventories(),
         ApiService.getAllSalesOrders(),
-        ApiService.getAllStockInwards(),
-        ApiService.getAllPurchaseRequests(purchaseRequestParams),
+        shouldLoadWarehouseWorkflow
+          ? ApiService.getAllStockInwards()
+          : Promise.resolve({ stockInwards: [] }),
+        shouldLoadWarehouseWorkflow
+          ? ApiService.getAllPurchaseRequests(purchaseRequestParams)
+          : Promise.resolve({ purchaseRequests: [] }),
         ApiService.getAllWarehouses(),
       ]);
 
@@ -445,7 +471,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [showMessage]);
+  }, [role, showMessage]);
 
   useEffect(() => {
     loadDashboardData();
@@ -465,7 +491,8 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     return Number.isFinite(parsedUserId) ? parsedUserId : null;
   }, [currentUser]);
 
-  const activeCopy = SECTION_COPY[activeSection] || SECTION_COPY.overview;
+  const sectionCopy = isSalesStaff ? SALE_STAFF_SECTION_COPY : SECTION_COPY;
+  const activeCopy = sectionCopy[activeSection] || sectionCopy.overview;
 
   const warehouseOptions = useMemo(
     () =>
@@ -819,6 +846,10 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   );
 
   const queueSummary = useMemo(() => {
+    if (isSalesStaff) {
+      return salesOrderRows.length;
+    }
+
     const pendingShipments = salesOrderRows.filter(
       (row) => String(row.rawStatus || "").toLowerCase() === "awaiting_shipment"
     ).length;
@@ -832,7 +863,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     ).length;
 
     return pendingShipments + approvedReceipts + openRequests;
-  }, [goodsReceiptRows, myPurchaseRequestRows, salesOrderRows]);
+  }, [goodsReceiptRows, isSalesStaff, myPurchaseRequestRows, salesOrderRows]);
 
   const shipmentQueue = useMemo(
     () =>
@@ -1199,19 +1230,25 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     return (
       <section className="warehouse-section-card">
         <WarehouseSectionHeader
-          eyebrow="Inventory View"
-          title="Live Inventory Snapshot"
-          description="Filter by warehouse and status, export the latest inventory table, and jump to the purchase request page when replenishment is needed."
+          eyebrow={isSalesStaff ? "Inventory Lookup" : "Inventory View"}
+          title={isSalesStaff ? "Inventory Management" : "Live Inventory Snapshot"}
+          description={
+            isSalesStaff
+              ? "Search by product name, warehouse, and stock status before creating a customer sales order."
+              : "Filter by warehouse and status, export the latest inventory table, and jump to the purchase request page when replenishment is needed."
+          }
           meta={`${formatCompactNumber(filteredInventories.length)} rows`}
           action={
             <div className="warehouse-section-action-group">
-              <button
-                type="button"
-                className="warehouse-secondary-action"
-                onClick={() => navigate(PATHS.dashboardPurchaseRequests)}
-              >
-                Create Purchase Request
-              </button>
+              {!isSalesStaff ? (
+                <button
+                  type="button"
+                  className="warehouse-secondary-action"
+                  onClick={() => navigate(PATHS.dashboardPurchaseRequests)}
+                >
+                  Create Purchase Request
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="warehouse-primary-action"
@@ -1731,10 +1768,29 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
     return (
       <section className="warehouse-section-card">
         <WarehouseSectionHeader
-          eyebrow="Outbound Queue"
-          title="Sales Orders Waiting For Warehouse Action"
-          description="Open detail lines, confirm shipped orders, and keep outbound status aligned with warehouse operations."
+          eyebrow={isSalesStaff ? "Order Desk" : "Outbound Queue"}
+          title={
+            isSalesStaff
+              ? "Sales Order Management"
+              : "Sales Orders Waiting For Warehouse Action"
+          }
+          description={
+            isSalesStaff
+              ? "Search by customer name and order status, review order details, and create new customer orders."
+              : "Open detail lines, confirm shipped orders, and keep outbound status aligned with warehouse operations."
+          }
           meta={`${formatCompactNumber(filteredSalesOrderRows.length)} orders`}
+          action={
+            isSalesStaff ? (
+              <button
+                type="button"
+                className="warehouse-primary-action"
+                onClick={() => navigate(PATHS.sell)}
+              >
+                Create New Order
+              </button>
+            ) : null
+          }
         />
 
         <div className="warehouse-toolbar">
@@ -1742,7 +1798,11 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
             className="warehouse-search-input"
             value={salesOrderSearchTerm}
             onChange={(event) => setSalesOrderSearchTerm(event.target.value)}
-            placeholder="Search by code, customer, warehouse, or status"
+            placeholder={
+              isSalesStaff
+                ? "Search by customer name..."
+                : "Search by code, customer, warehouse, or status"
+            }
           />
 
           <select
@@ -1750,10 +1810,13 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
             value={salesOrderStatusFilter}
             onChange={(event) => setSalesOrderStatusFilter(event.target.value)}
           >
+            {isSalesStaff ? <option value="all">All statuses</option> : null}
+            <option value="pending_stock_check">Pending Stock Check</option>
             <option value="awaiting_shipment">Awaiting Shipment</option>
             <option value="shipped">Shipped</option>
             <option value="completed">Completed</option>
-            <option value="all">All statuses</option>
+            {!isSalesStaff ? <option value="all">All statuses</option> : null}
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
 
@@ -1802,7 +1865,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
                             >
                               Details
                             </button>
-                            {isAwaitingShipment ? (
+                            {!isSalesStaff && isAwaitingShipment ? (
                               <button
                                 type="button"
                                 className="warehouse-row-action"
@@ -1979,15 +2042,21 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
         <section className="warehouse-page-shell">
           <div className="warehouse-page-header">
             <div className="warehouse-page-title">
-              <span className="warehouse-page-kicker">Warehouse Staff Dashboard</span>
+              <span className="warehouse-page-kicker">
+                {isSalesStaff ? "Sales Staff Dashboard" : "Warehouse Staff Dashboard"}
+              </span>
               <h1>{activeCopy.title}</h1>
               <p>{activeCopy.subtitle}</p>
             </div>
 
             <div className="warehouse-page-summary-card">
-              <span>Queue Summary</span>
+              <span>{isSalesStaff ? "Order Summary" : "Queue Summary"}</span>
               <strong>{formatCompactNumber(queueSummary)}</strong>
-              <p>tasks need shipment, receipt completion, or restock follow-up.</p>
+              <p>
+                {isSalesStaff
+                  ? "sales orders are visible for customer follow-up and order tracking."
+                  : "tasks need shipment, receipt completion, or restock follow-up."}
+              </p>
             </div>
           </div>
 

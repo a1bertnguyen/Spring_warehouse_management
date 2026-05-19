@@ -28,13 +28,13 @@ public class SalesOrderController {
     private final SalesOrderDetailService salesOrderDetailService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'SALE_STAFF')")
     public ResponseEntity<Response> createSalesOrder(@RequestBody @Valid SalesOrderRequest salesOrderRequest) {
         return ResponseEntity.ok(salesOrderService.createSalesOrder(salesOrderRequest));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getAllSalesOrders(@RequestParam(defaultValue = "0") int page,
                                                       @RequestParam(defaultValue = "10") int size,
                                                       @RequestParam(required = false) String orderCode,
@@ -48,13 +48,13 @@ public class SalesOrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getSalesOrderById(@PathVariable Integer id) {
         return ResponseEntity.ok(salesOrderService.getSalesOrderById(id));
     }
 
     @GetMapping("/{id}/details")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'SALE_STAFF', 'WAREHOUSE_STAFF')")
     public ResponseEntity<Response> getSalesOrderDetails(@PathVariable Integer id) {
         return ResponseEntity.ok(salesOrderDetailService.getDetailsByOrderId(id));
     }
