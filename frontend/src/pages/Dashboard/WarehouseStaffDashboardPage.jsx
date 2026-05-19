@@ -340,7 +340,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
   const [inventoryWarehouseFilter, setInventoryWarehouseFilter] = useState("all");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
   const [salesOrderStatusFilter, setSalesOrderStatusFilter] = useState(() =>
-    isSalesStaff ? "all" : "awaiting_shipment"
+    isSalesStaff || role === "WAREHOUSE_STAFF" ? "all" : "awaiting_shipment"
   );
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
   const [goodsReceiptStatusFilter, setGoodsReceiptStatusFilter] = useState("approved");
@@ -414,7 +414,7 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       ] = await Promise.allSettled([
         ApiService.getLoggedInUserInfo(),
         ApiService.getAllInventories(),
-        ApiService.getAllSalesOrders(),
+        ApiService.getAllSalesOrders({ page: 0, size: 100 }),
         shouldLoadWarehouseWorkflow
           ? ApiService.getAllStockInwards()
           : Promise.resolve({ stockInwards: [] }),
@@ -455,15 +455,23 @@ const WarehouseStaffDashboardPage = ({ activeSection = "overview" }) => {
       );
 
       const errors = [
-        currentUserResult,
-        inventoryResult,
-        salesOrderResult,
-        goodsReceiptResult,
-        purchaseRequestResult,
-        warehouseResult,
+        ["user profile", currentUserResult],
+        ["inventory", inventoryResult],
+        ["sales orders", salesOrderResult],
+        ["stock inwards", goodsReceiptResult],
+        ["purchase requests", purchaseRequestResult],
+        ["warehouses", warehouseResult],
       ]
-        .filter((result) => result.status === "rejected")
-        .map((result) => result.reason?.response?.data?.message || "Unable to load data.");
+        .filter(([, result]) => result.status === "rejected")
+        .map(([label, result]) => {
+          const status = result.reason?.response?.status;
+          const message =
+            result.reason?.response?.data?.message ||
+            result.reason?.message ||
+            "Unable to load data.";
+
+          return status ? `${label}: ${message} (${status})` : `${label}: ${message}`;
+        });
 
       if (errors.length) {
         showMessage(errors[0]);

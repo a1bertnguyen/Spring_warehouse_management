@@ -320,6 +320,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [statusUpdateKey, setStatusUpdateKey] = useState("");
   const [inventoryMovementSearchTerm, setInventoryMovementSearchTerm] = useState("");
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
+  const [salesOrderStatusFilter, setSalesOrderStatusFilter] = useState("pending_stock_check");
   const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
   const [purchaseOrderSearchTerm, setPurchaseOrderSearchTerm] = useState("");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
@@ -755,6 +756,7 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
         code: order.orderCode || `Sales order #${order.id}`,
         partner: order.customerName || "Customer not assigned",
         warehouse:
+          order.warehouseName ||
           order.orderDetails?.[0]?.warehouseName ||
           order.orderDetails?.[0]?.warehouseId ||
           "Mixed",
@@ -859,15 +861,19 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
 
   const filteredSalesOrderRows = useMemo(
     () =>
-      salesOrderRows.filter((row) =>
-        matchesSearch(salesOrderSearchTerm, [
+      salesOrderRows.filter((row) => {
+        const matchesStatus =
+          salesOrderStatusFilter === "all" ||
+          String(row.rawStatus || "") === salesOrderStatusFilter;
+
+        return matchesStatus && matchesSearch(salesOrderSearchTerm, [
           row.code,
           row.partner,
           row.warehouse,
           row.status,
-        ])
-      ),
-    [salesOrderRows, salesOrderSearchTerm]
+        ]);
+      }),
+    [salesOrderRows, salesOrderSearchTerm, salesOrderStatusFilter]
   );
 
   const filteredPurchaseOrderRows = useMemo(
@@ -1659,6 +1665,20 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={`Search ${title.toLowerCase()}`}
           />
+          {detailKind === "salesOrder" ? (
+            <select
+              className="manager-filter-select"
+              value={salesOrderStatusFilter}
+              onChange={(event) => setSalesOrderStatusFilter(event.target.value)}
+            >
+              <option value="pending_stock_check">Pending Stock Check</option>
+              <option value="awaiting_shipment">Awaiting Shipment</option>
+              <option value="shipped">Shipped</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="all">All Statuses</option>
+            </select>
+          ) : null}
         </div>
 
         {rows.length ? (
@@ -1826,11 +1846,11 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
 
     if (activeSection === "salesOrders") {
       return renderOrders(
-        "Recent sales orders",
+        "Sales orders for manager approval",
         filteredSalesOrderRows,
         "No sales orders found",
-        "No sales orders match the current search.",
-        "Outbound",
+        "No sales orders match the current manager filter.",
+        "Manager approval",
         salesOrderSearchTerm,
         setSalesOrderSearchTerm,
         "salesOrder"

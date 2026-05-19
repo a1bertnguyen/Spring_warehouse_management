@@ -183,6 +183,12 @@ apiClient.interceptors.response.use(
 );
 
 export function withCollectionAlias(payload, key, mapper = (item) => item) {
+  if (typeof payload === "string") {
+    throw new Error(
+      "Invalid API response. Expected JSON data but received text/html. Check REACT_APP_API_BASE_URL."
+    );
+  }
+
   const items = Array.isArray(payload?.data) ? payload.data.map(mapper) : [];
   return { ...payload, data: items, [key]: items };
 }

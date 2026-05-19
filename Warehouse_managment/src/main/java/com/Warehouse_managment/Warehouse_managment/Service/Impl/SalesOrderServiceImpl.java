@@ -361,6 +361,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 .map(salesOrderDetailService::toDto)
                 .toList();
         dto.setOrderDetails(details);
+        applyWarehouseSummary(dto, details);
         dto.setTotalItems(details.stream()
                 .map(SalesOrderDetailDTO::getQuantityOrdered)
                 .filter(Objects::nonNull)
@@ -372,6 +373,27 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         return dto;
+    }
+
+    private void applyWarehouseSummary(SalesOrderDTO dto, List<SalesOrderDetailDTO> details) {
+        List<SalesOrderDetailDTO> warehouseDetails = details.stream()
+                .filter(detail -> detail.getWarehouseId() != null)
+                .toList();
+
+        if (warehouseDetails.isEmpty()) {
+            return;
+        }
+
+        SalesOrderDetailDTO firstDetail = warehouseDetails.get(0);
+        boolean hasMultipleWarehouses = warehouseDetails.stream()
+                .map(SalesOrderDetailDTO::getWarehouseId)
+                .distinct()
+                .count() > 1;
+
+        dto.setWarehouseId(firstDetail.getWarehouseId());
+        dto.setWarehouseName(hasMultipleWarehouses
+                ? "Multiple Warehouses"
+                : firstDetail.getWarehouseName());
     }
 
     private String generateOrderCode() {

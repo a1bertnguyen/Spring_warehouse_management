@@ -264,6 +264,23 @@
   width: min(100%, 480px);
 }
 
+.manager-filter-select {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  color: #12202d;
+  font-size: 0.95rem;
+  min-height: 44px;
+  min-width: 220px;
+  padding: 0 14px;
+}
+
+.manager-filter-select:focus {
+  border-color: rgba(15, 139, 141, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 139, 141, 0.12);
+  outline: none;
+}
+
 .manager-form-actions button,
 .manager-panel-heading button,
 .manager-table button {

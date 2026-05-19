@@ -25,6 +25,8 @@ public class SalesOrderDTO {
     private String customerEmail;
     private String customerPhone;
     private String shippingAddress;
+    private Integer warehouseId;
+    private String warehouseName;
     private Long createdById;
     private String createdByName;
     private LocalDateTime orderDate;
