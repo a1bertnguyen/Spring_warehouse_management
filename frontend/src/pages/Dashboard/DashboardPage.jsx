@@ -26,7 +26,7 @@ const PURCHASE_STAFF_SECTION_BY_PATH = {
   [PATHS.dashboardPurchaseRequests]: "purchaseRequests",
   [PATHS.dashboardPurchaseOrders]: "purchaseOrders",
   [PATHS.dashboardGoodsReceipts]: "goodsReceipts",
-  [PATHS.dashboardInventoryMovements]: "inventoryMovements",
+  [PATHS.dashboardInventoryMovements]: "purchaseRequests",
   [PATHS.dashboardCreateStockInward]: "createStockInward",
 };
 

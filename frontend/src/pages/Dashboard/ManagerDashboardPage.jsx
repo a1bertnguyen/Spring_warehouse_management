@@ -3,7 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
 import { PATHS } from "../../constants/paths";
 import ApiService from "../../services/ApiService";
+import PaginationComponent from "../../components/common/PaginationComponent";
 import "./ManagerDashboardPage.css";
+
+const INVENTORY_MOVEMENT_ITEMS_PER_PAGE = 12;
 
 const SECTION_COPY = {
   overview: {
@@ -227,6 +230,46 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function formatDateFilterValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-CA");
+}
+
+function matchesDateRange(value, dateFrom, dateTo) {
+  if (!dateFrom && !dateTo) {
+    return true;
+  }
+
+  if (!value) {
+    return false;
+  }
+
+  const movementDate = new Date(value);
+  if (Number.isNaN(movementDate.getTime())) {
+    return false;
+  }
+
+  const movementDateKey = formatDateFilterValue(movementDate);
+
+  if (dateFrom && movementDateKey < dateFrom) {
+    return false;
+  }
+
+  if (dateTo && movementDateKey > dateTo) {
+    return false;
+  }
+
+  return true;
+}
+
 function formatCompactNumber(value) {
   return new Intl.NumberFormat("en-US", {
     notation: "compact",
@@ -319,6 +362,9 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
   const [isExportingInventory, setIsExportingInventory] = useState(false);
   const [statusUpdateKey, setStatusUpdateKey] = useState("");
   const [inventoryMovementSearchTerm, setInventoryMovementSearchTerm] = useState("");
+  const [inventoryMovementDateFrom, setInventoryMovementDateFrom] = useState("");
+  const [inventoryMovementDateTo, setInventoryMovementDateTo] = useState("");
+  const [inventoryMovementPage, setInventoryMovementPage] = useState(1);
   const [salesOrderSearchTerm, setSalesOrderSearchTerm] = useState("");
   const [salesOrderStatusFilter, setSalesOrderStatusFilter] = useState("pending_stock_check");
   const [purchaseRequestSearchTerm, setPurchaseRequestSearchTerm] = useState("");
@@ -691,6 +737,11 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           String(movement?.warehouseId ?? "") === String(movementScope.warehouseId)) &&
         (!movementScope.productId ||
           String(movement?.productId ?? "") === String(movementScope.productId)) &&
+        matchesDateRange(
+          movement.createdAt,
+          inventoryMovementDateFrom,
+          inventoryMovementDateTo
+        ) &&
         matchesSearch(inventoryMovementSearchTerm, [
           movement.productName,
           movement.productSku,
@@ -701,15 +752,49 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
           movement.referenceCode,
           movement.referenceId,
           movement.note,
+          formatDate(movement.createdAt),
+          formatDateFilterValue(movement.createdAt),
         ])
       ),
     [
+      inventoryMovementDateFrom,
+      inventoryMovementDateTo,
       inventoryMovementSearchTerm,
       inventoryMovements,
       movementScope.productId,
       movementScope.warehouseId,
     ]
   );
+
+  const inventoryMovementTotalPages = Math.max(
+    1,
+    Math.ceil(filteredInventoryMovements.length / INVENTORY_MOVEMENT_ITEMS_PER_PAGE)
+  );
+
+  const paginatedInventoryMovements = useMemo(
+    () =>
+      filteredInventoryMovements.slice(
+        (inventoryMovementPage - 1) * INVENTORY_MOVEMENT_ITEMS_PER_PAGE,
+        inventoryMovementPage * INVENTORY_MOVEMENT_ITEMS_PER_PAGE
+      ),
+    [filteredInventoryMovements, inventoryMovementPage]
+  );
+
+  useEffect(() => {
+    setInventoryMovementPage(1);
+  }, [
+    inventoryMovementSearchTerm,
+    inventoryMovementDateFrom,
+    inventoryMovementDateTo,
+    movementScope.productId,
+    movementScope.warehouseId,
+  ]);
+
+  useEffect(() => {
+    if (inventoryMovementPage > inventoryMovementTotalPages) {
+      setInventoryMovementPage(inventoryMovementTotalPages);
+    }
+  }, [inventoryMovementPage, inventoryMovementTotalPages]);
 
   const summaryCards = useMemo(
     () => [
@@ -1568,67 +1653,99 @@ const ManagerDashboardPage = ({ activeSection = "overview" }) => {
             className="manager-search-input manager-search-input-wide"
             value={inventoryMovementSearchTerm}
             onChange={(event) => setInventoryMovementSearchTerm(event.target.value)}
-            placeholder="Search product, warehouse, actor, reference, or movement type"
+            placeholder="Search product, warehouse, actor, reference, movement type, or date"
           />
+          <label className="manager-date-filter">
+            <span>From</span>
+            <input
+              type="date"
+              className="manager-search-input"
+              value={inventoryMovementDateFrom}
+              onChange={(event) => setInventoryMovementDateFrom(event.target.value)}
+              aria-label="Inventory movement date from"
+            />
+          </label>
+          <label className="manager-date-filter">
+            <span>To</span>
+            <input
+              type="date"
+              className="manager-search-input"
+              value={inventoryMovementDateTo}
+              onChange={(event) => setInventoryMovementDateTo(event.target.value)}
+              aria-label="Inventory movement date to"
+            />
+          </label>
         </div>
 
         {filteredInventoryMovements.length ? (
-          <div className="manager-table-shell">
-            <table className="manager-table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Product</th>
-                  <th>Warehouse</th>
-                  <th>Movement</th>
-                  <th>Reference</th>
-                  <th>Actor</th>
-                  <th>Before</th>
-                  <th>Delta</th>
-                  <th>After</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInventoryMovements.slice(0, 24).map((movement) => (
-                  <tr key={movement.movementId}>
-                    <td>{formatDate(movement.createdAt)}</td>
-                    <td>
-                      <strong>{movement.productName || "Unnamed product"}</strong>
-                      <span>{movement.productSku || "No SKU"}</span>
-                    </td>
-                    <td>{movement.warehouseName || "Unassigned"}</td>
-                    <td>
-                      <span
-                        className={`manager-status-badge ${
-                          Number(movement.quantityDelta || 0) >= 0
-                            ? "manager-status-badge-positive"
-                            : "manager-status-badge-negative"
-                        }`}
-                      >
-                        {formatStatus(movement.movementType)}
-                      </span>
-                    </td>
-                    <td>
-                      <strong>{movement.referenceCode || movement.referenceId || "Manual"}</strong>
-                      <span>{formatStatus(movement.referenceType) || "No reference type"}</span>
-                    </td>
-                    <td>{movement.actorUserName || "System"}</td>
-                    <td>{movement.quantityBefore || 0}</td>
-                    <td
-                      className={
-                        Number(movement.quantityDelta || 0) >= 0
-                          ? "manager-delta-positive"
-                          : "manager-delta-negative"
-                      }
-                    >
-                      {formatSignedQuantity(movement.quantityDelta)}
-                    </td>
-                    <td>{movement.quantityAfter || 0}</td>
+          <>
+            <div className="manager-table-shell">
+              <table className="manager-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Time</th>
+                    <th>Product</th>
+                    <th>Warehouse</th>
+                    <th>Movement</th>
+                    <th>Reference</th>
+                    <th>Actor</th>
+                    <th>Before</th>
+                    <th>Delta</th>
+                    <th>After</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginatedInventoryMovements.map((movement, index) => (
+                    <tr key={movement.movementId}>
+                      <td>
+                        {(inventoryMovementPage - 1) * INVENTORY_MOVEMENT_ITEMS_PER_PAGE + index + 1}
+                      </td>
+                      <td>{formatDate(movement.createdAt)}</td>
+                      <td>
+                        <strong>{movement.productName || "Unnamed product"}</strong>
+                        <span>{movement.productSku || "No SKU"}</span>
+                      </td>
+                      <td>{movement.warehouseName || "Unassigned"}</td>
+                      <td>
+                        <span
+                          className={`manager-status-badge ${
+                            Number(movement.quantityDelta || 0) >= 0
+                              ? "manager-status-badge-positive"
+                              : "manager-status-badge-negative"
+                          }`}
+                        >
+                          {formatStatus(movement.movementType)}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{movement.referenceCode || movement.referenceId || "Manual"}</strong>
+                        <span>{formatStatus(movement.referenceType) || "No reference type"}</span>
+                      </td>
+                      <td>{movement.actorUserName || "System"}</td>
+                      <td>{movement.quantityBefore || 0}</td>
+                      <td
+                        className={
+                          Number(movement.quantityDelta || 0) >= 0
+                            ? "manager-delta-positive"
+                            : "manager-delta-negative"
+                        }
+                      >
+                        {formatSignedQuantity(movement.quantityDelta)}
+                      </td>
+                      <td>{movement.quantityAfter || 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <PaginationComponent
+              currentPage={inventoryMovementPage}
+              totalPages={inventoryMovementTotalPages}
+              onPageChange={setInventoryMovementPage}
+            />
+          </>
         ) : (
           <TableEmptyState
             title="No inventory movements found"

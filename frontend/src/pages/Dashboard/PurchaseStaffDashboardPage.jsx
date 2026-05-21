@@ -36,11 +36,6 @@ const SECTION_COPY = {
     subtitle:
       "Review receiving documents by supplier, destination warehouse, and received quantity.",
   },
-  inventoryMovements: {
-    title: "Inventory Movements",
-    subtitle:
-      "Audit stock changes to reconcile purchase orders, stock inwards, and warehouse activity.",
-  },
   createStockInward: {
     title: "Create Stock Inward",
     subtitle:
@@ -171,11 +166,6 @@ function formatCurrency(value) {
     currency: "USD",
     maximumFractionDigits: 2,
   }).format(amount);
-}
-
-function formatSignedQuantity(value) {
-  const amount = Number(value || 0);
-  return amount > 0 ? `+${amount}` : String(amount);
 }
 
 function getStatusTone(status) {
@@ -343,7 +333,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
   const [purchaseOrderStatusFilter, setPurchaseOrderStatusFilter] = useState("all");
   const [goodsReceiptSearchTerm, setGoodsReceiptSearchTerm] = useState("");
   const [goodsReceiptStatusFilter, setGoodsReceiptStatusFilter] = useState("all");
-  const [movementSearchTerm, setMovementSearchTerm] = useState("");
   const [isSubmittingStockInward, setIsSubmittingStockInward] = useState(false);
   const [isCreatingPurchaseOrder, setIsCreatingPurchaseOrder] = useState(false);
   const [pages, setPages] = useState({
@@ -352,7 +341,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
     purchaseRequests: 1,
     purchaseOrders: 1,
     goodsReceipts: 1,
-    inventoryMovements: 1,
   });
   const [detailDialog, setDetailDialog] = useState({
     isOpen: false,
@@ -383,7 +371,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
     purchaseRequests: [],
     purchaseOrders: [],
     goodsReceipts: [],
-    inventoryMovements: [],
     warehouses: [],
     products: [],
   });
@@ -417,7 +404,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
         purchaseRequestResult,
         purchaseOrderResult,
         goodsReceiptResult,
-        movementResult,
         warehouseResult,
         productResult,
       ] = await Promise.allSettled([
@@ -426,7 +412,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
         ApiService.getAllPurchaseRequests(),
         ApiService.getAllPurchaseOrders(),
         ApiService.getAllStockInwards(),
-        ApiService.getInventoryMovements(),
         ApiService.getAllWarehouses(),
         ApiService.getAllProducts(),
       ]);
@@ -452,10 +437,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
           goodsReceiptResult.status === "fulfilled"
             ? normalizeCollection(goodsReceiptResult.value, "stockInwards")
             : [],
-        inventoryMovements:
-          movementResult.status === "fulfilled"
-            ? normalizeCollection(movementResult.value, "inventoryMovements")
-            : [],
         warehouses:
           warehouseResult.status === "fulfilled"
             ? warehouseResult.value?.warehouses || []
@@ -479,7 +460,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
         purchaseRequestResult,
         purchaseOrderResult,
         goodsReceiptResult,
-        movementResult,
         warehouseResult,
         productResult,
       ]
@@ -624,7 +604,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
     purchaseRequests,
     purchaseOrders,
     goodsReceipts,
-    inventoryMovements,
     warehouses,
     products,
   } = dashboardData;
@@ -713,28 +692,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
     [goodsReceipts]
   );
 
-  const movementRows = useMemo(
-    () =>
-      inventoryMovements
-        .map((movement) => ({
-          id: movement.movementId,
-          createdAt: movement.createdAt,
-          product: movement.productName || "Unnamed Product",
-          productSku: movement.productSku || "N/A",
-          warehouse: movement.warehouseName || "Unassigned",
-          movementType: formatStatus(movement.movementType),
-          rawMovementType: movement.movementType,
-          reference: movement.referenceCode || movement.referenceId || "Manual",
-          referenceType: formatStatus(movement.referenceType),
-          actor: movement.actorUserName || "System",
-          before: movement.quantityBefore || 0,
-          delta: Number(movement.quantityDelta || 0),
-          after: movement.quantityAfter || 0,
-        }))
-        .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0)),
-    [inventoryMovements]
-  );
-
   const filteredSuppliers = useMemo(
     () =>
       supplierRows.filter((supplier) =>
@@ -813,22 +770,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
         return matchesReceiptSearch && matchesReceiptStatus;
       }),
     [goodsReceiptRows, goodsReceiptSearchTerm, goodsReceiptStatusFilter]
-  );
-
-  const filteredInventoryMovements = useMemo(
-    () =>
-      movementRows.filter((row) =>
-        matchesSearch(movementSearchTerm, [
-          row.product,
-          row.productSku,
-          row.warehouse,
-          row.movementType,
-          row.reference,
-          row.referenceType,
-          row.actor,
-        ])
-      ),
-    [movementRows, movementSearchTerm]
   );
 
   const pendingPurchaseCount = useMemo(
@@ -1588,98 +1529,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
     );
   }
 
-  function renderInventoryMovements() {
-    const { currentPage, rows, startIndex } = paginate(
-      filteredInventoryMovements,
-      "inventoryMovements"
-    );
-
-    return (
-      <section className="purchase-section-card">
-        <PurchaseSectionHeader
-          eyebrow="Audit Trail"
-          title="Inventory Movement History"
-          description="Trace stock increases and decreases across warehouses, purchase receipts, and operator actions."
-          meta={`${formatCompactNumber(filteredInventoryMovements.length)} movements`}
-        />
-
-        <div className="purchase-toolbar">
-          <input
-            className="purchase-search-input"
-            value={movementSearchTerm}
-            onChange={(event) => setMovementSearchTerm(event.target.value)}
-            placeholder="Search by product, warehouse, movement type, actor, or reference"
-          />
-        </div>
-
-        {rows.length ? (
-          <>
-            <div className="purchase-table-shell">
-              <table className="purchase-table">
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Timestamp</th>
-                    <th>Product</th>
-                    <th>Warehouse</th>
-                    <th>Movement</th>
-                    <th>Reference</th>
-                    <th>Actor</th>
-                    <th>Before</th>
-                    <th>Delta</th>
-                    <th>After</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, index) => (
-                    <tr key={row.id}>
-                      <td>{startIndex + index + 1}</td>
-                      <td>{formatDate(row.createdAt)}</td>
-                      <td>
-                        <strong>{row.product}</strong>
-                        <span>{row.productSku}</span>
-                      </td>
-                      <td>{row.warehouse}</td>
-                      <td>
-                        <span
-                          className={`purchase-badge tone-${getStatusTone(
-                            row.rawMovementType
-                          )}`}
-                        >
-                          {row.movementType}
-                        </span>
-                      </td>
-                      <td>
-                        <strong>{row.reference}</strong>
-                        <span>{row.referenceType}</span>
-                      </td>
-                      <td>{row.actor}</td>
-                      <td>{row.before}</td>
-                      <td className={row.delta >= 0 ? "movement-up" : "movement-down"}>
-                        {formatSignedQuantity(row.delta)}
-                      </td>
-                      <td>{row.after}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalItems={filteredInventoryMovements.length}
-              onChange={(page) => updatePage("inventoryMovements", page)}
-            />
-          </>
-        ) : (
-          <PurchaseEmptyState
-            title="No inventory movements match"
-            description="Inventory movement history will appear here when activity exists."
-          />
-        )}
-      </section>
-    );
-  }
-
   function renderCreateStockInward() {
     return (
       <section className="purchase-section-card purchase-section-card-form">
@@ -1931,10 +1780,6 @@ const PurchaseStaffDashboardPage = ({ activeSection = "purchaseRequests" }) => {
 
     if (activeSection === "goodsReceipts") {
       return renderGoodsReceipts();
-    }
-
-    if (activeSection === "inventoryMovements") {
-      return renderInventoryMovements();
     }
 
     if (activeSection === "createStockInward") {

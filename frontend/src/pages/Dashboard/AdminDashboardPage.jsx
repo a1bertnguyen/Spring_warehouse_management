@@ -84,6 +84,13 @@ function formatCurrency(value) {
   }).format(Number(value || 0));
 }
 
+function formatCompactNumber(value) {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(Number(value || 0));
+}
+
 function Pager({ currentPage, totalPages, totalItems, itemLabel, onPageChange }) {
   return (
     <div className="admin-pager">
@@ -506,10 +513,14 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                   </div>
 
                   <ResponsiveContainer width="100%" height={320}>
-                    <LineChart data={transactionSeries}>
+                    <LineChart data={transactionSeries} margin={{ top: 8, right: 16, left: 28, bottom: 0 }}>
                       <CartesianGrid stroke="#dbe6eb" strokeDasharray="3 3" />
                       <XAxis dataKey="day" tick={{ fill: "#64748b" }} />
-                      <YAxis tick={{ fill: "#64748b" }} />
+                      <YAxis
+                        tick={{ fill: "#64748b" }}
+                        tickFormatter={formatCompactNumber}
+                        width={74}
+                      />
                       <Tooltip
                         formatter={(value) => chartMeta.formatter(value)}
                         labelFormatter={(label) => `Day ${label}`}
@@ -536,7 +547,7 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                   </div>
 
                   <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={monthlyTransactions}>
+                    <AreaChart data={monthlyTransactions} margin={{ top: 8, right: 16, left: 28, bottom: 0 }}>
                       <defs>
                         <linearGradient id="tealGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.85} />
@@ -545,7 +556,11 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                       </defs>
                       <CartesianGrid stroke="#dbe6eb" strokeDasharray="3 3" />
                       <XAxis dataKey="month" tick={{ fill: "#64748b" }} />
-                      <YAxis tick={{ fill: "#64748b" }} />
+                      <YAxis
+                        tick={{ fill: "#64748b" }}
+                        tickFormatter={formatCompactNumber}
+                        width={74}
+                      />
                       <Tooltip formatter={(value) => formatCurrency(value)} />
                       <Area
                         type="monotone"
@@ -577,7 +592,7 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                     <div className="admin-toolbar-group">
                       <input
                         aria-label="Search users"
-                        placeholder="Search by name, email, phone, or role"
+                        placeholder="Search by name, email, or role"
                         type="text"
                         value={userSearch}
                         onChange={(event) => setUserSearch(event.target.value)}
@@ -617,7 +632,6 @@ const AdminDashboardPage = ({ initialSection = "overview" }) => {
                             <td>
                               <strong>{user.name}</strong>
                               <small>{user.email}</small>
-                              <small>{user.phoneNumber}</small>
                             </td>
                             <td>{formatUserRole(user.role)}</td>
                             <td>

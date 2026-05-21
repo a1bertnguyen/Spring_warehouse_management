@@ -73,11 +73,6 @@ const PURCHASE_STAFF_NAV_ITEMS = [
     label: "Stock Inwards",
     icon: "receipts",
   },
-  {
-    path: PATHS.dashboardInventoryMovements,
-    label: "Inventory Movements",
-    icon: "movements",
-  },
 ];
 
 function formatRoleLabel(role) {

@@ -318,6 +318,8 @@
 
 .admin-table td small {
   color: #64748b;
+  display: block;
+  line-height: 1.5;
 }
 
 .admin-form {
