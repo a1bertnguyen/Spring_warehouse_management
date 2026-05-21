@@ -1,0 +1,11 @@
+.git
+.gitnexus
+.idea
+.vscode
+node_modules
+frontend/node_modules
+frontend/build
+Warehouse_managment/target
+Warehouse_managment/.mvn/wrapper/maven-wrapper.jar
+Warehouse_managment/server-test.log
+Warehouse_managment/server-test.err.log
