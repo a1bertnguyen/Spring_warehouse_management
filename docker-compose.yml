@@ -16,6 +16,22 @@ services:
       timeout: 5s
       retries: 10
 
+  db-seed:
+    image: mysql:8.4
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-inventory_db}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+    volumes:
+      - ./docker/seed.sql:/seed/seed.sql:ro
+    command:
+      - sh
+      - -c
+      - mysql -h db -uroot -p$$MYSQL_ROOT_PASSWORD $$MYSQL_DATABASE < /seed/seed.sql
+    restart: "no"
+
   backend:
     build:
       context: .
@@ -27,10 +43,12 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SECRET_JWT_STRING: ${SECRET_JWT_STRING:-ABCDEF1234567890abcdef1234567890}
+      SECRET_JWT_STRING: ${SECRET_JWT_STRING:-change-this-jwt-secret}
     depends_on:
       db:
         condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
     ports:
       - "${BACKEND_HOST_PORT:-8081}:8081"
     volumes:
