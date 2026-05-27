@@ -1,4 +1,8 @@
 .gitnexus
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
 node_modules/
 .env
 .env.*
