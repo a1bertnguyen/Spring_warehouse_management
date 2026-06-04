@@ -1,3 +1,5 @@
+// Learning note: TransactionDetailsPage opens one normalized transaction and can
+// send status updates back through the adapter layer.
 import React, { useState, useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

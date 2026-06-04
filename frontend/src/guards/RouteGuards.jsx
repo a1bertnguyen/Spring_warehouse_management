@@ -1,3 +1,5 @@
+// Learning note: Route guards centralize navigation security for the frontend.
+// They check the saved auth session before protected pages are allowed to render.
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import ApiService from "../services/ApiService";

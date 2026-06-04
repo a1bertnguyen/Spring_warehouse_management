@@ -1,3 +1,5 @@
+// Learning note: Inventory API calls live here. Dashboards use this service for
+// stock lists, summaries, movement history, and exports.
 import { apiClient, withCollectionAlias, withItemAlias } from "./apiClient";
 
 export async function getAllInventories() {

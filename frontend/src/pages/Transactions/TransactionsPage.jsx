@@ -1,3 +1,5 @@
+// Learning note: TransactionsPage shows the legacy combined transaction list
+// produced by transactionAdapter from purchase and sales data.
 import React, { useState, useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

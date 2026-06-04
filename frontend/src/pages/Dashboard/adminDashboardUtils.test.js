@@ -1,3 +1,5 @@
+// Learning note: These tests cover the pure admin dashboard helpers without
+// needing to render the full dashboard UI.
 import {
   buildLoginActivityView,
   buildOverviewMetrics,

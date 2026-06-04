@@ -1,3 +1,5 @@
+/* Learning note: Global CSS starts here. It defines the shared look for the app
+   shell, sidebar, forms, tables, buttons, and responsive layout rules. */
 * {
   margin: 0;
   padding: 0;

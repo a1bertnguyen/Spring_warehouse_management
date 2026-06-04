@@ -1,3 +1,5 @@
+// Learning note: ManagerDashboardPage is the broad operations dashboard. It
+// connects categories, warehouses, products, inventory, and order approvals.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";

@@ -1,3 +1,5 @@
+/* Learning note: Styles for purchase staff workflows such as requests, orders,
+   stock inward creation, and supplier/inventory views. */
 .purchase-dashboard-page {
   min-height: calc(100vh - 56px);
 }

@@ -1,3 +1,5 @@
+// Learning note: User management tests exercise the AdminDashboard user section
+// through the route wrapper used by the app.
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";

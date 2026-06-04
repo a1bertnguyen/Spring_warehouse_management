@@ -1,3 +1,5 @@
+// Learning note: Product API calls live here. This service also handles product
+// image/form uploads and import/export endpoints.
 import {
   apiClient,
   normalizeProduct,

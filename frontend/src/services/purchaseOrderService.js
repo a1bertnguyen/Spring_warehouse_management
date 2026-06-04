@@ -1,3 +1,5 @@
+// Learning note: Purchase order API calls live here. Purchase staff and managers
+// use these endpoints to create orders and update order status.
 import { apiClient, withCollectionAlias, withItemAlias } from "./apiClient";
 
 export async function getAllPurchaseOrders(params = {}) {

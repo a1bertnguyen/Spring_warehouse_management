@@ -1,3 +1,5 @@
+// Learning note: RegisterPage uses the auth service to create a new account.
+// In current routing, admin user creation mainly happens from AdminDashboardPage.
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ApiService from "../../services/ApiService";

@@ -1,3 +1,5 @@
+// Learning note: This is the shared API foundation. It configures axios,
+// stores auth session data, attaches tokens, and normalizes backend responses.
 import axios from "axios";
 import CryptoJS from "crypto-js";
 
@@ -146,6 +148,8 @@ export function isAdmin() {
   return isAuthenticated() && getRole() === "ADMIN";
 }
 
+// Learning note: Every request passes through here before it reaches the backend.
+// If the user is logged in, the JWT is attached as a Bearer token.
 apiClient.interceptors.request.use((config) => {
   const token = isAuthenticated() ? getToken() : null;
 
@@ -163,6 +167,8 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Learning note: A 401 means the saved session is no longer valid. The frontend
+// clears local auth state and sends the user back to the login page.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -231,6 +237,8 @@ export function resolveApiAssetUrl(url) {
   return url;
 }
 
+// Learning note: Normalizers smooth over backend field-name differences so pages
+// can read consistent fields like id, productId, price, and imageUrl.
 export function normalizeProduct(product) {
   if (!product) return null;
 

@@ -1,0 +1,112 @@
+flowchart TB
+    subgraph CSA["Client-Server Architecture"]
+        direction TB
+
+        Browser(("Browser"))
+
+        subgraph Middle[" "]
+            direction LR
+
+            Controller["<b>Controller</b><br/>
+            Folder: Warehouse_managment/src/main/java/com/Warehouse_managment/Warehouse_managment/Controller<br/><br/>
+            + AuthController.java<br/>
+            + UserController.java<br/>
+            + CategoryController.java<br/>
+            + ProductController.java<br/>
+            + SupplierController.java<br/>
+            + WarehouseController.java<br/>
+            + InventoryController.java<br/>
+            + InventoryMovementController.java<br/>
+            + PurchaseRequestController.java<br/>
+            + PurchaseOrderController.java<br/>
+            + SalesOrderController.java<br/>
+            + StockInwardController.java<br/>
+            + StockTakeController.java<br/>
+            + ActivityLogController.java<br/>
+            + TaskController.java"]
+
+            View["<b>View</b><br/>
+            Folder: frontend/src/pages<br/><br/>
+            + Auth/LoginPage.jsx<br/>
+            + Auth/RegisterPage.jsx<br/>
+            + Auth/ForgotPasswordPage.jsx<br/>
+            + Auth/ResetPasswordPage.jsx<br/>
+            + Dashboard/DashboardPage.jsx<br/>
+            + Dashboard/AdminDashboardPage.jsx<br/>
+            + Dashboard/ManagerDashboardPage.jsx<br/>
+            + Dashboard/PurchaseStaffDashboardPage.jsx<br/>
+            + Dashboard/WarehouseStaffDashboardPage.jsx<br/>
+            + User/UserManagementPage.jsx<br/>
+            + Profile/ProfilePage.jsx<br/>
+            + Product/ProductPage.jsx<br/>
+            + Product/AddEditProductPage.jsx<br/>
+            + Category/CategoryPage.jsx<br/>
+            + Supplier/SupplierPage.jsx<br/>
+            + Purchase/PurchasePage.jsx<br/>
+            + Sales/SellPage.jsx<br/>
+            + Transactions/TransactionsPage.jsx<br/><br/>
+            Folder: frontend/src/services<br/>
+            + ApiService.js<br/>
+            + apiClient.js<br/>
+            + authService.js<br/>
+            + productService.js<br/>
+            + inventoryService.js<br/>
+            + purchaseRequestService.js<br/>
+            + purchaseOrderService.js<br/>
+            + salesOrderService.js"]
+        end
+
+        Model["<b>Model</b><br/>
+        Folder: Warehouse_managment/src/main/java/com/Warehouse_managment/Warehouse_managment/Model<br/><br/>
+        + User.java<br/>
+        + Category.java<br/>
+        + Product.java<br/>
+        + Supplier.java<br/>
+        + Warehouse.java<br/>
+        + Inventory.java<br/>
+        + InventoryMovement.java<br/>
+        + PurchaseRequest.java<br/>
+        + PurchaseRequestDetail.java<br/>
+        + PurchaseOrder.java<br/>
+        + PurchaseOrderDetail.java<br/>
+        + SalesOrder.java<br/>
+        + SalesOrderDetail.java<br/>
+        + StockInward.java<br/>
+        + StockInwardDetail.java<br/>
+        + StockTake.java<br/>
+        + StockTakeDetail.java<br/>
+        + ActivityLog.java<br/>
+        + Task.java<br/><br/>
+        Folder: Warehouse_managment/src/main/java/com/Warehouse_managment/Warehouse_managment/Service<br/>
+        + UserService.java<br/>
+        + ProductService.java<br/>
+        + InventoryService.java<br/>
+        + PurchaseRequestService.java<br/>
+        + PurchaseOrderService.java<br/>
+        + SalesOrderService.java<br/>
+        + StockInwardService.java<br/>
+        + StockTakeService.java<br/><br/>
+        Folder: Warehouse_managment/src/main/java/com/Warehouse_managment/Warehouse_managment/Repository<br/>
+        + UserRepository.java<br/>
+        + ProductRepository.java<br/>
+        + InventoryRepository.java<br/>
+        + PurchaseRequestRepository.java<br/>
+        + PurchaseOrderRepository.java<br/>
+        + SalesOrderRepository.java<br/>
+        + StockInwardRepository.java<br/>
+        + StockTakeRepository.java<br/><br/>
+        Database: MySQL"]
+
+        Browser -->|"Perform action<br/>(add, edit, delete, approve)"| View
+        View -->|"Update user interface"| Browser
+        View -->|"Send API request<br/>(HTTP/JSON + JWT)"| Controller
+        Controller -->|"Send response<br/>(JSON)"| View
+        Controller -->|"Call model for data<br/>access / modification"| Model
+        Model -->|"Return data"| Controller
+    end
+
+    classDef box fill:#ffffff,stroke:#333333,stroke-width:1px,color:#111111;
+    classDef browser fill:#ffffff,stroke:#333333,stroke-width:1px,color:#111111;
+    class Controller,View,Model box;
+    class Browser browser;
+    style Middle fill:transparent,stroke:transparent,color:transparent;

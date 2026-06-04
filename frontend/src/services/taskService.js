@@ -1,3 +1,5 @@
+// Learning note: Task API calls live here. This appears to support staff task
+// assignment workflows alongside the core warehouse features.
 import { apiClient, withCollectionAlias, withItemAlias } from "./apiClient";
 
 export async function getAllTasks() {

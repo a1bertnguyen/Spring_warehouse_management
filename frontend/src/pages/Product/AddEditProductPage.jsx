@@ -1,3 +1,5 @@
+// Learning note: AddEditProductPage handles product creation/editing and builds
+// multipart FormData for product fields plus an optional image file.
 import React, { useEffect, useState } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

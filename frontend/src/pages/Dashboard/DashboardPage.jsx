@@ -1,3 +1,5 @@
+// Learning note: DashboardPage is the role switchboard. It reads the saved role
+// and delegates to the correct dashboard implementation.
 import React from "react";
 import { useLocation } from "react-router-dom";
 import ApiService from "../../services/ApiService";

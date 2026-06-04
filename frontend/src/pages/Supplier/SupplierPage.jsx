@@ -1,3 +1,5 @@
+// Learning note: SupplierPage lists suppliers and supports navigation to add,
+// edit, or delete supplier records.
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";

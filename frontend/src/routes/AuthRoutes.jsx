@@ -1,3 +1,5 @@
+// Learning note: Public authentication routes live here. PublicRoute prevents
+// already-authenticated users from going back to the login page.
 import React from "react";
 import { Route } from "react-router-dom";
 import { PublicRoute } from "../guards/RouteGuards";

@@ -1,3 +1,5 @@
+/* Learning note: Styles for the manager operations dashboard, including
+   management panels, inventory tables, order approvals, and modals. */
 .manager-dashboard {
   display: grid;
   gap: 24px;

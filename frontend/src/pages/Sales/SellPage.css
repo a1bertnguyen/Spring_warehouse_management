@@ -1,3 +1,4 @@
+/* Learning note: Styles specific to the sales order creation screen. */
 .sales-order-page {
   min-height: calc(100vh - 56px);
 }

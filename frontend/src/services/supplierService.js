@@ -1,3 +1,5 @@
+// Learning note: Supplier API calls live here. Supplier records are used by
+// product setup and purchase workflows.
 import {
   apiClient,
   normalizeSupplier,

@@ -1,3 +1,5 @@
+// Learning note: AdminDashboardPage owns admin statistics, user management, and
+// activity-log views. UserManagementPage and ActivityLogPage reuse sections here.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,

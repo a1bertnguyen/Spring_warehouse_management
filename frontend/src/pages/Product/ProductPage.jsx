@@ -1,3 +1,5 @@
+// Learning note: ProductPage is the main product catalog screen. It supports
+// listing, searching, deleting, warehouse assignment, import, and export.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

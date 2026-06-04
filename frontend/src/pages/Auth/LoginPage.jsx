@@ -1,3 +1,5 @@
+// Learning note: LoginPage collects credentials, calls ApiService.loginUser,
+// then redirects into the protected dashboard after the session is saved.
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ApiService from "../../services/ApiService";

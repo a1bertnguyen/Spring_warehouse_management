@@ -1,3 +1,5 @@
+// Learning note: WarehouseStaffDashboardPage supports warehouse execution work:
+// inventory review, sales order handling, stock inward completion, and requests.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";

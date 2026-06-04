@@ -1,3 +1,5 @@
+// Learning note: ResetPasswordPage completes the password reset flow by sending
+// the reset token and replacement password to the backend.
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ApiService from "../../services/ApiService";

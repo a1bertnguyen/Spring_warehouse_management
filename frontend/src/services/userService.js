@@ -1,3 +1,5 @@
+// Learning note: User-related API calls live here, including admin user
+// management and the current user's profile/password endpoints.
 import {
   apiClient,
   normalizeUser,

@@ -1,3 +1,5 @@
+// Learning note: AddEditSupplierPage handles both supplier creation and editing.
+// It switches mode based on whether supplierId exists in the route params.
 import React, { useState, useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

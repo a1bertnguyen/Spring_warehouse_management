@@ -1,3 +1,5 @@
+// Learning note: PurchaseStaffDashboardPage focuses on suppliers, purchase
+// requests, purchase orders, stock inwards, and creating stock receipts.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";

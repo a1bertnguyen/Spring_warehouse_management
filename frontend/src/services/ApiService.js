@@ -1,3 +1,5 @@
+// Learning note: ApiService is a facade over all frontend service modules.
+// Pages import this one object instead of importing every domain service directly.
 import * as authService from "./authService";
 import * as userService from "./userService";
 import * as productService from "./productService";

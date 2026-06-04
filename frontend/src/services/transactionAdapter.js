@@ -1,3 +1,5 @@
+// Learning note: This adapter preserves the older "transaction" UI by combining
+// purchase requests and sales orders into one normalized transaction shape.
 import {
   buildNotes,
   formatStatus,

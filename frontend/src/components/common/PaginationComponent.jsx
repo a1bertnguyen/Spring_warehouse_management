@@ -1,3 +1,5 @@
+// Learning note: Reusable pagination control for pages that keep current page
+// state in the parent component.
 import React from "react";
 
 const PaginationComponent = ({currentPage, totalPages, onPageChange}) =>{

@@ -1,3 +1,5 @@
+// Learning note: Default smoke test scaffold from Create React App. Project
+// feature tests live closer to their pages when present.
 import { render, screen } from "@testing-library/react";
 import App from "./app/App";
 

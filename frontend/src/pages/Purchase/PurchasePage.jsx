@@ -1,3 +1,5 @@
+// Learning note: PurchasePage is an older purchase entry screen that creates a
+// purchase transaction from selected product, supplier, quantity, and price.
 import React, { useState, useEffect } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

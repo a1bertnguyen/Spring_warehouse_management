@@ -1,3 +1,5 @@
+# Learning note: This multi-stage Dockerfile builds the React app with Node,
+# then serves the static build output with Nginx.
 FROM node:20-alpine AS build
 
 WORKDIR /app

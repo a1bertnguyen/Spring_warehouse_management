@@ -1,3 +1,5 @@
+// Learning note: Authentication API calls live here. loginUser saves the auth
+// session so route guards and API interceptors can use it later.
 import { apiClient, clearAuth, saveAuthSession } from "./apiClient";
 
 export async function registerUser(registerData) {

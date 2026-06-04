@@ -1,3 +1,5 @@
+// Learning note: Warehouse API calls live here. These functions support warehouse
+// CRUD plus product assignment/removal inside a warehouse.
 import {
   apiClient,
   normalizeProduct,

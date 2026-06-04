@@ -1,3 +1,5 @@
+// Learning note: These routes are reserved for administrators and managers.
+// The guard components decide whether the current role can open each page.
 import React from "react";
 import { Route } from "react-router-dom";
 import { AdminRoute, ManagementRoute } from "../guards/RouteGuards";

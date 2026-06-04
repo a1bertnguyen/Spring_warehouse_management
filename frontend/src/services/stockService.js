@@ -1,3 +1,5 @@
+// Learning note: Stock inward and stock take API calls live here. These endpoints
+// support receiving purchased goods and checking warehouse stock.
 import { apiClient, withTopLevelAlias } from "./apiClient";
 
 export async function getAllStockInwards() {

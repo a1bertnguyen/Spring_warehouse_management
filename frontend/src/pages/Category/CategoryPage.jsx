@@ -1,3 +1,5 @@
+// Learning note: CategoryPage is the manager/admin CRUD screen for product
+// categories. Product forms depend on this category list.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

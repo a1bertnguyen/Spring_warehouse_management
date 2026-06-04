@@ -1,3 +1,5 @@
+/* Learning note: Styles for the admin dashboard, including overview cards,
+   charts, user-management tables/forms, and activity log views. */
 .admin-dashboard-page {
   color: #102137;
   display: grid;

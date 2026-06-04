@@ -1,0 +1,428 @@
+flowchart LR
+    %% Chen-style ERD for Warehouse Management System
+    %% Rectangles = entities, ovals = attributes, diamonds = relationships.
+
+    %% =========================
+    %% User / audit / task area
+    %% =========================
+    USER["User"]:::entity
+    U_ID(["id"]):::pk
+    U_NAME(["name"]):::attr
+    U_EMAIL(["email"]):::attr
+    U_PASSWORD(["password"]):::attr
+    U_PHONE(["phone_number"]):::attr
+    U_ROLE(["role"]):::attr
+    U_ACTIVE(["active"]):::attr
+    U_CREATED(["created_at"]):::attr
+
+    U_ID --- USER
+    U_NAME --- USER
+    U_EMAIL --- USER
+    U_PASSWORD --- USER
+    U_PHONE --- USER
+    U_ROLE --- USER
+    U_ACTIVE --- USER
+    U_CREATED --- USER
+
+    ACTIVITY_LOG["ActivityLog"]:::entity
+    AL_ID(["id"]):::pk
+    AL_ACTION(["action_type"]):::attr
+    AL_DOMAIN(["domain"]):::attr
+    AL_REF(["reference_type"]):::attr
+    AL_TIME(["timestamp"]):::attr
+
+    AL_ID --- ACTIVITY_LOG
+    AL_ACTION --- ACTIVITY_LOG
+    AL_DOMAIN --- ACTIVITY_LOG
+    AL_REF --- ACTIVITY_LOG
+    AL_TIME --- ACTIVITY_LOG
+
+    TASK["Task"]:::entity
+    T_ID(["id"]):::pk
+    T_NAME(["name"]):::attr
+    T_STATUS(["status"]):::attr
+    T_DEADLINE(["deadline"]):::attr
+
+    T_ID --- TASK
+    T_NAME --- TASK
+    T_STATUS --- TASK
+    T_DEADLINE --- TASK
+
+    %% =========================
+    %% Master data area
+    %% =========================
+    CATEGORY["Category"]:::entity
+    C_ID(["id"]):::pk
+    C_NAME(["name"]):::attr
+    C_DELETED(["deleted"]):::attr
+
+    C_ID --- CATEGORY
+    C_NAME --- CATEGORY
+    C_DELETED --- CATEGORY
+
+    SUPPLIER["Supplier"]:::entity
+    S_ID(["id"]):::pk
+    S_NAME(["name"]):::attr
+    S_CONTACT(["contactInfo"]):::attr
+    S_ADDRESS(["address"]):::attr
+
+    S_ID --- SUPPLIER
+    S_NAME --- SUPPLIER
+    S_CONTACT --- SUPPLIER
+    S_ADDRESS --- SUPPLIER
+
+    PRODUCT["Product"]:::entity
+    P_ID(["id"]):::pk
+    P_NAME(["name"]):::attr
+    P_SKU(["sku"]):::attr
+    P_PURCHASE(["purchaseprice"]):::attr
+    P_SALE(["sale_price"]):::attr
+    P_STOCK(["stockQuantity"]):::attr
+    P_THRESHOLD(["low_stock_threshold"]):::attr
+    P_STATUS(["status"]):::attr
+    P_UNIT(["unit"]):::attr
+    P_DELETED(["deleted"]):::attr
+
+    P_ID --- PRODUCT
+    P_NAME --- PRODUCT
+    P_SKU --- PRODUCT
+    P_PURCHASE --- PRODUCT
+    P_SALE --- PRODUCT
+    P_STOCK --- PRODUCT
+    P_THRESHOLD --- PRODUCT
+    P_STATUS --- PRODUCT
+    P_UNIT --- PRODUCT
+    P_DELETED --- PRODUCT
+
+    WAREHOUSE["Warehouse"]:::entity
+    W_ID(["warehouse_id"]):::pk
+    W_NAME(["warehouse_name"]):::attr
+    W_ADDRESS(["address"]):::attr
+    W_CREATED(["created_at"]):::attr
+    W_DELETED(["deleted"]):::attr
+
+    W_ID --- WAREHOUSE
+    W_NAME --- WAREHOUSE
+    W_ADDRESS --- WAREHOUSE
+    W_CREATED --- WAREHOUSE
+    W_DELETED --- WAREHOUSE
+
+    INVENTORY["Inventory"]:::entity
+    I_ID(["inventory_id"]):::pk
+    I_QTY(["quantity_on_hand"]):::attr
+    I_UPDATED(["last_updated"]):::attr
+
+    I_ID --- INVENTORY
+    I_QTY --- INVENTORY
+    I_UPDATED --- INVENTORY
+
+    INVENTORY_MOVEMENT["InventoryMovement"]:::entity
+    IM_ID(["movement_id"]):::pk
+    IM_TYPE(["movement_type"]):::attr
+    IM_REF(["reference_type"]):::attr
+    IM_BEFORE(["quantity_before"]):::attr
+    IM_DELTA(["quantity_delta"]):::attr
+    IM_AFTER(["quantity_after"]):::attr
+    IM_CREATED(["created_at"]):::attr
+
+    IM_ID --- INVENTORY_MOVEMENT
+    IM_TYPE --- INVENTORY_MOVEMENT
+    IM_REF --- INVENTORY_MOVEMENT
+    IM_BEFORE --- INVENTORY_MOVEMENT
+    IM_DELTA --- INVENTORY_MOVEMENT
+    IM_AFTER --- INVENTORY_MOVEMENT
+    IM_CREATED --- INVENTORY_MOVEMENT
+
+    %% =========================
+    %% Purchase area
+    %% =========================
+    PURCHASE_REQUEST["PurchaseRequest"]:::entity
+    PR_ID(["request_id"]):::pk
+    PR_CODE(["request_code"]):::attr
+    PR_DATE(["request_date"]):::attr
+    PR_STATUS(["status"]):::attr
+    PR_NOTES(["notes"]):::attr
+    PR_APPROVED(["approved_at"]):::attr
+
+    PR_ID --- PURCHASE_REQUEST
+    PR_CODE --- PURCHASE_REQUEST
+    PR_DATE --- PURCHASE_REQUEST
+    PR_STATUS --- PURCHASE_REQUEST
+    PR_NOTES --- PURCHASE_REQUEST
+    PR_APPROVED --- PURCHASE_REQUEST
+
+    PURCHASE_REQUEST_DETAIL["PurchaseRequestDetail"]:::entity
+    PRD_ID(["request_detail_id"]):::pk
+    PRD_QTY(["requested_quantity"]):::attr
+    PRD_PRICE(["unit_price_estimated"]):::attr
+    PRD_NOTE(["note"]):::attr
+
+    PRD_ID --- PURCHASE_REQUEST_DETAIL
+    PRD_QTY --- PURCHASE_REQUEST_DETAIL
+    PRD_PRICE --- PURCHASE_REQUEST_DETAIL
+    PRD_NOTE --- PURCHASE_REQUEST_DETAIL
+
+    PURCHASE_ORDER["PurchaseOrder"]:::entity
+    PO_ID(["request_id"]):::pk
+    PO_CODE(["request_code"]):::attr
+    PO_DATE(["request_date"]):::attr
+    PO_STATUS(["status"]):::attr
+    PO_NOTES(["notes"]):::attr
+
+    PO_ID --- PURCHASE_ORDER
+    PO_CODE --- PURCHASE_ORDER
+    PO_DATE --- PURCHASE_ORDER
+    PO_STATUS --- PURCHASE_ORDER
+    PO_NOTES --- PURCHASE_ORDER
+
+    PURCHASE_ORDER_DETAIL["PurchaseOrderDetail"]:::entity
+    POD_ID(["request_detail_id"]):::pk
+    POD_QTY(["requested_quantity"]):::attr
+    POD_PRICE(["unit_price_estimated"]):::attr
+    POD_NOTE(["note"]):::attr
+
+    POD_ID --- PURCHASE_ORDER_DETAIL
+    POD_QTY --- PURCHASE_ORDER_DETAIL
+    POD_PRICE --- PURCHASE_ORDER_DETAIL
+    POD_NOTE --- PURCHASE_ORDER_DETAIL
+
+    %% =========================
+    %% Sales area
+    %% =========================
+    CUSTOMER["Customer"]:::entity
+    CU_ID(["id"]):::pk
+    CU_NAME(["name"]):::attr
+    CU_EMAIL(["email"]):::attr
+    CU_PHONE(["phone_number"]):::attr
+    CU_ADDRESS(["default_shipping_address"]):::attr
+
+    CU_ID --- CUSTOMER
+    CU_NAME --- CUSTOMER
+    CU_EMAIL --- CUSTOMER
+    CU_PHONE --- CUSTOMER
+    CU_ADDRESS --- CUSTOMER
+
+    SALES_ORDER["SalesOrder"]:::entity
+    SO_ID(["sales_order_id"]):::pk
+    SO_CODE(["order_code"]):::attr
+    SO_DATE(["order_date"]):::attr
+    SO_STATUS(["status"]):::attr
+    SO_SHIP(["shipping_address"]):::attr
+    SO_NOTES(["notes"]):::attr
+
+    SO_ID --- SALES_ORDER
+    SO_CODE --- SALES_ORDER
+    SO_DATE --- SALES_ORDER
+    SO_STATUS --- SALES_ORDER
+    SO_SHIP --- SALES_ORDER
+    SO_NOTES --- SALES_ORDER
+
+    SALES_ORDER_DETAIL["SalesOrderDetail"]:::entity
+    SOD_ID(["order_detail_id"]):::pk
+    SOD_QTY(["quantity_ordered"]):::attr
+    SOD_PRICE(["unit_sale_price"]):::attr
+
+    SOD_ID --- SALES_ORDER_DETAIL
+    SOD_QTY --- SALES_ORDER_DETAIL
+    SOD_PRICE --- SALES_ORDER_DETAIL
+
+    %% =========================
+    %% Stock inward / stock take area
+    %% =========================
+    STOCK_INWARD["StockInward"]:::entity
+    SI_ID(["stockInwardId"]):::pk
+    SI_CODE(["inwardCode"]):::attr
+    SI_DATE(["inwardDate"]):::attr
+    SI_CREATED(["createdAt"]):::attr
+    SI_STATUS(["status"]):::attr
+    SI_NOTES(["notes"]):::attr
+
+    SI_ID --- STOCK_INWARD
+    SI_CODE --- STOCK_INWARD
+    SI_DATE --- STOCK_INWARD
+    SI_CREATED --- STOCK_INWARD
+    SI_STATUS --- STOCK_INWARD
+    SI_NOTES --- STOCK_INWARD
+
+    STOCK_INWARD_DETAIL["StockInwardDetail"]:::entity
+    SID_ID(["inward_detail_id"]):::pk
+    SID_QTY(["quantity_received"]):::attr
+    SID_NEGOTIATED(["unit_price_negotiated"]):::attr
+    SID_PURCHASE(["unit_purchase_price"]):::attr
+
+    SID_ID --- STOCK_INWARD_DETAIL
+    SID_QTY --- STOCK_INWARD_DETAIL
+    SID_NEGOTIATED --- STOCK_INWARD_DETAIL
+    SID_PURCHASE --- STOCK_INWARD_DETAIL
+
+    STOCK_TAKE["StockTake"]:::entity
+    ST_ID(["stock_take_id"]):::pk
+    ST_CODE(["stock_take_code"]):::attr
+    ST_DATE(["stock_take_date"]):::attr
+    ST_STATUS(["status"]):::attr
+    ST_CREATED(["created_at"]):::attr
+
+    ST_ID --- STOCK_TAKE
+    ST_CODE --- STOCK_TAKE
+    ST_DATE --- STOCK_TAKE
+    ST_STATUS --- STOCK_TAKE
+    ST_CREATED --- STOCK_TAKE
+
+    STOCK_TAKE_DETAIL["StockTakeDetail"]:::entity
+    STD_ID(["stock_take_detail_id"]):::pk
+    STD_SYSTEM(["system_quantity"]):::attr
+    STD_COUNTED(["counted_quantity"]):::attr
+    STD_DIFF(["discrepancy"]):::attr
+
+    STD_ID --- STOCK_TAKE_DETAIL
+    STD_SYSTEM --- STOCK_TAKE_DETAIL
+    STD_COUNTED --- STOCK_TAKE_DETAIL
+    STD_DIFF --- STOCK_TAKE_DETAIL
+
+    %% =========================
+    %% Relationship diamonds
+    %% =========================
+    R_USER_LOG{"creates"}:::rel
+    USER ---|1| R_USER_LOG
+    R_USER_LOG ---|N| ACTIVITY_LOG
+
+    R_USER_TASK{"assigned to"}:::rel
+    USER ---|1| R_USER_TASK
+    R_USER_TASK ---|N| TASK
+
+    R_PRODUCT_TASK{"relates to"}:::rel
+    PRODUCT ---|1| R_PRODUCT_TASK
+    R_PRODUCT_TASK ---|N| TASK
+
+    R_CATEGORY_PRODUCT{"has"}:::rel
+    CATEGORY ---|1| R_CATEGORY_PRODUCT
+    R_CATEGORY_PRODUCT ---|N| PRODUCT
+
+    R_SUPPLIER_PRODUCT{"provides"}:::rel
+    SUPPLIER ---|1| R_SUPPLIER_PRODUCT
+    R_SUPPLIER_PRODUCT ---|N| PRODUCT
+
+    R_PRODUCT_INVENTORY{"stocked as"}:::rel
+    PRODUCT ---|1| R_PRODUCT_INVENTORY
+    R_PRODUCT_INVENTORY ---|N| INVENTORY
+
+    R_WAREHOUSE_INVENTORY{"stores"}:::rel
+    WAREHOUSE ---|1| R_WAREHOUSE_INVENTORY
+    R_WAREHOUSE_INVENTORY ---|N| INVENTORY
+
+    R_PRODUCT_MOVEMENT{"tracked in"}:::rel
+    PRODUCT ---|1| R_PRODUCT_MOVEMENT
+    R_PRODUCT_MOVEMENT ---|N| INVENTORY_MOVEMENT
+
+    R_WAREHOUSE_MOVEMENT{"has"}:::rel
+    WAREHOUSE ---|1| R_WAREHOUSE_MOVEMENT
+    R_WAREHOUSE_MOVEMENT ---|N| INVENTORY_MOVEMENT
+
+    R_USER_MOVEMENT{"performs"}:::rel
+    USER ---|1| R_USER_MOVEMENT
+    R_USER_MOVEMENT ---|N| INVENTORY_MOVEMENT
+
+    R_USER_PR{"requests"}:::rel
+    USER ---|1| R_USER_PR
+    R_USER_PR ---|N| PURCHASE_REQUEST
+
+    R_WAREHOUSE_PR{"receives"}:::rel
+    WAREHOUSE ---|1| R_WAREHOUSE_PR
+    R_WAREHOUSE_PR ---|N| PURCHASE_REQUEST
+
+    R_SUPPLIER_PR{"suggested for"}:::rel
+    SUPPLIER ---|1| R_SUPPLIER_PR
+    R_SUPPLIER_PR ---|N| PURCHASE_REQUEST
+
+    R_PR_DETAIL{"includes"}:::rel
+    PURCHASE_REQUEST ---|1| R_PR_DETAIL
+    R_PR_DETAIL ---|N| PURCHASE_REQUEST_DETAIL
+
+    R_PRODUCT_PRD{"requested"}:::rel
+    PRODUCT ---|1| R_PRODUCT_PRD
+    R_PRODUCT_PRD ---|N| PURCHASE_REQUEST_DETAIL
+
+    R_PR_PO{"converted to"}:::rel
+    PURCHASE_REQUEST ---|1| R_PR_PO
+    R_PR_PO ---|N| PURCHASE_ORDER
+
+    R_USER_PO{"creates"}:::rel
+    USER ---|1| R_USER_PO
+    R_USER_PO ---|N| PURCHASE_ORDER
+
+    R_WAREHOUSE_PO{"ordered for"}:::rel
+    WAREHOUSE ---|1| R_WAREHOUSE_PO
+    R_WAREHOUSE_PO ---|N| PURCHASE_ORDER
+
+    R_SUPPLIER_PO{"selected for"}:::rel
+    SUPPLIER ---|1| R_SUPPLIER_PO
+    R_SUPPLIER_PO ---|N| PURCHASE_ORDER
+
+    R_PO_DETAIL{"includes"}:::rel
+    PURCHASE_ORDER ---|1| R_PO_DETAIL
+    R_PO_DETAIL ---|N| PURCHASE_ORDER_DETAIL
+
+    R_PRODUCT_POD{"ordered"}:::rel
+    PRODUCT ---|1| R_PRODUCT_POD
+    R_PRODUCT_POD ---|N| PURCHASE_ORDER_DETAIL
+
+    R_CUSTOMER_SO{"places"}:::rel
+    CUSTOMER ---|1| R_CUSTOMER_SO
+    R_CUSTOMER_SO ---|N| SALES_ORDER
+
+    R_USER_SO{"creates"}:::rel
+    USER ---|1| R_USER_SO
+    R_USER_SO ---|N| SALES_ORDER
+
+    R_SO_DETAIL{"includes"}:::rel
+    SALES_ORDER ---|1| R_SO_DETAIL
+    R_SO_DETAIL ---|N| SALES_ORDER_DETAIL
+
+    R_PRODUCT_SOD{"sold"}:::rel
+    PRODUCT ---|1| R_PRODUCT_SOD
+    R_PRODUCT_SOD ---|N| SALES_ORDER_DETAIL
+
+    R_WAREHOUSE_SOD{"fulfilled from"}:::rel
+    WAREHOUSE ---|1| R_WAREHOUSE_SOD
+    R_WAREHOUSE_SOD ---|N| SALES_ORDER_DETAIL
+
+    R_SUPPLIER_SI{"delivers"}:::rel
+    SUPPLIER ---|1| R_SUPPLIER_SI
+    R_SUPPLIER_SI ---|N| STOCK_INWARD
+
+    R_USER_SI{"records"}:::rel
+    USER ---|1| R_USER_SI
+    R_USER_SI ---|N| STOCK_INWARD
+
+    R_WAREHOUSE_SI{"receives"}:::rel
+    WAREHOUSE ---|1| R_WAREHOUSE_SI
+    R_WAREHOUSE_SI ---|N| STOCK_INWARD
+
+    R_PO_SI{"received by"}:::rel
+    PURCHASE_ORDER ---|1| R_PO_SI
+    R_PO_SI ---|N| STOCK_INWARD
+
+    R_SI_DETAIL{"includes"}:::rel
+    STOCK_INWARD ---|1| R_SI_DETAIL
+    R_SI_DETAIL ---|N| STOCK_INWARD_DETAIL
+
+    R_PRODUCT_SID{"received"}:::rel
+    PRODUCT ---|1| R_PRODUCT_SID
+    R_PRODUCT_SID ---|N| STOCK_INWARD_DETAIL
+
+    R_USER_ST{"performs"}:::rel
+    USER ---|1| R_USER_ST
+    R_USER_ST ---|N| STOCK_TAKE
+
+    R_ST_DETAIL{"includes"}:::rel
+    STOCK_TAKE ---|1| R_ST_DETAIL
+    R_ST_DETAIL ---|N| STOCK_TAKE_DETAIL
+
+    R_PRODUCT_STD{"counted"}:::rel
+    PRODUCT ---|1| R_PRODUCT_STD
+    R_PRODUCT_STD ---|N| STOCK_TAKE_DETAIL
+
+    classDef entity fill:#ffffff,stroke:#333333,stroke-width:1px,color:#111111;
+    classDef attr fill:#ffffff,stroke:#333333,stroke-width:1px,color:#111111;
+    classDef pk fill:#fff2cc,stroke:#d6a53a,stroke-width:1px,color:#111111;
+    classDef rel fill:#ffffff,stroke:#333333,stroke-width:1px,color:#111111;

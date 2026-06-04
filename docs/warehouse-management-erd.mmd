@@ -1,0 +1,276 @@
+erDiagram
+    USER ||--o{ ACTIVITY_LOG : creates
+    USER ||--o{ TASK : assigned_to
+    USER ||--o{ INVENTORY_MOVEMENT : performs
+    USER ||--o{ PURCHASE_REQUEST : requests
+    USER ||--o{ PURCHASE_ORDER : creates
+    USER ||--o{ SALES_ORDER : creates
+    USER ||--o{ STOCK_INWARD : records
+    USER ||--o{ STOCK_TAKE : performs
+
+    CATEGORY ||--o{ PRODUCT : classifies
+    SUPPLIER ||--o{ PRODUCT : supplies
+    PRODUCT ||--o{ TASK : relates_to
+    PRODUCT ||--o{ INVENTORY : stocked_as
+    WAREHOUSE ||--o{ INVENTORY : stores
+    PRODUCT ||--o{ INVENTORY_MOVEMENT : tracked_in
+    WAREHOUSE ||--o{ INVENTORY_MOVEMENT : has
+
+    WAREHOUSE ||--o{ PURCHASE_REQUEST : receives
+    SUPPLIER ||--o{ PURCHASE_REQUEST : suggested_for
+    PURCHASE_REQUEST ||--o{ PURCHASE_REQUEST_DETAIL : contains
+    PRODUCT ||--o{ PURCHASE_REQUEST_DETAIL : requested
+    SUPPLIER ||--o{ PURCHASE_REQUEST_DETAIL : suggested_supplier
+
+    PURCHASE_REQUEST ||--o{ PURCHASE_ORDER : converted_to
+    WAREHOUSE ||--o{ PURCHASE_ORDER : ordered_for
+    SUPPLIER ||--o{ PURCHASE_ORDER : selected_for
+    PURCHASE_ORDER ||--o{ PURCHASE_ORDER_DETAIL : contains
+    PRODUCT ||--o{ PURCHASE_ORDER_DETAIL : ordered
+    SUPPLIER ||--o{ PURCHASE_ORDER_DETAIL : suggested_supplier
+
+    CUSTOMER ||--o{ SALES_ORDER : places
+    SALES_ORDER ||--o{ SALES_ORDER_DETAIL : contains
+    PRODUCT ||--o{ SALES_ORDER_DETAIL : sold
+    WAREHOUSE ||--o{ SALES_ORDER_DETAIL : fulfilled_from
+
+    SUPPLIER ||--o{ STOCK_INWARD : delivers
+    WAREHOUSE ||--o{ STOCK_INWARD : receives
+    PURCHASE_ORDER ||--o{ STOCK_INWARD : received_by
+    STOCK_INWARD ||--o{ STOCK_INWARD_DETAIL : contains
+    PRODUCT ||--o{ STOCK_INWARD_DETAIL : received
+
+    STOCK_TAKE ||--o{ STOCK_TAKE_DETAIL : contains
+    PRODUCT ||--o{ STOCK_TAKE_DETAIL : counted
+
+    USER {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR email UK
+        VARCHAR password
+        VARCHAR phone_number
+        ENUM role
+        BOOLEAN active
+        DATETIME created_at
+        VARCHAR reset_token
+        DATETIME reset_token_expiry
+    }
+
+    ACTIVITY_LOG {
+        BIGINT id PK
+        BIGINT user_id FK
+        ENUM action_type
+        ENUM domain
+        VARCHAR reference_type
+        BIGINT reference_id
+        JSON before_state
+        JSON after_state
+        JSON metadata
+        VARCHAR ip_address
+        VARCHAR note
+        DATETIME timestamp
+    }
+
+    TASK {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR description
+        ENUM status
+        DATETIME created_at
+        DATETIME deadline
+        BIGINT userId FK
+        BIGINT product_id FK
+    }
+
+    CATEGORY {
+        BIGINT id PK
+        VARCHAR name
+        BOOLEAN deleted
+    }
+
+    SUPPLIER {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR contactInfo
+        VARCHAR address
+    }
+
+    PRODUCT {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR sku UK
+        DECIMAL purchaseprice
+        DECIMAL sale_price
+        INT stockQuantity
+        BIGINT supplier_id FK
+        INT low_stock_threshold
+        ENUM status
+        VARCHAR unit
+        DATETIME updated_at
+        TEXT description
+        DATETIME expiryDate
+        VARCHAR imageUrl
+        BOOLEAN deleted
+        DATETIME createdAt
+        BIGINT category_id FK
+    }
+
+    WAREHOUSE {
+        INT warehouse_id PK
+        VARCHAR warehouse_name
+        TEXT address
+        DATETIME created_at
+        BOOLEAN deleted
+    }
+
+    INVENTORY {
+        INT inventory_id PK
+        BIGINT product_id FK
+        INT warehouse_id FK
+        INT quantity_on_hand
+        TIMESTAMP last_updated
+    }
+
+    INVENTORY_MOVEMENT {
+        BIGINT movement_id PK
+        BIGINT product_id FK
+        VARCHAR product_name
+        VARCHAR product_sku
+        INT warehouse_id FK
+        VARCHAR warehouse_name
+        BIGINT actor_user_id FK
+        VARCHAR actor_user_name
+        ENUM movement_type
+        ENUM reference_type
+        VARCHAR reference_id
+        VARCHAR reference_code
+        INT quantity_before
+        INT quantity_delta
+        INT quantity_after
+        TEXT note
+        DATETIME created_at
+    }
+
+    PURCHASE_REQUEST {
+        INT request_id PK
+        VARCHAR request_code UK
+        BIGINT user_id_requester FK
+        INT warehouse_id FK
+        BIGINT supplier_id FK
+        DATETIME request_date
+        ENUM status
+        TEXT notes
+        DATETIME approved_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    PURCHASE_REQUEST_DETAIL {
+        INT request_detail_id PK
+        INT request_id FK
+        BIGINT product_id FK
+        INT requested_quantity
+        DECIMAL unit_price_estimated
+        BIGINT supplier_id_suggested FK
+        TEXT note
+    }
+
+    PURCHASE_ORDER {
+        INT request_id PK
+        VARCHAR request_code UK
+        INT purchase_request_id FK
+        BIGINT user_id_requester FK
+        INT warehouse_id FK
+        DATETIME request_date
+        ENUM status
+        TEXT notes
+        BIGINT supplier_id FK
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    PURCHASE_ORDER_DETAIL {
+        INT request_detail_id PK
+        INT request_id FK
+        BIGINT product_id FK
+        INT requested_quantity
+        DECIMAL unit_price_estimated
+        BIGINT supplier_id_suggested FK
+        TEXT note
+    }
+
+    CUSTOMER {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR email UK
+        VARCHAR phone_number
+        TEXT default_shipping_address
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    SALES_ORDER {
+        INT sales_order_id PK
+        VARCHAR order_code UK
+        BIGINT customer_id FK
+        VARCHAR customer_name
+        VARCHAR customer_email
+        VARCHAR customer_phone
+        TEXT shipping_address
+        BIGINT user_id FK
+        DATETIME order_date
+        ENUM status
+        TEXT notes
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    SALES_ORDER_DETAIL {
+        INT order_detail_id PK
+        INT sales_order_id FK
+        BIGINT product_id FK
+        INT warehouse_id FK
+        INT quantity_ordered
+        DECIMAL unit_sale_price
+    }
+
+    STOCK_INWARD {
+        INT stockInwardId PK
+        VARCHAR inwardCode
+        BIGINT supplier_id FK
+        BIGINT user_id FK
+        INT warehouse_id FK
+        INT purchase_order_id FK
+        TEXT notes
+        DATETIME inwardDate
+        DATETIME createdAt
+        ENUM status
+    }
+
+    STOCK_INWARD_DETAIL {
+        INT inward_detail_id PK
+        INT stock_inward_id FK
+        BIGINT product_id FK
+        INT quantity_received
+        DECIMAL unit_price_negotiated
+        DECIMAL unit_purchase_price
+    }
+
+    STOCK_TAKE {
+        INT stock_take_id PK
+        VARCHAR stock_take_code UK
+        BIGINT user_id FK
+        DATE stock_take_date
+        VARCHAR status
+        VARCHAR notes
+        TIMESTAMP created_at
+    }
+
+    STOCK_TAKE_DETAIL {
+        INT stock_take_detail_id PK
+        INT stock_take_id FK
+        BIGINT product_id FK
+        INT system_quantity
+        INT counted_quantity
+        INT discrepancy
+    }

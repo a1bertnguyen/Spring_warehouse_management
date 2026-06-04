@@ -1,3 +1,5 @@
+// Learning note: Sidebar chooses navigation items from the current user's role.
+// It is the quickest file to inspect when you want to see each role's menu.
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import ApiService from "../../services/ApiService";

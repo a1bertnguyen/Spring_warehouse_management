@@ -1,3 +1,5 @@
+// Learning note: ProfilePage reads the current user's account information and
+// lets the logged-in user change their own password.
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

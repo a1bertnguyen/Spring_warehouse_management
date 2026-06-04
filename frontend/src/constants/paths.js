@@ -1,3 +1,5 @@
+// Learning note: Keep client-side route paths in one place so links, redirects,
+// and route definitions do not drift apart as the app grows.
 export const PATHS = {
   root: "/",
   login: "/login",

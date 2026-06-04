@@ -1,3 +1,5 @@
+// Learning note: Category API calls live here. Category data is used when
+// creating, editing, and filtering products.
 import {
   apiClient,
   normalizeCategory,

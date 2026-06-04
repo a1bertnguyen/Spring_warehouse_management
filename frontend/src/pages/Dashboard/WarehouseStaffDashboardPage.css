@@ -1,3 +1,5 @@
+/* Learning note: Styles for warehouse and sales staff dashboards, including
+   inventory, sales orders, stock inwards, and request tables. */
 .warehouse-dashboard-page {
   min-height: calc(100vh - 56px);
 }

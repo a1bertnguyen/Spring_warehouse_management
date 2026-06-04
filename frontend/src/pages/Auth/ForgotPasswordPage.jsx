@@ -1,3 +1,5 @@
+// Learning note: ForgotPasswordPage starts the password reset flow by sending
+// the user's email to the backend.
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import ApiService from "../../services/ApiService";

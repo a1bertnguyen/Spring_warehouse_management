@@ -1,3 +1,5 @@
+// Learning note: StaffDashboardPage is the fallback dashboard for roles that do
+// not have a specialized admin/manager/purchase/warehouse dashboard.
 import React, { useEffect, useState } from "react";
 import MainLayout from "../../layouts/MainLayout";
 import ApiService from "../../services/ApiService";

@@ -1,3 +1,5 @@
+// Learning note: Pure helper functions for the admin dashboard live here so the
+// chart/table calculations can be tested separately from React rendering.
 export const USER_PAGE_SIZE = 6;
 export const ACTIVITY_PAGE_SIZE = 8;
 

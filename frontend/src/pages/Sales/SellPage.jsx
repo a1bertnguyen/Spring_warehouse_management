@@ -1,3 +1,5 @@
+// Learning note: SellPage creates sales orders from warehouse inventory. It
+// loads warehouses first, then inventory for the selected warehouse.
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";

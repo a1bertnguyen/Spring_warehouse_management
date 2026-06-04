@@ -1,3 +1,5 @@
+// Learning note: Purchase request API calls live here. Purchase and warehouse
+// dashboards use these endpoints to create and approve replenishment requests.
 import { apiClient, withCollectionAlias, withItemAlias } from "./apiClient";
 
 export async function getAllPurchaseRequests(params = {}) {

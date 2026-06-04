@@ -1,3 +1,5 @@
+// Learning note: Sales order API calls live here. Sales and warehouse staff use
+// this service to create, review, ship, and complete sales orders.
 import { apiClient, withCollectionAlias, withItemAlias } from "./apiClient";
 
 export async function getAllSalesOrders(params = {}) {

@@ -1,3 +1,5 @@
+// Learning note: This is the frontend bootstrap file. It mounts the React app
+// into public/index.html and hands control to the top-level App component.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

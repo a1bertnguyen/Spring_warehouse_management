@@ -1,3 +1,5 @@
+// Learning note: These routes require any authenticated user. Role-specific
+// dashboard sections are still selected later by DashboardPage.
 import React from "react";
 import { Route } from "react-router-dom";
 import { ProtectedRoute } from "../guards/RouteGuards";
